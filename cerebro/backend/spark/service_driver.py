@@ -36,17 +36,17 @@ class TaskHostHashIndicesResponse(object):
         """Task indices."""
 
 
-class TaskIndexByRankRequest(object):
-    """Request task index by Horovod rank."""
+class LocalRankByTaskIndexRequest(object):
+    """Request local rank on the worker giving task index."""
 
-    def __init__(self, rank):
-        self.rank = rank
+    def __init__(self, task_index):
+        self.task_index = task_index
 
 
-class TaskIndexByRankResponse(object):
-    def __init__(self, index):
-        self.index = index
-        """Task index."""
+class LocalRankByTaskIndexResponse(object):
+    def __init__(self, local_rank):
+        self.local_rank = local_rank
+        """Local rank of the task"""
 
 
 class AllTaskAddressesRequest(object):
@@ -99,7 +99,6 @@ class SparkDriverService:
         self._task_host_hash_indices = {}
         self._wait_cond = threading.Condition()
 
-        self._ranks_to_indices = None
         self._spark_job_failed = False
 
     def _make_handler(self):
@@ -175,8 +174,13 @@ class SparkDriverService:
         if isinstance(req, TaskHostHashIndicesRequest):
             return TaskHostHashIndicesResponse(self._task_host_hash_indices[req.host_hash])
 
-        if isinstance(req, TaskIndexByRankRequest):
-            return TaskIndexByRankResponse(self._ranks_to_indices[req.rank])
+        if isinstance(req, LocalRankByTaskIndexRequest):
+            task_index = req.task_index
+            for hh in self._task_host_hash_indices:
+                if task_index in self._task_host_hash_indices[hh]:
+                    for local_rank, ti in enumerate(self._task_host_hash_indices[hh]):
+                        if ti == task_index:
+                            return LocalRankByTaskIndexResponse(task_index)
 
         if isinstance(req, RegisterTaskRequest):
             self._wait_cond.acquire()
@@ -213,8 +217,6 @@ class SparkDriverService:
 
         raise NotImplementedError(req)
 
-    def set_ranks_to_indices(self, ranks_to_indices):
-        self._ranks_to_indices = ranks_to_indices
 
     def notify_spark_job_failed(self):
         self._wait_cond.acquire()
@@ -237,7 +239,6 @@ class SparkDriverService:
                 timeout.check_time_out_for('Spark tasks to start')
         finally:
             self._wait_cond.release()
-
 
 
 class SparkDriverClient:
@@ -375,6 +376,6 @@ class SparkDriverClient:
         resp = self._send(TaskHostHashIndicesRequest(host_hash))
         return resp.indices
 
-    def task_index_by_rank(self, rank):
-        resp = self._send(TaskIndexByRankRequest(rank))
-        return resp.index
+    def local_rank_by_task_index(self, task_index):
+        resp = self._send(LocalRankByTaskIndexRequest(task_index))
+        return resp.local_rank

@@ -24,7 +24,7 @@ Detailed documentation about the system can be found [here](https://adalabucsd.g
 Acknowledgement
 ---------------
 We learned a lot from the following projects when building Cerebro.
-- [Horovod](https://github.com/horovod/horovod): Cerebro's Apache Spark implementation originates from the Horovod's
+- [Horovod](https://github.com/horovod/horovod): Cerebro's Apache Spark implementation uses code from the Horovod's
  implementation for Apache Spark.
  
  

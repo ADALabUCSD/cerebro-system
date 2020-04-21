@@ -32,10 +32,11 @@ class InitDataLoadersRequest(object):
 
 
 class ExecuteSubEpochRequest(object):
-    def __init__(self, sub_epoch_fn, train, initial_epoch):
+    def __init__(self, sub_epoch_fn, train, initial_epoch, local_task_index=0):
         self.sub_epoch_fn = sub_epoch_fn
         self.is_train = train
         self.initial_epoch = initial_epoch
+        self.local_task_index = local_task_index
 
 class SubEpochCompletedRequest(object):
     """Is command execution finished?"""
@@ -169,18 +170,18 @@ class SparkTaskService:
                 if self._sub_epoch_thread is None or not self._sub_epoch_thread.is_alive():
                     self._sub_epoch_status = None
 
-                    def bg_execute(fn, is_train, initial_epoch):
+                    def bg_execute(fn, is_train, initial_epoch, local_task_index):
                         try:
                             self._sub_epoch_status = {"status": "RUNNING", "result": None}
                             if is_train:
-                                func_result = fn(self._train_reader, is_train, initial_epoch)
+                                func_result = fn(self._train_reader, is_train, initial_epoch, local_task_index=local_task_index)
                             else:
                                 func_result = fn(self._val_reader, is_train, initial_epoch)
                             self._sub_epoch_status = {"status": "COMPLETED", "result": func_result}
                         except Exception as e:
                             self._sub_epoch_status = {"status": "FAILED", "result": None, "error": str(e) + "\n" + traceback.format_exc()}
 
-                    self._sub_epoch_thread = threading.Thread(target=bg_execute, args=(req.sub_epoch_fn, req.is_train, req.initial_epoch,))
+                    self._sub_epoch_thread = threading.Thread(target=bg_execute, args=(req.sub_epoch_fn, req.is_train, req.initial_epoch, req.local_task_index))
                     self._sub_epoch_thread.start()
             finally:
                 self._wait_cond.notify_all()
@@ -358,8 +359,8 @@ class SparkTaskClient:
     def initialize_data_loaders(self, fn):
         self._send(InitDataLoadersRequest(fn))
 
-    def execute_sub_epoch(self, fn, train=True, initial_epoch=0):
-        self._send(ExecuteSubEpochRequest(fn, train, initial_epoch))
+    def execute_sub_epoch(self, fn, train=True, initial_epoch=0, local_task_index=0):
+        self._send(ExecuteSubEpochRequest(fn, train, initial_epoch, local_task_index))
 
     def sub_epoch_completed(self):
         return self._send(SubEpochCompletedRequest())

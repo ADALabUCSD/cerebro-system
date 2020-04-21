@@ -483,14 +483,13 @@ class CerebroSparkModel(Model, ModelParams, KerasEstimatorParamsReadable, KerasE
         pin_cpu = spark.backend._pin_cpu_fn()
 
         def predict(rows):
-            import tensorflow as tf
             from pyspark import Row
             from pyspark.ml.linalg import DenseVector, SparseVector
 
             k = keras_utils.keras()
             k.backend.set_floatx(floatx)
             # Do not use GPUs for prediction, use single CPU core per task.
-            pin_cpu(tf)
+            pin_cpu()
 
             def load_model_fn(x):
                 with k.utils.custom_object_scope(custom_objects):

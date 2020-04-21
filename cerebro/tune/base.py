@@ -175,11 +175,12 @@ class ModelSearch(object):
         raise NotImplementedError('method not implemented')
 
     def _estimator_gen_fn_wrapper(self, params):
-        model = self.estimator_gen_fn(params)
-        model.setFeatureCols([self.feature_col])
-        model.setLabelCols([self.label_col])
-        model.setStore(self.store)
-        return model
+        est = self.estimator_gen_fn(params)
+        est.setFeatureCols([self.feature_col])
+        est.setLabelCols([self.label_col])
+        est.setStore(self.store)
+        est.setLogsDir(os.path.join(self.logdir, est.getRunId()))
+        return est
 
     def _log_epoch_metrics_to_tensorboard(self, estimators, estimator_results):
         # logging to TensorBoard

@@ -49,7 +49,7 @@ def default_num_proc():
 class SparkBackend(Backend):
     """Uses `horovod.spark.run` to execute the distributed training `fn`."""
 
-    def __init__(self, spark_context=None, num_proc=None, start_timeout=None, verbose=1, nics=None):
+    def __init__(self, spark_context=None, num_proc=None, start_timeout=600, disk_cache_size=20480, verbose=1):
         """
         Args:
             spark_context: Spark context
@@ -57,16 +57,9 @@ class SparkBackend(Backend):
             start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
                        If not set, falls back to `CEREBRO_SPARK_START_TIMEOUT` environment variable value.
                        If it is not set as well, defaults to 600 seconds.
+            disk_cache_size: Size of the disk data cache in MBs.
             verbose: Debug output verbosity (0-2). Defaults to 1..
-            nics: List of NICs for tcp network communication.
         """
-        if start_timeout is None:
-            # Lookup default timeout from the environment variable.
-            start_timeout = int(os.getenv('CEREBRO_SPARK_START_TIMEOUT', '600'))
-
-        # nics needs to be a set
-        if nics and not isinstance(nics, set):
-            nics = set(nics)
 
         tmout = timeout.Timeout(start_timeout,
                                 message='Timed out waiting for {activity}. Please check that you have '
@@ -77,8 +70,9 @@ class SparkBackend(Backend):
         settings = spark_settings.Settings(verbose=verbose,
                                            key=secret.make_secret_key(),
                                            timeout=tmout,
-                                           nics=nics,
                                            run_func_mode=True)
+
+        self.disk_cache_size = disk_cache_size
 
         if spark_context is None:
             spark_context = pyspark.SparkContext._active_spark_context
@@ -101,6 +95,7 @@ class SparkBackend(Backend):
         self.workers_initialized = False
         self.task_clients = None
         self.driver = None
+        self.driver_client = None
         self.spark_job_group = None
         self.data_loaders_initialized = False
 
@@ -109,6 +104,8 @@ class SparkBackend(Backend):
         result_queue = queue.Queue(1)
         spark_job_group = 'cerebro.spark.run.%d' % job_id.next_job_id()
         driver = service_driver.SparkDriverService(self.settings.num_proc, self.settings.key, self.settings.nics)
+        driver_client = service_driver.SparkDriverClient(driver.addresses(), self.settings.key, self.settings.verbose)
+
         _make_spark_thread(self.spark_context, spark_job_group, driver, result_queue, self.settings)
 
         driver.wait_for_initial_registration(self.settings.timeout)
@@ -121,31 +118,8 @@ class SparkBackend(Backend):
         for task_client in task_clients:
             task_client.notify_initial_registration_complete()
 
-        # Determine a set of common interfaces for communication.
-        common_intfs = set(driver.task_addresses_for_tasks(0).keys())
-        for index in range(1, self.settings.num_proc):
-            common_intfs.intersection_update(driver.task_addresses_for_tasks(index).keys())
-        if not common_intfs:
-            raise Exception('Unable to find a set of common communication interfaces: %s'
-                            % [(index, driver.task_addresses_for_tasks(index)) for index in
-                               range(self.settings.num_proc)])
-
-        # Determine the index grouping based on host hashes.
-        # Barrel shift until index 0 is in the first host.
-        host_hashes = list(driver.task_host_hash_indices().keys())
-        host_hashes.sort()
-        while 0 not in driver.task_host_hash_indices()[host_hashes[0]]:
-            host_hashes = host_hashes[1:] + host_hashes[:1]
-
-        self.settings.hosts = ','.join(
-            '%s:%d' % (host_hash, len(driver.task_host_hash_indices()[host_hash])) for host_hash in host_hashes)
-
-        ranks_to_indices = []
-        for host_hash in host_hashes:
-            ranks_to_indices += driver.task_host_hash_indices()[host_hash]
-        driver.set_ranks_to_indices(ranks_to_indices)
-
         self.driver = driver
+        self.driver_client = driver_client
         self.task_clients = task_clients
         self.spark_job_group = spark_job_group
         self.workers_initialized = True
@@ -160,10 +134,9 @@ class SparkBackend(Backend):
         if self.workers_initialized:
             remote_store = store.to_remote(self.spark_job_group, dataset_idx)
             shard_count = self.num_processes()
-            # FIXME
-            cache_size_limit = 1024 ** 3
             _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, dataset_idx)
-            data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cache_size_limit)
+            data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size,
+                                               self.disk_cache_size)
 
             for task_client in self.task_clients:
                 task_client.initialize_data_loaders(data_readers_fn)
@@ -173,14 +146,12 @@ class SparkBackend(Backend):
             raise Exception('Spark tasks not initialized for Cerebro. Please run SparkBackend.initialize_workers() '
                             'first!')
 
-
     def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
         sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col) \
                               for model in models]
 
         model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self.num_processes())]
         # take a random ordering
-        random.seed = 2020
         random.shuffle(model_worker_pairs)
 
         model_states = {i: False for i in range(len(models))}
@@ -197,7 +168,10 @@ class SparkBackend(Backend):
                     m = _get_runnable_model(w, model_worker_pairs, model_states)
                     if m != -1:
                         # runnable model found
-                        self.task_clients[w].execute_sub_epoch(sub_epoch_trainers[m], is_train, models[m].getEpochs())
+                        self.task_clients[w].execute_sub_epoch(
+                            fn=sub_epoch_trainers[m], train=is_train, initial_epoch=models[m].getEpochs(),
+                            local_task_index=self.driver_client.local_rank_by_task_index(w))
+
                         model_states[m] = True
                         worker_states[w] = True
                         model_on_worker[w] = m
@@ -267,7 +241,8 @@ class SparkBackend(Backend):
         :param dataset_idx:
         """
         return util.prepare_data(self.num_processes(), store, dataset, [label_column], [feature_column], validation,
-                          partitions_per_process=1, compress_sparse=compress_sparse, verbose=verbose, dataset_idx=dataset_idx)
+                                 partitions_per_process=1, compress_sparse=compress_sparse, verbose=verbose,
+                                 dataset_idx=dataset_idx)
 
     def num_processes(self):
         """
@@ -395,6 +370,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     custom_objects = estimator.getCustomObjects()
     user_shuffle_buffer_size = estimator.getShufflingBufferSize()
     metrics_names = estimator.getMetrics()
+    model_logs_dir = estimator.getLogsDir()
     user_verbose = estimator.getVerbose()
 
     # Model parameters
@@ -419,11 +395,10 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     store = estimator.getStore()
     remote_store = store.to_remote(run_id, dataset_idx)
 
-    def train(data_reader, is_train, starting_epoch):
-        tf.keras.backend.set_floatx(floatx)
+    def train(data_reader, is_train, starting_epoch, local_task_index=0):
 
-        # FIXME: Each task service should have a local index
-        # pin_gpu(hvd, tf, k)
+        tf.keras.backend.set_floatx(floatx)
+        pin_gpu(local_task_index)
 
         # FIXME: Enable sub-epoch data shuffling
         # if not user_shuffle_buffer_size:
@@ -442,17 +417,11 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
                 serialized_model, lambda x: tf.keras.models.load_model(x))
 
         # # Verbose mode 1 will print a progress bar
-        # verbose = user_verbose if hvd.rank() == 0 else 0
         verbose = user_verbose
 
         with remote_store.get_local_output_dir() as run_output_dir:
-
             callbacks = user_callbacks
-
             ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
-            # FIXME create summary writer for with logdir
-            logs_dir = os.path.join(run_output_dir, remote_store.logs_subdir)
-
             # restore model from checkpoint if it exists
             if os.path.exists(ckpt_file):
                 model.load_weights(ckpt_file)
@@ -543,53 +512,20 @@ def _calculate_shuffle_buffer_size_fn():
 
 
 def _pin_gpu_fn():
-    # Horovod: pin GPU to be used to process local rank (one GPU per process)
-    return _pin_gpu_tensorflow2_fn() if LooseVersion(tf.__version__) >= LooseVersion('2.0.0') \
-        else _pin_gpu_tensorflow1_fn()
-
-
-# FIXME
-def _pin_gpu_tensorflow2_fn():
-    def fn(tf):
+    def fn(local_task_index):
         gpus = tf.config.experimental.list_physical_devices('GPU')
         for gpu in gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
         if gpus:
-            tf.config.experimental.set_visible_devices(gpus[0], 'GPU')
-
-    return fn
-
-
-# FIXME
-def _pin_gpu_tensorflow1_fn():
-    def fn(tf):
-        config = tf.ConfigProto()
-        config.gpu_options.allow_growth = True
-        config.gpu_options.visible_device_list = str(0)
-        tf.keras.backend.set_session(tf.Session(config=config))
+            tf.config.experimental.set_visible_devices(gpus[local_task_index], 'GPU')
 
     return fn
 
 
 def _pin_cpu_fn():
-    return _pin_cpu_tensorflow2_fn() if LooseVersion(tf.__version__) >= LooseVersion('2.0.0') \
-        else _pin_cpu_tensorflow1_fn()
-
-
-def _pin_cpu_tensorflow2_fn():
-    def fn(tf):
+    def fn():
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
         tf.config.threading.set_inter_op_parallelism_threads(1)
         tf.config.threading.set_intra_op_parallelism_threads(1)
-
-    return fn
-
-
-def _pin_cpu_tensorflow1_fn():
-    def fn(tf):
-        config = tf.ConfigProto(device_count={'GPU': 0})
-        config.inter_op_parallelism_threads = 1
-        config.intra_op_parallelism_threads = 1
-        tf.keras.backend.set_session(tf.Session(config=config))
 
     return fn
