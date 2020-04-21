@@ -118,6 +118,12 @@ class SparkBackend(Backend):
         for task_client in task_clients:
             task_client.notify_initial_registration_complete()
 
+        # setting local index for each task on the corresponding worker for GPU pinning (if needed)
+        host_hashes = driver.task_host_hash_indices()
+        for host_hash in host_hashes:
+            for i, task_index in enumerate(host_hashes[host_hash]):
+                task_clients[task_index].set_local_task_index(i)
+
         self.driver = driver
         self.driver_client = driver_client
         self.task_clients = task_clients
@@ -169,8 +175,7 @@ class SparkBackend(Backend):
                     if m != -1:
                         # runnable model found
                         self.task_clients[w].execute_sub_epoch(
-                            fn=sub_epoch_trainers[m], train=is_train, initial_epoch=models[m].getEpochs(),
-                            local_task_index=self.driver_client.local_rank_by_task_index(w))
+                            fn=sub_epoch_trainers[m], train=is_train, initial_epoch=models[m].getEpochs())
 
                         model_states[m] = True
                         worker_states[w] = True

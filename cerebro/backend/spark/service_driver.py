@@ -35,20 +35,6 @@ class TaskHostHashIndicesResponse(object):
         self.indices = indices
         """Task indices."""
 
-
-class LocalRankByTaskIndexRequest(object):
-    """Request local rank on the worker giving task index."""
-
-    def __init__(self, task_index):
-        self.task_index = task_index
-
-
-class LocalRankByTaskIndexResponse(object):
-    def __init__(self, local_rank):
-        self.local_rank = local_rank
-        """Local rank of the task"""
-
-
 class AllTaskAddressesRequest(object):
     """Request all task addresses for a given index."""
 
@@ -173,14 +159,6 @@ class SparkDriverService:
 
         if isinstance(req, TaskHostHashIndicesRequest):
             return TaskHostHashIndicesResponse(self._task_host_hash_indices[req.host_hash])
-
-        if isinstance(req, LocalRankByTaskIndexRequest):
-            task_index = req.task_index
-            for hh in self._task_host_hash_indices:
-                if task_index in self._task_host_hash_indices[hh]:
-                    for local_rank, ti in enumerate(self._task_host_hash_indices[hh]):
-                        if ti == task_index:
-                            return LocalRankByTaskIndexResponse(task_index)
 
         if isinstance(req, RegisterTaskRequest):
             self._wait_cond.acquire()
@@ -375,7 +353,3 @@ class SparkDriverClient:
     def task_host_hash_indices(self, host_hash):
         resp = self._send(TaskHostHashIndicesRequest(host_hash))
         return resp.indices
-
-    def local_rank_by_task_index(self, task_index):
-        resp = self._send(LocalRankByTaskIndexRequest(task_index))
-        return resp.local_rank

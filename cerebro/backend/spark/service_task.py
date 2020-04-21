@@ -26,17 +26,23 @@ from six.moves import queue, socketserver
 from .service_common import find_port, PingResponse, PingRequest, NoValidAddressesFound, AckResponse, Wire
 
 
+class SetLocalTaskIndexRequest(object):
+    def __init__(self, local_task_index):
+        self.local_task_index = local_task_index
+        """Local rank of the task"""
+
+
 class InitDataLoadersRequest(object):
     def __init__(self, initialize_data_loaders_fn):
         self.initialize_data_loaders_fn = initialize_data_loaders_fn
 
 
 class ExecuteSubEpochRequest(object):
-    def __init__(self, sub_epoch_fn, train, initial_epoch, local_task_index=0):
+    def __init__(self, sub_epoch_fn, train, initial_epoch):
         self.sub_epoch_fn = sub_epoch_fn
         self.is_train = train
         self.initial_epoch = initial_epoch
-        self.local_task_index = local_task_index
+
 
 class SubEpochCompletedRequest(object):
     """Is command execution finished?"""
@@ -82,6 +88,7 @@ class SparkTaskService:
         self._thread.start()
 
         service_env_keys = SparkTaskService.SERVICE_ENV_KEYS
+        self.local_task_index = 0
         self._initial_registration_complete = False
         self._workload_complete = False
         self._wait_cond = threading.Condition()
@@ -164,24 +171,32 @@ class SparkTaskService:
                 self._wait_cond.release()
             return AckResponse()
 
+        if isinstance(req, SetLocalTaskIndexRequest):
+            self.local_task_index = req.local_task_index
+            return AckResponse()
+
         if isinstance(req, ExecuteSubEpochRequest):
             self._wait_cond.acquire()
             try:
                 if self._sub_epoch_thread is None or not self._sub_epoch_thread.is_alive():
                     self._sub_epoch_status = None
 
-                    def bg_execute(fn, is_train, initial_epoch, local_task_index):
+                    def bg_execute(fn, is_train, initial_epoch):
                         try:
                             self._sub_epoch_status = {"status": "RUNNING", "result": None}
                             if is_train:
-                                func_result = fn(self._train_reader, is_train, initial_epoch, local_task_index=local_task_index)
+                                reader = self._train_reader
                             else:
-                                func_result = fn(self._val_reader, is_train, initial_epoch)
+                                reader = self._val_reader
+                            func_result = fn(reader, is_train, initial_epoch,
+                                             local_task_index=self.local_task_index)
                             self._sub_epoch_status = {"status": "COMPLETED", "result": func_result}
                         except Exception as e:
-                            self._sub_epoch_status = {"status": "FAILED", "result": None, "error": str(e) + "\n" + traceback.format_exc()}
+                            self._sub_epoch_status = {"status": "FAILED", "result": None,
+                                                      "error": str(e) + "\n" + traceback.format_exc()}
 
-                    self._sub_epoch_thread = threading.Thread(target=bg_execute, args=(req.sub_epoch_fn, req.is_train, req.initial_epoch, req.local_task_index))
+                    self._sub_epoch_thread = threading.Thread(target=bg_execute, args=(req.sub_epoch_fn, req.is_train,
+                                                                                       req.initial_epoch))
                     self._sub_epoch_thread.start()
             finally:
                 self._wait_cond.notify_all()
@@ -359,8 +374,11 @@ class SparkTaskClient:
     def initialize_data_loaders(self, fn):
         self._send(InitDataLoadersRequest(fn))
 
-    def execute_sub_epoch(self, fn, train=True, initial_epoch=0, local_task_index=0):
-        self._send(ExecuteSubEpochRequest(fn, train, initial_epoch, local_task_index))
+    def execute_sub_epoch(self, fn, train=True, initial_epoch=0):
+        self._send(ExecuteSubEpochRequest(fn, train, initial_epoch))
 
     def sub_epoch_completed(self):
         return self._send(SubEpochCompletedRequest())
+
+    def set_local_task_index(self, local_task_index):
+        return self._send(SetLocalTaskIndexRequest(local_task_index))
