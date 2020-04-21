@@ -4,5 +4,4 @@ petastorm==0.8.2
 pyarrow>=0.15.0  # Petastorm 0.7.7 is not compatible with < 0.15.0
 pyspark>=2.4.0
 cloudpickle
-tensorflow>=2.0.0
 hyperopt>=0.2.3

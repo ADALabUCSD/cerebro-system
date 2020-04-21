@@ -16,8 +16,16 @@
 
 all: install
 
-install:
-	python setup.py install
+build: clean
+	python3 setup.py sdist bdist_wheel
+
+install: clean
+	python3 setup.py install
+
+publish: clean build
+	python3 -m pip install --user --upgrade twine
+	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+	#twine upload dist/*
 
 clean:
 	rm -rf build dist cerebro.egg-info .cache .pytest_cache
