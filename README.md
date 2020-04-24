@@ -35,6 +35,8 @@ We used the following projects when building Cerebro.
  
 Cite
 ----
+If you use this software for research, plase cite the following paper:
+
 ```latex
 @inproceedings{nakandala2019cerebro,
   title={Cerebro: Efficient and Reproducible Model Selection on Deep Learning Systems},
