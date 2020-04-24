@@ -2,7 +2,7 @@
 layout: default
 ---
 
-``Cerebro`` is a resource-efficient model selection system for deep learning.
+``Cerebro`` is a data system for optimized deep learning model selection.
 
 
 Installation
