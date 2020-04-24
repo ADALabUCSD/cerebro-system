@@ -216,13 +216,13 @@ def _serialize_param_value(param_name, param_val, serialize_model_fn, serialize_
     if param_val is None:
         return param_val
 
-    if param_name in [params.EstimatorParams.backend.name, params.EstimatorParams.store.name]:
+    if param_name in [params.SparkEstimatorParams.backend.name, params.SparkEstimatorParams.store.name]:
         # We do not serialize backend and store. These params have to be regenerated for each
         # run of the pipeline
         return None
-    elif param_name == params.EstimatorParams.model.name:
+    elif param_name == params.SparkEstimatorParams.model.name:
         return serialize_model_fn(param_val)
-    if param_name == params.EstimatorParams.optimizer.name:
+    if param_name == params.SparkEstimatorParams.optimizer.name:
         return serialize_opt_fn(param_val)
     else:
         return codec.dumps_base64(param_val)

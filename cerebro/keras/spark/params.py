@@ -19,6 +19,8 @@ from __future__ import absolute_import
 from pyspark import keyword_only
 from pyspark.ml.param.shared import HasOutputCols, Param, Params, TypeConverters
 
+from ..params import KerasEstimatorParams, KerasModelParams
+
 
 def _check_validation(validation):
     if validation:
@@ -31,7 +33,7 @@ def _check_validation(validation):
                              .format(type(validation)))
 
 
-class EstimatorParams(Params):
+class SparkEstimatorParams(Params, KerasEstimatorParams):
     optimizer = Param(Params._dummy(), 'optimizer', 'optimizer')
     model = Param(Params._dummy(), 'model', 'model')
     store = Param(Params._dummy(), 'store', 'store')
@@ -89,7 +91,7 @@ class EstimatorParams(Params):
                               'every batch before train and validation steps')
 
     def __init__(self):
-        super(EstimatorParams, self).__init__()
+        super(SparkEstimatorParams, self).__init__()
 
         self._setDefault(
             store=None,
@@ -213,7 +215,6 @@ class EstimatorParams(Params):
     def getLogsDir(self):
         return self.getOrDefault(self.logs_dir)
 
-
     def setVerbose(self, value):
         return self._set(verbose=value)
 
@@ -245,7 +246,7 @@ class EstimatorParams(Params):
         return self.getOrDefault(self.transformation_fn)
 
 
-class ModelParams(HasOutputCols):
+class SparkModelParams(HasOutputCols, KerasModelParams):
     history = Param(Params._dummy(), 'history', 'history')
     model = Param(Params._dummy(), 'model', 'model')
     feature_columns = Param(Params._dummy(), 'feature_columns', 'feature columns')
@@ -258,7 +259,7 @@ class ModelParams(HasOutputCols):
                       'metadata contains the shape and type of input and output')
 
     def __init__(self):
-        super(ModelParams, self).__init__()
+        super(SparkModelParams, self).__init__()
 
     @keyword_only
     def setParams(self, **kwargs):

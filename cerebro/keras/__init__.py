@@ -16,5 +16,5 @@
 
 from __future__ import absolute_import
 
-from .spark.estimator import CerebroSparkEstimator
-from .spark.estimator import CerebroSparkModel
+from .spark.estimator import SparkEstimator
+from .spark.estimator import SparkModel

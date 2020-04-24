@@ -17,7 +17,7 @@ import unittest
 
 import tensorflow as tf
 from cerebro.backend import SparkBackend
-from cerebro.keras import CerebroSparkEstimator
+from cerebro.keras import SparkEstimator
 from cerebro.storage import LocalStore
 from cerebro.tune import RandomSearch, GridSearch, hp_choice
 from pyspark.sql import SparkSession
@@ -32,7 +32,7 @@ def estimator_gen_fn(params):
     optimizer = tf.keras.optimizers.Adam(lr=params['lr'])
     loss = 'binary_crossentropy'
 
-    keras_estimator = CerebroSparkEstimator(
+    keras_estimator = SparkEstimator(
         model=model,
         optimizer=optimizer,
         loss=loss,

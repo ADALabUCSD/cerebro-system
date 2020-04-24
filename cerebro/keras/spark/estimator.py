@@ -26,7 +26,7 @@ import tensorflow as tf
 from pyspark import keyword_only
 from pyspark.ml.util import MLWritable, MLReadable
 from pyspark.ml.param.shared import Param, Params
-from pyspark.ml import Estimator, Model
+from pyspark.ml import Estimator as PySparkEstimator, Model as PySparkModel
 from pyspark.ml.util import DefaultParamsWriter, DefaultParamsReader
 
 from ...backend import codec
@@ -34,7 +34,10 @@ from ...backend import spark
 
 from .util import TF_KERAS, TFKerasUtil
 
-from .params import EstimatorParams, ModelParams
+from .params import SparkEstimatorParams, SparkModelParams
+
+from ..estimator import KerasEstimator, KerasModel
+
 import threading
 
 LOCK = threading.Lock()
@@ -114,14 +117,14 @@ class KerasEstimatorParamsReader(DefaultParamsReader):
             if param_val is None:
                 return param_val
 
-            if name == EstimatorParams.model.name:
+            if name == SparkEstimatorParams.model.name:
                 def load_model_fn(x):
                     with keras_utils.keras().utils.custom_object_scope(custom_objects):
                         return keras_utils.keras().models.load_model(x, compile=True)
 
                 return keras_utils.deserialize_model(param_val,
                                                      load_model_fn=load_model_fn)
-            elif name == CerebroSparkEstimator.optimizer.name:
+            elif name == SparkEstimator.optimizer.name:
                 opt_base64_encoded = codec.loads_base64(param_val)
                 return keras_utils.deserialize_optimizer(opt_base64_encoded)
             else:
@@ -130,9 +133,9 @@ class KerasEstimatorParamsReader(DefaultParamsReader):
         # In order to deserialize the model, we need to deserialize the custom_objects param
         # first.
         keras_utils = None
-        if CerebroSparkEstimator._keras_pkg_type.name in dict:
-            keras_pkg_type = _param_deserializer_fn(CerebroSparkEstimator._keras_pkg_type.name,
-                                                    dict[CerebroSparkEstimator._keras_pkg_type.name],
+        if SparkEstimator._keras_pkg_type.name in dict:
+            keras_pkg_type = _param_deserializer_fn(SparkEstimator._keras_pkg_type.name,
+                                                    dict[SparkEstimator._keras_pkg_type.name],
                                                     None, None)
             if keras_pkg_type == TF_KERAS:
                 keras_utils = TFKerasUtil
@@ -140,9 +143,9 @@ class KerasEstimatorParamsReader(DefaultParamsReader):
                 raise ValueError("invalid keras type")
 
         custom_objects = {}
-        if CerebroSparkEstimator.custom_objects.name in dict:
-            custom_objects = _param_deserializer_fn(CerebroSparkEstimator.custom_objects.name,
-                                                    dict[CerebroSparkEstimator.custom_objects.name],
+        if SparkEstimator.custom_objects.name in dict:
+            custom_objects = _param_deserializer_fn(SparkEstimator.custom_objects.name,
+                                                    dict[SparkEstimator.custom_objects.name],
                                                     None, None)
 
         for key, val in dict.items():
@@ -150,19 +153,20 @@ class KerasEstimatorParamsReader(DefaultParamsReader):
         return dict
 
 
-class KerasEstimatorParamsWritable(MLWritable):
+class SparkEstimatorParamsWritable(MLWritable):
     def write(self):
         return KerasEstimatorParamsWriter(self)
 
 
-class KerasEstimatorParamsReadable(MLReadable):
+class SparkEstimatorParamsReadable(MLReadable):
     @classmethod
     def read(cls):
         """Returns a KerasEstimatorParamsReader instance for this class."""
         return KerasEstimatorParamsReader(cls)
 
 
-class CerebroSparkEstimator(Estimator, EstimatorParams, KerasEstimatorParamsReadable, KerasEstimatorParamsWritable):
+class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParamsReadable, SparkEstimatorParamsWritable,
+                     KerasEstimator):
     """Cerebro Spark Estimator for fitting Keras models to a DataFrame.
 
     Supports standalone `keras` and `tf.keras`, and TensorFlow 1.X and 2.X.
@@ -208,7 +212,7 @@ class CerebroSparkEstimator(Estimator, EstimatorParams, KerasEstimatorParamsRead
                  transformation_fn=None
                  ):
 
-        super(CerebroSparkEstimator, self).__init__()
+        super(SparkEstimator, self).__init__()
 
         self._setDefault(optimizer=None,
                          custom_objects={},
@@ -253,7 +257,7 @@ class CerebroSparkEstimator(Estimator, EstimatorParams, KerasEstimatorParamsRead
             raise ValueError('mixed keras and tf.keras values for optimizers and model')
         elif len(types) == 1:
             pkg_type = types.pop()
-            super(CerebroSparkEstimator, self)._set(_keras_pkg_type=pkg_type)
+            super(SparkEstimator, self)._set(_keras_pkg_type=pkg_type)
 
             if pkg_type == TF_KERAS:
                 return TFKerasUtil
@@ -281,46 +285,6 @@ class CerebroSparkEstimator(Estimator, EstimatorParams, KerasEstimatorParamsRead
         output_shapes = [[dim if dim else -1 for dim in output.shape.as_list()]
                          for output in model.outputs]
         return input_shapes, output_shapes
-
-    # def _fit_on_parquet(self, dataset_idx):
-    #     backend = self._get_or_create_backend()
-    #     store = self.getStore()
-    #     label_columns = self.getLabelCols()
-    #     feature_columns = self.getFeatureCols()
-    #     sample_weight_col = self.getSampleWeightCol()
-    #
-    #     train_rows, val_rows, metadata, avg_row_size = \
-    #         util.get_simple_meta_from_parquet(store,
-    #                                           schema_cols=label_columns+feature_columns,
-    #                                           sample_weight_col=sample_weight_col,
-    #                                           dataset_idx=dataset_idx)
-    #
-    #     return self._fit_on_prepared_data(backend, train_rows, val_rows, metadata, avg_row_size, dataset_idx)
-
-
-
-    # def _fit_on_prepared_data(self, backend, train_rows, val_rows, metadata, avg_row_size, dataset_idx):
-    #     self._check_params(metadata)
-    #     keras_utils = self._get_keras_utils()
-    #
-    #     run_id = self.getRunId()
-    #     if run_id is None:
-    #         run_id = 'keras_' + str(int(time.time()))
-    #
-    #     if self._has_checkpoint(run_id):
-    #         serialized_model = self._load_model_from_checkpoint(run_id)
-    #     else:
-    #         serialized_model = self._compile_model(keras_utils)
-    #
-    #     # Workaround:
-    #     # https://stackoverflow.com/questions/50583056/is-there-any-way-to-set-java-opts-for-tensorflow-process/50615570
-    #     env = {'LIBHDFS_OPTS': '-Xms2048m -Xmx2048m'}
-    #
-    #     trainer = backend.RemoteTrainer(self, metadata, keras_utils, run_id, dataset_idx)
-    #     handle = backend.run(trainer,
-    #                          args=(serialized_model, train_rows, val_rows, avg_row_size),
-    #                          env=env)
-    #     return self._create_model(handle, run_id, metadata)
 
 
     def _load_model_from_checkpoint(self, run_id):
@@ -379,7 +343,7 @@ class CerebroSparkEstimator(Estimator, EstimatorParams, KerasEstimatorParamsRead
         return self.get_model_class()(**self._get_model_kwargs(model, history, run_id, metadata, floatx))
 
     def get_model_class(self):
-        return CerebroSparkModel
+        return SparkModel
 
     def _get_model_kwargs(self, model, history, run_id, metadata, floatx):
         return dict(history=history,
@@ -397,7 +361,7 @@ class CerebroSparkEstimator(Estimator, EstimatorParams, KerasEstimatorParamsRead
         return last_ckpt_path is not None and store.exists(last_ckpt_path)
 
 
-class CerebroSparkModel(Model, ModelParams, KerasEstimatorParamsReadable, KerasEstimatorParamsWritable):
+class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, SparkEstimatorParamsWritable, KerasModel):
     """Spark Transformer wrapping a Keras model, used for making predictions on a DataFrame.
 
     Retrieve the underlying Keras model by calling `keras_model.getModel()`.
@@ -430,7 +394,7 @@ class CerebroSparkModel(Model, ModelParams, KerasEstimatorParamsReadable, KerasE
                  _metadata=None,
                  _floatx=None):
 
-        super(CerebroSparkModel, self).__init__()
+        super(SparkModel, self).__init__()
 
         if label_columns:
             self.setOutputCols([col + '__output' for col in label_columns])
@@ -456,7 +420,7 @@ class CerebroSparkModel(Model, ModelParams, KerasEstimatorParamsReadable, KerasE
                 raise ValueError(
                     "model has to be an instance of tensorflow.keras.Model")
 
-            super(CerebroSparkModel, self)._set(_keras_pkg_type=pkg_type)
+            super(SparkModel, self)._set(_keras_pkg_type=pkg_type)
 
             if pkg_type == TF_KERAS:
                 return TFKerasUtil

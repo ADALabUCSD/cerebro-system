@@ -19,7 +19,7 @@ import tensorflow as tf
 from pyspark.sql import SparkSession
 
 from cerebro.backend import SparkBackend
-from cerebro.keras import CerebroSparkEstimator
+from cerebro.keras import SparkEstimator
 from cerebro.storage import LocalStore
 from cerebro.tune import HyperOpt, hp_choice, hp_uniform
 
@@ -48,7 +48,7 @@ class TestHyperOpt(unittest.TestCase):
             optimizer = tf.keras.optimizers.Adam(lr=params['lr'])
             loss = 'binary_crossentropy'
 
-            keras_estimator = CerebroSparkEstimator(
+            keras_estimator = SparkEstimator(
                 model=model,
                 optimizer=optimizer,
                 loss=loss,
