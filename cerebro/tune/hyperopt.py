@@ -13,7 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 
-from .base import ModelSearch, _HP, _HPChoice, _HPUniform, update_model_results, is_larger_better, ModelSearchModel
+from .base import ModelSearch, _HP, _HPChoice, _HPUniform, _HPLogUniform, _HPQLogUnifrom, _HPQUniform,\
+    update_model_results, is_larger_better, ModelSearchModel
 from hyperopt import tpe, hp, Trials, STATUS_OK, STATUS_RUNNING
 from hyperopt.base import Domain
 import numpy as np
@@ -36,6 +37,12 @@ def _validate_and_generate_hyperopt_search_space(search_space):
             hyperopt_space[k] = hp.choice(k, search_space[k].options)
         elif isinstance(search_space[k], _HPUniform):
             hyperopt_space[k] = hp.uniform(k, search_space[k].min, search_space[k].max)
+        elif isinstance(search_space[k], _HPQUniform):
+            hyperopt_space[k] = hp.quniform(k, search_space[k].min, search_space[k].max, search_space[k].q)
+        elif isinstance(search_space[k], _HPLogUniform):
+            hyperopt_space[k] = hp.loguniform(k, search_space[k].min, search_space[k].max)
+        elif isinstance(search_space[k], _HPQLogUnifrom):
+            hyperopt_space[k] = hp.qloguniform(k, search_space[k].min, search_space[k].max, search_space[k].q)
         else:
             raise Exception('Unsupported hyperparameter option type: {}'.format(type(search_space[k])))
 

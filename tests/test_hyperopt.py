@@ -21,7 +21,7 @@ from pyspark.sql import SparkSession
 from cerebro.backend import SparkBackend
 from cerebro.keras import SparkEstimator
 from cerebro.storage import LocalStore
-from cerebro.tune import HyperOpt, hp_choice, hp_uniform
+from cerebro.tune import HyperOpt, hp_choice, hp_uniform, hp_quniform, hp_qloguniform
 
 
 class TestHyperOpt(unittest.TestCase):
@@ -59,7 +59,9 @@ class TestHyperOpt(unittest.TestCase):
 
         search_space = {
             'lr': hp_choice([0.01, 0.001, 0.0001]),
-            'dummy': hp_uniform(0, 100)
+            'dummy1': hp_uniform(0, 100),
+            'dummy2': hp_quniform(0, 100, 1),
+            'dummy3': hp_qloguniform(0, 100, 1),
         }
 
         hyperopt = HyperOpt(backend, store, estimator_gen_fn, search_space, 3, 1,
