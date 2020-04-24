@@ -13,8 +13,8 @@
 # limitations under the License.
 # ==============================================================================
 
-from .base import ModelSearch, _HP, _HPChoice, _HPUniform, _HPLogUniform, _HPQLogUnifrom, _HPQUniform,\
-    update_model_results, is_larger_better, ModelSearchModel
+from .base import ModelSelection, _HP, _HPChoice, _HPUniform, _HPLogUniform, _HPQLogUnifrom, _HPQUniform,\
+    update_model_results, is_larger_better, ModelSelectionResult
 from hyperopt import tpe, hp, Trials, STATUS_OK, STATUS_RUNNING
 from hyperopt.base import Domain
 import numpy as np
@@ -49,7 +49,7 @@ def _validate_and_generate_hyperopt_search_space(search_space):
     return hyperopt_space
 
 
-class HyperOpt(ModelSearch):
+class HyperOpt(ModelSelection):
     """Performs HyperOpt[https://github.com/hyperopt/hyperopt] search using the given param grid"""
 
     def __init__(self, backend, store, estimator_gen_fn, search_space, num_params, num_epochs, validation=0.25,
@@ -137,4 +137,4 @@ class HyperOpt(ModelSearch):
                        all_estimators]
         best_model = models[np.argmin(val_metrics)]
 
-        return ModelSearchModel(best_model, estimator_results, models)
+        return ModelSelectionResult(best_model, estimator_results, models)

@@ -19,7 +19,7 @@ from __future__ import absolute_import
 from pyspark import keyword_only
 from pyspark.ml.param.shared import HasOutputCols, Param, Params, TypeConverters
 
-from ..params import KerasEstimatorParams, KerasModelParams
+from ..params import CerebroEstimatorParams, CerebroModelParams
 
 
 def _check_validation(validation):
@@ -33,7 +33,7 @@ def _check_validation(validation):
                              .format(type(validation)))
 
 
-class SparkEstimatorParams(Params, KerasEstimatorParams):
+class SparkEstimatorParams(Params, CerebroEstimatorParams):
     optimizer = Param(Params._dummy(), 'optimizer', 'optimizer')
     model = Param(Params._dummy(), 'model', 'model')
     store = Param(Params._dummy(), 'store', 'store')
@@ -246,7 +246,7 @@ class SparkEstimatorParams(Params, KerasEstimatorParams):
         return self.getOrDefault(self.transformation_fn)
 
 
-class SparkModelParams(HasOutputCols, KerasModelParams):
+class SparkModelParams(HasOutputCols, CerebroModelParams):
     history = Param(Params._dummy(), 'history', 'history')
     model = Param(Params._dummy(), 'model', 'model')
     feature_columns = Param(Params._dummy(), 'feature_columns', 'feature columns')

@@ -17,16 +17,16 @@ import itertools
 
 import numpy as np
 
-from .base import ModelSearch, is_larger_better, ModelSearchModel, _HP, _HPChoice, update_model_results
+from .base import ModelSelection, is_larger_better, ModelSelectionResult, _HP, _HPChoice, update_model_results
 
 
-class GridSearch(ModelSearch):
+class GridSelection(ModelSelection):
     """Performs grid search using the given param grid"""
 
     def __init__(self, backend, store, estimator_gen_fn, search_space, num_epochs, validation=0.25,
                  evaluation_metric='loss', label_column='label', feature_column='features', logdir='./logs', verbose=2):
-        super(GridSearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
-                                         label_column, feature_column, logdir, verbose)
+        super(GridSelection, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
+                                            label_column, feature_column, logdir, verbose)
 
         self.search_space = search_space
         # validate the search space
@@ -62,13 +62,13 @@ class GridSearch(ModelSearch):
         return _fit_on_prepared_data(self, dataset_idx, metadata)
 
 
-class RandomSearch(ModelSearch):
+class RandomSelection(ModelSelection):
     """ Performs Random Search over the param grid"""
 
     def __init__(self, backend, store, estimator_gen_fn, search_space, num_params, num_epochs, validation=0.25,
                  evaluation_metric='loss', label_column='label', feature_column='features', logdir='./logs', verbose=2):
-        super(RandomSearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
-                                           label_column, feature_column, logdir, verbose)
+        super(RandomSelection, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
+                                              label_column, feature_column, logdir, verbose)
 
         self.search_space = search_space
         # validate the search space
@@ -130,4 +130,4 @@ def _fit_on_prepared_data(self, dataset_idx, metadata):
     best_model_idx = np.argmax(val_metrics) if is_larger_better(self.evaluation_metric) else np.argmin(val_metrics)
     best_model = models[best_model_idx]
 
-    return ModelSearchModel(best_model, estimator_results, models)
+    return ModelSelectionResult(best_model, estimator_results, models)

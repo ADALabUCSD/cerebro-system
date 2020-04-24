@@ -14,7 +14,7 @@
 # ==============================================================================
 
 
-class KerasEstimator(object):
+class CerebroEstimator(object):
 
     def get_model_shapes(self):
         raise NotImplementedError('Abstract class. Method not implemented!')
@@ -26,7 +26,7 @@ class KerasEstimator(object):
         raise NotImplementedError('Abstract class. Method not implemented!')
 
 
-class KerasModel(object):
+class CerebroModel(object):
 
     def setCustomObjects(self, value):
         raise NotImplementedError('Abstract class. Method not implemented!')

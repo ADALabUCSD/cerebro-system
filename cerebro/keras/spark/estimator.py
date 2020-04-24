@@ -36,7 +36,7 @@ from .util import TF_KERAS, TFKerasUtil
 
 from .params import SparkEstimatorParams, SparkModelParams
 
-from ..estimator import KerasEstimator, KerasModel
+from ..estimator import CerebroEstimator, CerebroModel
 
 import threading
 
@@ -166,7 +166,7 @@ class SparkEstimatorParamsReadable(MLReadable):
 
 
 class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParamsReadable, SparkEstimatorParamsWritable,
-                     KerasEstimator):
+                     CerebroEstimator):
     """Cerebro Spark Estimator for fitting Keras models to a DataFrame.
 
     Supports standalone `keras` and `tf.keras`, and TensorFlow 1.X and 2.X.
@@ -361,7 +361,7 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         return last_ckpt_path is not None and store.exists(last_ckpt_path)
 
 
-class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, SparkEstimatorParamsWritable, KerasModel):
+class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, SparkEstimatorParamsWritable, CerebroModel):
     """Spark Transformer wrapping a Keras model, used for making predictions on a DataFrame.
 
     Retrieve the underlying Keras model by calling `keras_model.getModel()`.

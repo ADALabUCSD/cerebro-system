@@ -115,7 +115,7 @@ def hp_qloguniform(min, max, q):
     return _HPQLogUnifrom(min, max, q)
 
 
-class ModelSearch(object):
+class ModelSelection(object):
     """Cerebro model search base class"""
 
     def __init__(self, backend, store, validation, estimator_gen_fn, evaluation_metric, label_column,
@@ -194,7 +194,7 @@ class ModelSearch(object):
             log_model_hps(os.path.join(self.logdir, est.getRunId()), est.getRunId(), hparams[i])
 
 
-class ModelSearchModel(object):
+class ModelSelectionResult(object):
     """ModelSearchModel: Output of a ModelSearch fit() method"""
 
     def __init__(self, best_model, metrics, all_models):
@@ -212,13 +212,13 @@ class ModelSearchModel(object):
 
     def get_best_model(self):
         """ Returns the best models
-        :return: CerebroSparkModel
+        :return: CerebroKerasModel
         """
         return self.best_model
 
     def get_all_models(self):
         """ Returns a list of all models
-        :return: list[CerebroSparkModel]
+        :return: list[CerebroKerasModel]
         """
         return self.all_models
 

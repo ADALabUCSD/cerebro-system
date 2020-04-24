@@ -13,7 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
-class KerasEstimatorParams(object):
+class CerebroEstimatorParams(object):
 
     def setModel(self, value):
         raise NotImplementedError('Abstract class. Method not implement!')
@@ -124,7 +124,7 @@ class KerasEstimatorParams(object):
         raise NotImplementedError('Abstract class. Method not implement!')
 
 
-class KerasModelParams(object):
+class CerebroModelParams(object):
 
     def setHistory(self, value):
         raise NotImplementedError('Abstract class. Method not implement!')
