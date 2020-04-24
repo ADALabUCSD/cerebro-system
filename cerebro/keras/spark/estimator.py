@@ -510,3 +510,12 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
                 yield Row(**fields)
 
         return df.rdd.mapPartitions(predict).toDF()
+
+    def toKeras(self):
+        """ Returns the trained model in Keras format.
+            :return: TensorFlow Keras Model
+        """
+        if self.model is not None:
+            return self.getModel()
+        else:
+            raise Exception('Keras model is not set!')
