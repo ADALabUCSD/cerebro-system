@@ -1,8 +1,10 @@
 Cerebro
 =======
  
-``Cerebro`` is a data system for optimized deep learning model selection. Detailed technical information can be found
-in our [technical report](https://adalabucsd.github.io/papers/TR_2020_Cerebro.pdf)
+``Cerebro`` is a data system for optimized deep learning model selection. It uses a novel parallel execution strategy
+called **model hopper parallelism (MOP)** to execute end-to-end deep learning model selection workloads in a more 
+resource-efficient manner. Detailed technical information about ``Cerebro`` can be found in our 
+[Technical Report](https://adalabucsd.github.io/papers/TR_2020_Cerebro.pdf)
 
 
 Installation
