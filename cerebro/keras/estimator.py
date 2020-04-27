@@ -37,5 +37,5 @@ class CerebroModel(object):
     def transform(self, df):
         raise NotImplementedError('Abstract class. Method not implemented!')
 
-    def toKeras(self):
+    def keras(self):
         raise NotImplementedError('Abstract class. Method not implemented!')

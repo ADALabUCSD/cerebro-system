@@ -14,5 +14,5 @@
 # ==============================================================================
 
 from .base import hp_choice, hp_uniform, hp_quniform, hp_loguniform, hp_qloguniform
-from .grid import GridSelection, RandomSelection
+from .grid import GridSearch, RandomSearch
 from .hyperopt import HyperOpt

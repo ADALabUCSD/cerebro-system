@@ -52,7 +52,7 @@ def _validate_and_generate_hyperopt_search_space(search_space):
 class HyperOpt(ModelSelection):
     """Performs HyperOpt[https://github.com/hyperopt/hyperopt] search using the given param grid"""
 
-    def __init__(self, backend, store, estimator_gen_fn, search_space, num_params, num_epochs, validation=0.25,
+    def __init__(self, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, validation=0.25,
                  evaluation_metric='loss', label_column='label', feature_column='features', logdir='./logs',
                  parallelism=None, verbose=2):
         super(HyperOpt, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
@@ -68,7 +68,7 @@ class HyperOpt(ModelSelection):
         if parallelism is None:
             parallelism = backend.num_processes()
         self.parallelism = parallelism
-        self.num_params = num_params
+        self.num_params = num_models
         self.num_epochs = num_epochs
 
     def _fit_on_prepared_data(self, dataset_idx, metadata):

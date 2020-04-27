@@ -19,8 +19,9 @@ import tensorflow as tf
 from pyspark.sql import SparkSession
 
 from cerebro.backend import SparkBackend
-from cerebro.keras import SparkEstimator
 from cerebro.storage import LocalStore
+
+from cerebro.keras import SparkEstimator
 from cerebro.tune import HyperOpt, hp_choice, hp_uniform, hp_quniform, hp_qloguniform
 
 
@@ -64,9 +65,9 @@ class TestHyperOpt(unittest.TestCase):
             'dummy3': hp_qloguniform(0, 100, 1),
         }
 
-        hyperopt = HyperOpt(backend, store, estimator_gen_fn, search_space, 3, 1,
-                                 validation=0.25, evaluation_metric='loss',
-                                 feature_column='features', label_column='label', logdir='/tmp/logs')
+        hyperopt = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+                            num_models=3, num_epochs=1, validation=0.25, evaluation_metric='loss',
+                            feature_column='features', label_column='label', logdir='/tmp/logs')
 
         model = hyperopt.fit(df)
         output_df = model.transform(df)

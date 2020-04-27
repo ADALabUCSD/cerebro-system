@@ -20,13 +20,13 @@ import numpy as np
 from .base import ModelSelection, is_larger_better, ModelSelectionResult, _HP, _HPChoice, update_model_results
 
 
-class GridSelection(ModelSelection):
+class GridSearch(ModelSelection):
     """Performs grid search using the given param grid"""
 
     def __init__(self, backend, store, estimator_gen_fn, search_space, num_epochs, validation=0.25,
                  evaluation_metric='loss', label_column='label', feature_column='features', logdir='./logs', verbose=2):
-        super(GridSelection, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
-                                            label_column, feature_column, logdir, verbose)
+        super(GridSearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
+                                         label_column, feature_column, logdir, verbose)
 
         self.search_space = search_space
         # validate the search space
@@ -62,19 +62,19 @@ class GridSelection(ModelSelection):
         return _fit_on_prepared_data(self, dataset_idx, metadata)
 
 
-class RandomSelection(ModelSelection):
+class RandomSearch(ModelSelection):
     """ Performs Random Search over the param grid"""
 
-    def __init__(self, backend, store, estimator_gen_fn, search_space, num_params, num_epochs, validation=0.25,
+    def __init__(self, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, validation=0.25,
                  evaluation_metric='loss', label_column='label', feature_column='features', logdir='./logs', verbose=2):
-        super(RandomSelection, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
-                                              label_column, feature_column, logdir, verbose)
+        super(RandomSearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
+                                           label_column, feature_column, logdir, verbose)
 
         self.search_space = search_space
         # validate the search space
         self._validate_search_space()
 
-        self.num_params = num_params
+        self.num_params = num_models
         self.estimator_param_maps = self._generate_all_param_maps()
         self.num_epochs = num_epochs
 

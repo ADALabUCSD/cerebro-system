@@ -511,7 +511,7 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
 
         return df.rdd.mapPartitions(predict).toDF()
 
-    def toKeras(self):
+    def keras(self):
         """ Returns the trained model in Keras format.
             :return: TensorFlow Keras Model
         """

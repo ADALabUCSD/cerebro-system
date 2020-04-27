@@ -19,7 +19,7 @@ import tensorflow as tf
 from cerebro.backend import SparkBackend
 from cerebro.keras import SparkEstimator
 from cerebro.storage import LocalStore
-from cerebro.tune import RandomSelection, GridSelection, hp_choice
+from cerebro.tune import RandomSearch, GridSearch, hp_choice
 from pyspark.sql import SparkSession
 
 
@@ -60,9 +60,9 @@ class TestGridSearch(unittest.TestCase):
 
         search_space = {'lr': hp_choice([0.01, 0.001, 0.0001])}
 
-        grid_search = GridSelection(backend, store, estimator_gen_fn, search_space, 1,
-                                    validation=0.25, evaluation_metric='loss',
-                                    feature_column='features', label_column='label', logdir='/tmp/logs')
+        grid_search = GridSearch(backend, store, estimator_gen_fn, search_space, 1,
+                                 validation=0.25, evaluation_metric='loss',
+                                 feature_column='features', label_column='label', logdir='/tmp/logs')
 
         model = grid_search.fit(df)
         output_df = model.transform(df)
@@ -86,10 +86,10 @@ class TestGridSearch(unittest.TestCase):
         ######## Random Search ###########
         search_space = {'lr': hp_choice([0.01, 0.001, 0.0001])}
 
-        random_search = RandomSelection(backend, store, estimator_gen_fn, search_space, 3, 1,
-                                        validation=0.25,
-                                        evaluation_metric='loss',
-                                        feature_column='features', label_column='label', logdir='/tmp/logs')
+        random_search = RandomSearch(backend, store, estimator_gen_fn, search_space, 3, 1,
+                                     validation=0.25,
+                                     evaluation_metric='loss',
+                                     feature_column='features', label_column='label', logdir='/tmp/logs')
         model = random_search.fit(df)
 
         output_df = model.transform(df)
@@ -113,10 +113,10 @@ class TestGridSearch(unittest.TestCase):
         ######## Random Search ###########
         search_space = {'lr': hp_choice([0.01, 0.001, 0.0001])}
 
-        random_search = RandomSelection(backend, store, estimator_gen_fn, search_space, 3, 1,
-                                        validation=0.25,
-                                        evaluation_metric='loss',
-                                        feature_column='features', label_column='label', logdir='/tmp/logs')
+        random_search = RandomSearch(backend, store, estimator_gen_fn, search_space, 3, 1,
+                                     validation=0.25,
+                                     evaluation_metric='loss',
+                                     feature_column='features', label_column='label', logdir='/tmp/logs')
         model = random_search.fit_on_prepared_data()
 
         output_df = model.transform(df)
