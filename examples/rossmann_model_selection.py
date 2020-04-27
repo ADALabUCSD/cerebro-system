@@ -45,6 +45,10 @@ parser.add_argument('--master',
                          'supplying `-c <NUM_GPUS>` in Spark Standalone mode')
 parser.add_argument('--num-workers', type=int,
                     help='number of workers for training, default: `spark.default.parallelism`')
+parser.add_argument('--learning_rate', type=float, default=0.0001,
+                    help='initial learning rate')
+parser.add_argument('--batch-size', type=int, default=100,
+                    help='batch size')
 parser.add_argument('--epochs', type=int, default=100,
                     help='number of epochs to train')
 parser.add_argument('--num-models', type=int, default=64,
@@ -355,10 +359,9 @@ def estimator_gen_fn(params):
     continuous_bn = BatchNormalization()(continuous_bn)
     x = Concatenate()(embeddings + [continuous_bn])
     x = Flatten()(x)
-    x = Dense(1000, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.00005))(x)
-    x = Dense(1000, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.00005))(x)
-    x = Dense(1000, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.00005))(x)
-    x = Dense(500, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.00005))(x)
+    for _ in range(params['num_layers']):
+        x = Dense(1000, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(params['l2']))(x)
+    x = Dense(500, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(params['l2']))(x)
     x = Dropout(0.5)(x)
     output = Dense(1, activation=act_sigmoid_scaled)(x)
     model = tf.keras.Model([inputs[f] for f in all_cols], output)
@@ -378,7 +381,9 @@ def estimator_gen_fn(params):
 
 # Define dictionary containing the parameter search space
 search_space = {
-    'lr': hp_choice([0.01, 0.001, 0.0001]),
+    'lr': hp_loguniform(0.001, 0.00001),
+    'l2': hp_loguniform(0.0001, 0.000001),
+    'num_layers': hp_choice([1, 2, 3, 4, 5, 6]),
     'batch_size': hp_quniform(16, 256, 16)
 }
 
