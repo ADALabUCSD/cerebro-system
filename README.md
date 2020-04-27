@@ -1,8 +1,8 @@
 Cerebro
 =======
-
  
-``Cerebro`` is a data system for optimized deep learning model selection.
+``Cerebro`` is a data system for optimized deep learning model selection. Detailed technical information can be found
+in our [technical report](https://adalabucsd.github.io/papers/TR_2020_Cerebro.pdf)
 
 
 Installation
@@ -16,7 +16,7 @@ Alternatively, you can git clone and run the provided Makefile script
 
     git clone https://github.com/ADALabUCSD/cerebro-system.git && cd cerebro-system && make
 
-You MUST be running on **Python >= 3.5** with **Tensorflow >= 2.0** and **Apache Spark >= 2.4**
+You MUST be running on **Python >= 3.6** with **Tensorflow >= 2.0** and **Apache Spark >= 2.4**
 
 
 Documentation

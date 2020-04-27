@@ -2,7 +2,11 @@
 layout: default
 ---
 
-``Cerebro`` is a data system for optimized deep learning model selection.
+What is Cerebro?
+---------------
+
+``Cerebro`` is a data system for optimized deep learning model selection. Detailed technical information can be found
+in our [technical report](https://adalabucsd.github.io/papers/TR_2020_Cerebro.pdf)
 
 
 Installation
@@ -170,8 +174,8 @@ and configure each executor with ``# of CPU cores`` = ``# of GPUs``. This can
 be accomplished in standalone mode as follows:
 
 ```bash
-    $ echo "export SPARK_WORKER_CORES=<# of GPUs>" >> /path/to/spark/conf/spark-env.sh
-    $ /path/to/spark/sbin/start-all.sh
+$ echo "export SPARK_WORKER_CORES=<# of GPUs>" >> /path/to/spark/conf/spark-env.sh
+$ /path/to/spark/sbin/start-all.sh
 ```
 
 This approach turns the ``spark.task.cpus`` setting to control # of GPUs
@@ -185,11 +189,10 @@ For CPU training, one approach is to specify the ``spark.task.cpus`` setting
 during the training session creation:
 
 ```python
-    conf = SparkConf().setAppName('training') \
-        .setMaster('spark://training-cluster:7077') \
-        .set('spark.task.cpus', '16')
-    spark = SparkSession.builder.config(conf=conf).getOrCreate()
-
+conf = SparkConf().setAppName('training') \
+    .setMaster('spark://training-cluster:7077') \
+    .set('spark.task.cpus', '16')
+spark = SparkSession.builder.config(conf=conf).getOrCreate()
 ```
 
 This approach allows you to reuse the same Spark cluster for data preparation
