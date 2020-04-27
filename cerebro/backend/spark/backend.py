@@ -153,7 +153,7 @@ class SparkBackend(Backend):
                             'first!')
 
     def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
-        sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col) \
+        sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col, self.settings.verbose) \
                               for model in models]
 
         model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self.num_workers())]
@@ -265,7 +265,7 @@ def _get_runnable_model(worker, model_worker_pairs, model_states):
     return -1
 
 
-def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns):
+def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns, verbose=0):
     train_rows, val_rows, metadata, avg_row_size = \
         util.get_simple_meta_from_parquet(store,
                                           schema_cols=label_columns + feature_columns,
@@ -280,7 +280,7 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
         serialized_model = estimator._compile_model(keras_utils)
 
     trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx,
-                                train_rows, val_rows, backend.num_workers())
+                                train_rows, val_rows, backend.num_workers(), verbose)
     return trainer
 
 
@@ -365,7 +365,7 @@ def _make_mapper(driver_addresses, settings):
 
 
 def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx, train_rows, val_rows,
-                      num_workers):
+                      num_workers, verbose=0):
     # Estimator parameters
     label_columns = estimator.getLabelCols()
     feature_columns = estimator.getFeatureCols()
@@ -401,7 +401,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     remote_store = store.to_remote(run_id, dataset_idx)
 
     def train(data_reader, is_train, starting_epoch, local_task_index=0):
-
+        begin_time = time.time()
         tf.keras.backend.set_floatx(floatx)
         pin_gpu(local_task_index)
 
@@ -444,8 +444,12 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
 
             if is_train:
                 train_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
+                initialization_time = time.time()
+                begin_time = time.time()
                 result = fit_sub_epoch_fn(starting_epoch, model, train_data, steps_per_epoch, callbacks,
                                           verbose).history
+                training_time = time.time() - begin_time
+                begin_time = time.time()
                 result = {'train_' + name: result[name] for name in result}
                 model.save(ckpt_file)
             else:
@@ -458,6 +462,11 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
 
             if remote_store.saving_runs:
                 remote_store.sync(run_output_dir)
+            finalization_time = time.time() - begin_time
+
+            if verbose >= 1:
+                print('Model initialization time: {}, training time: {}, finalization time: {}'.format(
+                    initialization_time, training_time, finalization_time))
 
             return result
 
