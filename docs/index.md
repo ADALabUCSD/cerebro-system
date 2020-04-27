@@ -226,14 +226,6 @@ spark = SparkSession.builder.config(conf=conf).getOrCreate()
 This approach allows you to reuse the same Spark cluster for data preparation
 and training.
 
-
-Environment knobs
------------------
-
-* ``CEREBRO_SPARK_START_TIMEOUT`` - sets the default timeout for Spark tasks to spawn, register, and start running the
- code.  If executors for Spark tasks are scheduled on-demand and can take a long time to start, it may be useful to
-  increase this timeout on a system level.
-  
   
 Acknowledgement
 ---------------
