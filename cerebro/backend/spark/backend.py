@@ -374,7 +374,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     sample_weight_col = estimator.getSampleWeightCol()
     custom_objects = estimator.getCustomObjects()
     user_shuffle_buffer_size = estimator.getShufflingBufferSize()
-    metrics_names = [name.__name__ if isinstance(name, function) else name for name in  estimator.getMetrics()]
+    metrics_names = [name.__name__ if callable(name) else name for name in  estimator.getMetrics()]
     model_logs_dir = estimator.getLogsDir()
     user_verbose = estimator.getVerbose()
 
