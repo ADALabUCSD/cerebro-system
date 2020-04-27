@@ -2,6 +2,14 @@
 layout: default
 ---
 
+<p align="center">
+  <a href="/">Home</a> •
+  <a href="#what-is-cerebro">What is Cerebro?</a> •
+  <a href="#install">Install</a> •
+  <a href="#getting-started">Getting Started</a> •
+  <a href="/api">API</a>
+</p>
+
 What is Cerebro?
 ---------------
 
@@ -23,6 +31,44 @@ Alternatively, you can git clone and run the provided Makefile script
     git clone https://github.com/ADALabUCSD/cerebro-system.git && cd cerebro-system && make
 
 You MUST be running on **Python >= 3.6** with **Tensorflow >= 2.0** and **Apache Spark >= 2.4**
+
+
+### Spark Cluster Setup
+
+As deep learning workloads tend to have very different resource requirements
+from typical data processing workloads, there are certain considerations
+for DL Spark cluster setup.
+
+#### GPU training
+
+For GPU training, one approach is to set up a separate GPU Spark cluster
+and configure each executor with ``# of CPU cores`` = ``# of GPUs``. This can
+be accomplished in standalone mode as follows:
+
+```bash
+$ echo "export SPARK_WORKER_CORES=<# of GPUs>" >> /path/to/spark/conf/spark-env.sh
+$ /path/to/spark/sbin/start-all.sh
+```
+
+This approach turns the ``spark.task.cpus`` setting to control # of GPUs
+requested per process (defaults to 1).
+
+The ongoing [SPARK-24615](https://issues.apache.org/jira/browse/SPARK-24615) effort aims to
+introduce GPU-aware resource scheduling in future versions of Spark.
+
+#### CPU training
+For CPU training, one approach is to specify the ``spark.task.cpus`` setting
+during the training session creation:
+
+```python
+conf = SparkConf().setAppName('training') \
+    .setMaster('spark://training-cluster:7077') \
+    .set('spark.task.cpus', '16')
+spark = SparkSession.builder.config(conf=conf).getOrCreate()
+```
+
+This approach allows you to reuse the same Spark cluster for data preparation
+and training.
 
 
 Getting Started
@@ -127,29 +173,7 @@ The user provided Store object is used to store all model checkpoints, all inter
 data, and metrics logs (for Tensorboard). Cerebro currently supports stores for HDFS and local filesystems.
 
 
-End-to-End Example
-------------------
-[rossmann_model_selection.py](https://raw.githubusercontent.com/ADALabUCSD/cerebro-system/master/examples/rossmann_model_selection.py) 
-script provides an example of end-to-end data preparation and model selection of a model for the 
-[Rossmann Store Sales](https://www.kaggle.com/c/rossmann-store-sales) Kaggle competition. 
-It is inspired by an article [An Introduction to Deep Learning for Tabular Data](https://www.fast.ai/2018/04/29/categorical-embeddings/) 
-and leverages the code of the notebook referenced in the article. The example is split into three parts:
-
-#. The first part performs complicated data preprocessing over an initial set of CSV files provided by the competition and gathered by the community.
-#. The second part defines a Keras model and performs model selection using Cerebro on Spark.
-#. The third part performs prediction using the best model and creates a submission file.
-
-To run the example:
-
-```bash
-$ wget https://raw.githubusercontent.com/horovod/horovod/master/examples/keras_spark_rossmann_estimator.py
-$ wget http://files.fast.ai/part2/lesson14/rossmann.tgz
-$ tar zxvf rossmann.tgz
-$ python3 rossmann_model_selection.py
-```
-
-Training on Existing Parquet Datasets
--------------------------------------
+### Training on Existing Parquet Datasets
 
 If your data is already in the Parquet format and you wish to perform model selection using Cerebro, you
 can do so without needing to reprocess the data in Spark. Using `.fit_on_parquet()`, you can train directly
@@ -188,63 +212,23 @@ backend.prepare_data(store, train_df, validation=0.25, feature_column='features'
 Once the data has been prepared, you can reuse it in future Spark applications without needing to call
 ``backend.prepare_data`` again.
 
+### End-to-End Example
 
-Spark Cluster Setup
--------------------
-As deep learning workloads tend to have very different resource requirements
-from typical data processing workloads, there are certain considerations
-for DL Spark cluster setup.
+[rossmann_model_selection.py](https://raw.githubusercontent.com/ADALabUCSD/cerebro-system/master/examples/rossmann_model_selection.py) 
+script provides an example of end-to-end data preparation and model selection of a model for the 
+[Rossmann Store Sales](https://www.kaggle.com/c/rossmann-store-sales) Kaggle competition. 
+It is inspired by an article [An Introduction to Deep Learning for Tabular Data](https://www.fast.ai/2018/04/29/categorical-embeddings/) 
+and leverages the code of the notebook referenced in the article. The example is split into three parts:
 
-### GPU training
+#. The first part performs complicated data preprocessing over an initial set of CSV files provided by the competition and gathered by the community.
+#. The second part defines a Keras model and performs model selection using Cerebro on Spark.
+#. The third part performs prediction using the best model and creates a submission file.
 
-For GPU training, one approach is to set up a separate GPU Spark cluster
-and configure each executor with ``# of CPU cores`` = ``# of GPUs``. This can
-be accomplished in standalone mode as follows:
+To run the example:
 
 ```bash
-$ echo "export SPARK_WORKER_CORES=<# of GPUs>" >> /path/to/spark/conf/spark-env.sh
-$ /path/to/spark/sbin/start-all.sh
+$ wget https://raw.githubusercontent.com/horovod/horovod/master/examples/keras_spark_rossmann_estimator.py
+$ wget http://files.fast.ai/part2/lesson14/rossmann.tgz
+$ tar zxvf rossmann.tgz
+$ python3 rossmann_model_selection.py
 ```
-
-This approach turns the ``spark.task.cpus`` setting to control # of GPUs
-requested per process (defaults to 1).
-
-The ongoing [SPARK-24615](https://issues.apache.org/jira/browse/SPARK-24615) effort aims to
-introduce GPU-aware resource scheduling in future versions of Spark.
-
-### CPU training
-For CPU training, one approach is to specify the ``spark.task.cpus`` setting
-during the training session creation:
-
-```python
-conf = SparkConf().setAppName('training') \
-    .setMaster('spark://training-cluster:7077') \
-    .set('spark.task.cpus', '16')
-spark = SparkSession.builder.config(conf=conf).getOrCreate()
-```
-
-This approach allows you to reuse the same Spark cluster for data preparation
-and training.
-
-  
-Acknowledgement
----------------
-We used the following projects when building Cerebro.
-- [Horovod](https://github.com/horovod/horovod): Cerebro's Apache Spark implementation uses code from the Horovod's
- implementation for Apache Spark.
-- [Petastorm](https://github.com/uber/petastorm): We use Petastorm to read Apache Parquet data from remote storage
- (e.g., HDFS)  
- 
-
-Cite
-----
-If you use this software for research, plase cite the following paper:
-
-```latex
-@inproceedings{nakandala2019cerebro,
-  title={Cerebro: Efficient and Reproducible Model Selection on Deep Learning Systems},
-  author={Nakandala, Supun and Zhang, Yuhao and Kumar, Arun},
-  booktitle={Proceedings of the 3rd International Workshop on Data Management for End-to-End Machine Learning},
-  pages={1--4},
-  year={2019}
-}
