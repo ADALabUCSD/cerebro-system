@@ -205,3 +205,26 @@ Environment knobs
 * ``CEREBRO_SPARK_START_TIMEOUT`` - sets the default timeout for Spark tasks to spawn, register, and start running the
  code.  If executors for Spark tasks are scheduled on-demand and can take a long time to start, it may be useful to
   increase this timeout on a system level.
+  
+  
+Acknowledgement
+---------------
+We used the following projects when building Cerebro.
+- [Horovod](https://github.com/horovod/horovod): Cerebro's Apache Spark implementation uses code from the Horovod's
+ implementation for Apache Spark.
+- [Petastorm](https://github.com/uber/petastorm): We use Petastorm to read Apache Parquet data from remote storage
+ (e.g., HDFS)  
+ 
+
+Cite
+----
+If you use this software for research, plase cite the following paper:
+
+```latex
+@inproceedings{nakandala2019cerebro,
+  title={Cerebro: Efficient and Reproducible Model Selection on Deep Learning Systems},
+  author={Nakandala, Supun and Zhang, Yuhao and Kumar, Arun},
+  booktitle={Proceedings of the 3rd International Workshop on Data Management for End-to-End Machine Learning},
+  pages={1--4},
+  year={2019}
+}
