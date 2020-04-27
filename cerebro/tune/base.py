@@ -14,6 +14,7 @@
 # ==============================================================================
 
 import os
+from distutils.version import LooseVersion
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 
@@ -175,6 +176,13 @@ class ModelSelection(object):
         raise NotImplementedError('method not implemented')
 
     def _estimator_gen_fn_wrapper(self, params):
+        # Disable GPUs when building the model to prevent memory leaks
+        if LooseVersion(tf.__version__) >= LooseVersion('2.0.0'):
+            # See https://github.com/tensorflow/tensorflow/issues/33168
+            os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        else:
+            tf.keras.set_session(tf.Session(config=tf.ConfigProto(device_count={'GPU': 0})))
+
         est = self.estimator_gen_fn(params)
         est.setFeatureCols([self.feature_col])
         est.setLabelCols([self.label_col])
