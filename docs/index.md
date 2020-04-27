@@ -231,9 +231,9 @@ script provides an example of end-to-end data preparation and model selection of
 It is inspired by an article [An Introduction to Deep Learning for Tabular Data](https://www.fast.ai/2018/04/29/categorical-embeddings/) 
 and leverages the code of the notebook referenced in the article. The example is split into three parts:
 
-#. The first part performs complicated data preprocessing over an initial set of CSV files provided by the competition and gathered by the community.
-#. The second part defines a Keras model and performs model selection using Cerebro on Spark.
-#. The third part performs prediction using the best model and creates a submission file.
+1. The first part performs complicated data preprocessing over an initial set of CSV files provided by the competition and gathered by the community.
+2. The second part defines a Keras model and performs model selection using Cerebro on Spark.
+3. The third part performs prediction using the best model and creates a submission file.
 
 To run the example:
 
