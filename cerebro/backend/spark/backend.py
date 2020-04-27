@@ -418,8 +418,10 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
             shuffle_buffer_size = user_shuffle_buffer_size
 
         with tf.keras.utils.custom_object_scope(custom_objects):
+            begin_time = time.time()
             model = deserialize_keras_model(
                 serialized_model, lambda x: tf.keras.models.load_model(x))
+            print('Load time: {}'.format(time.time() - begin_time))
 
         # # Verbose mode 1 will print a progress bar
         verbose = user_verbose
@@ -447,7 +449,9 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
                 result = fit_sub_epoch_fn(starting_epoch, model, train_data, steps_per_epoch, callbacks,
                                           verbose).history
                 result = {'train_' + name: result[name] for name in result}
+                begin_time = time.time()
                 model.save(ckpt_file)
+                print('Save time: {}'.format(time.time() - begin_time))
             else:
                 val_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
                 result = eval_sub_epoch_fn(starting_epoch, model, val_data, validation_steps, callbacks, verbose)

@@ -383,8 +383,8 @@ def estimator_gen_fn(params):
 search_space = {
     'lr': hp_loguniform(-5, -3),
     'l2': hp_loguniform(-6, -4),
-    'num_layers': hp_choice([1, 2, 3, 4, 5, 6]),
-    'batch_size': hp_quniform(16, 256, 16)
+    'num_layers': hp_choice([3, 4, 5, 6]),
+    'batch_size': hp_quniform(16, 128, 16)
 }
 
 # Instantiate model selection object
