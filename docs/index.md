@@ -127,6 +127,27 @@ The user provided Store object is used to store all model checkpoints, all inter
 data, and metrics logs (for Tensorboard). Cerebro currently supports stores for HDFS and local filesystems.
 
 
+End-to-End Example
+------------------
+[rossmann_model_selection.py](https://raw.githubusercontent.com/ADALabUCSD/cerebro-system/master/examples/rossmann_model_selection.py) 
+script provides an example of end-to-end data preparation and model selection of a model for the 
+[Rossmann Store Sales](https://www.kaggle.com/c/rossmann-store-sales) Kaggle competition. 
+It is inspired by an article [An Introduction to Deep Learning for Tabular Data](https://www.fast.ai/2018/04/29/categorical-embeddings/) 
+and leverages the code of the notebook referenced in the article. The example is split into three parts:
+
+#. The first part performs complicated data preprocessing over an initial set of CSV files provided by the competition and gathered by the community.
+#. The second part defines a Keras model and performs model selection using Cerebro on Spark.
+#. The third part performs prediction using the best model and creates a submission file.
+
+To run the example:
+
+```bash
+$ wget https://raw.githubusercontent.com/horovod/horovod/master/examples/keras_spark_rossmann_estimator.py
+$ wget http://files.fast.ai/part2/lesson14/rossmann.tgz
+$ tar zxvf rossmann.tgz
+$ python3 rossmann_model_selection.py
+```
+
 Training on Existing Parquet Datasets
 -------------------------------------
 
