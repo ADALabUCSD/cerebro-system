@@ -102,7 +102,7 @@ spark = SparkSession \
 ...
 
 backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
-store = HDFSStore('/user/username/experiments')
+store = LocalStore(prefix_path='/user/username/experiments')
 
 # Define estimator generating function.
 # Input: Dictionary containing parameter values
@@ -171,8 +171,18 @@ output DataFrame. It also contain all the other models and their training metric
 converted to Keras format and used in other ways.
 
 The user provided Store object is used to store all model checkpoints, all intermediate representations of the training 
-data, and metrics logs (for Tensorboard). Cerebro currently supports stores for HDFS and local filesystems.
+data, and training metrics (for Tensorboard). Cerebro currently supports stores for HDFS and local filesystems.
 
+
+### Visualizing the Model Selection Process 
+Cerebro logs model training metrics into the ``<prefix_path>/logs`` directory of your Storage object.
+To visualize the model selection process, launch a Tensorboard instance as follows:
+
+```bash
+tensorboard --logdir <prefix_path>/logs
+```  
+
+![tensorboard](assets/images/tensorboard.png)
 
 ### Training on Existing Parquet Datasets
 
@@ -182,7 +192,7 @@ on an existing Parquet dataset:
 
 ```python
 backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
-store = HDFSStore(train_path='/user/username/training_dataset', val_path='/user/username/val_dataset')
+store = LocalStore(prefix_path='/user/username/experiments', train_path='/user/username/training_dataset', val_path='/user/username/val_dataset')
 ...
 
 # Instantiate model selection object
