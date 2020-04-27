@@ -104,9 +104,10 @@ output_df.select('label', 'label_predicted').show(n=10)
 all_models = model.get_all_models()
 all_model_training_history = model.get_all_model_history()
 
-# Convert the best model to Keras and perform inference using numpy data
+# Convert the best model to Keras and perform inference using numpy data or saving the checkpoint file.
 keras_model = model.keras()
 pred = keras_model.predict([np.ones([1, 692], dtype=np.float32)])
+keras_model.save(ckpt_path)
 
 # Convert all the model to Keras
 all_models_keras = [m.keras() for m in all_models]

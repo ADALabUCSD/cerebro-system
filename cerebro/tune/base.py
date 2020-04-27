@@ -222,6 +222,13 @@ class ModelSelectionResult(object):
             m.setOutputCols(output_columns)
         return self
 
+    def keras(self):
+        """
+        Returns the best model in Keras format
+        :return:
+        """
+        return self.best_model.keras()
+
     def transform(self, dataset):
         """
         Performs inference on a given dataset. Will run on CPU
