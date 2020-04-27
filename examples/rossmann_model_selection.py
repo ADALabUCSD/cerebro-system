@@ -381,8 +381,8 @@ def estimator_gen_fn(params):
 
 # Define dictionary containing the parameter search space
 search_space = {
-    'lr': hp_loguniform(0.001, 0.00001),
-    'l2': hp_loguniform(0.0001, 0.000001),
+    'lr': hp_loguniform(0.00001, 0.001),
+    'l2': hp_loguniform(0.000001, 0.0001),
     'num_layers': hp_choice([1, 2, 3, 4, 5, 6]),
     'batch_size': hp_quniform(16, 256, 16)
 }
