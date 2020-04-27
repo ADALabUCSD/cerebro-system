@@ -454,7 +454,11 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
                 model.save(ckpt_file)
             else:
                 val_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
+                initialization_time = time.time()
+                begin_time = time.time()
                 result = eval_sub_epoch_fn(starting_epoch, model, val_data, validation_steps, callbacks, verbose)
+                training_time = time.time() - begin_time
+                begin_time = time.time()
                 result = [[x] for x in result]
                 result = {k: v for k, v in zip(['val_loss'] + ['val_' + name for name in metrics_names], result)}
 
@@ -465,7 +469,8 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
             finalization_time = time.time() - begin_time
 
             if verbose >= 1:
-                print('Model initialization time: {}, training time: {}, finalization time: {}'.format(
+                print('Model {} initialization time: {}, training time: {}, finalization time: {}'.format(
+                    'train' if is_train else 'valid',
                     initialization_time, training_time, finalization_time))
 
             return result
