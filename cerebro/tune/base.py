@@ -51,6 +51,9 @@ def hp_choice(options):
 
 class _HPUniform(_HP):
     def __init__(self, min, max):
+        if min >= max:
+            raise Exception('min should be smaller than max')
+
         self.min = min
         self.max = max
 
@@ -69,6 +72,11 @@ def hp_uniform(min, max):
 
 class _HPQUniform(_HP):
     def __init__(self, min, max, q):
+        if min >= max:
+            raise Exception('min should be smaller than max')
+
+        if q >= (max - min):
+            raise Exception('q should be smaller than (max-min)')
         self.min = min
         self.max = max
         self.q = q
@@ -86,6 +94,9 @@ def hp_quniform(min, max, q):
 
 class _HPLogUniform(_HP):
     def __init__(self, min, max):
+        if min >= max:
+            raise Exception('min should be smaller than max')
+
         self.min = min
         self.max = max
 
@@ -101,6 +112,12 @@ def hp_loguniform(min, max):
 
 class _HPQLogUnifrom(_HP):
     def __init__(self, min, max, q):
+        if min >= max:
+            raise Exception('min should be smaller than max')
+
+        if q >= (max-min):
+            raise Exception('q should be smaller than (max-min)')
+
         self.min = min
         self.max = max
         self.q = q
