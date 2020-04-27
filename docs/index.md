@@ -136,7 +136,7 @@ be accomplished in standalone mode as follows:
 This approach turns the ``spark.task.cpus`` setting to control # of GPUs
 requested per process (defaults to 1).
 
-The ongoing `SPARK-24615 <https://issues.apache.org/jira/browse/SPARK-24615>`__ effort aims to
+The ongoing [SPARK-24615](https://issues.apache.org/jira/browse/SPARK-24615) effort aims to
 introduce GPU-aware resource scheduling in future versions of Spark.
 
 ### CPU training
