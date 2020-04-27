@@ -236,6 +236,10 @@ class ModelSelectionResult(object):
         """
         return self.best_model
 
+    def get_history(self):
+        return self.get_best_model_history()
+
+
     def get_best_model_history(self):
         """ Get best model training history
         :return:

@@ -90,22 +90,26 @@ model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estima
             num_models=30, num_epochs=10, validation=0.25, evaluation_metric='loss',
             feature_columns=['features'], label_columns=['label'], logdir='/tmp/logs')
                   
-# Perform model selection                  
-model_selection_output = model_selection.fit(train_df)
+# Perform model selection. Returns best model                 
+model = model_selection.fit(train_df)
 
-# Inspect model selection results
-best_model = model_selection_output.get_best_model()
-best_model_history = model_selection_output.get_best_model_history()
+# Inspect best model training history
+model_history = model.get_history()
 
-best_model_keras = best_model.keras()
-pred = best_model_keras.predict([np.ones([1, 692], dtype=np.float32)])
-
-all_models = model_selection_output.get_all_models()
-all_model_training_history = model_selection_output.get_all_model_history()
-
-# Perform inference using the best model
-output_df = model_selection_output.set_output_columns(['label_predicted']).transform(test_df)
+# Perform inference using the best model and Spark DataFrame
+output_df = model.set_output_columns(['label_predicted']).transform(test_df)
 output_df.select('label', 'label_predicted').show(n=10)
+
+# Access all other models
+all_models = model.get_all_models()
+all_model_training_history = model.get_all_model_history()
+
+# Convert the best model to Keras and perform inference using numpy data
+keras_model = model.keras()
+pred = keras_model.predict([np.ones([1, 692], dtype=np.float32)])
+
+# Convert all the model to Keras
+all_models_keras = [m.keras() for m in all_models]
 
 ```
 
