@@ -119,8 +119,8 @@ def hp_qloguniform(min, max, q):
 class ModelSelection(object):
     """Cerebro model search base class"""
 
-    def __init__(self, backend, store, validation, estimator_gen_fn, evaluation_metric, label_column,
-                 feature_column, logdir, verbose):
+    def __init__(self, backend, store, validation, estimator_gen_fn, evaluation_metric, label_columns,
+                 feature_columns, logdir, verbose):
         if is_valid_evaluation_metric(evaluation_metric):
             self.evaluation_metric = evaluation_metric
         else:
@@ -130,8 +130,8 @@ class ModelSelection(object):
         self.store = store
         self.validation = validation
         self.estimator_gen_fn = estimator_gen_fn
-        self.label_col = label_column
-        self.feature_col = feature_column
+        self.label_cols = label_columns
+        self.feature_cols = feature_columns
         self.logdir = logdir
         self.verbose = verbose
 
@@ -142,12 +142,12 @@ class ModelSelection(object):
         :return:
         """
         _, _, metadata, _ = self.backend.prepare_data(
-            self.store, df, self.validation, label_column=self.label_col, feature_column=self.feature_col,
+            self.store, df, self.validation, label_columns=self.label_cols, feature_columns=self.feature_cols,
             compress_sparse=False, verbose=self.verbose, dataset_idx=None)  # no multiple datasets. Hence ids=None.
 
         # initialize backend and data loaders
         self.backend.initialize_workers()
-        self.backend.initialize_data_loaders(self.store, None, [self.feature_col, self.label_col])
+        self.backend.initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
         try:
             result = self._fit_on_prepared_data(None, metadata)
             return result
@@ -160,11 +160,11 @@ class ModelSelection(object):
         Trains ML models on already preapred data
         :return:
         """
-        _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_col, self.feature_col)
+        _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
 
         # initialize backend and data loaders
         self.backend.initialize_workers()
-        self.backend.initialize_data_loaders(self.store, dataset_index, [self.feature_col, self.label_col])
+        self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
         try:
             result = self._fit_on_prepared_data(dataset_index, metadata)
             return result
@@ -184,8 +184,8 @@ class ModelSelection(object):
             tf.keras.set_session(tf.Session(config=tf.ConfigProto(device_count={'GPU': 0})))
 
         est = self.estimator_gen_fn(params)
-        est.setFeatureCols([self.feature_col])
-        est.setLabelCols([self.label_col])
+        est.setFeatureCols(self.feature_cols)
+        est.setLabelCols(self.label_cols)
         est.setStore(self.store)
         est.setLogsDir(os.path.join(self.logdir, est.getRunId()))
         return est
@@ -205,10 +205,22 @@ class ModelSelection(object):
 class ModelSelectionResult(object):
     """ModelSearchModel: Output of a ModelSearch fit() method"""
 
-    def __init__(self, best_model, metrics, all_models):
+    def __init__(self, best_model, metrics, all_models, output_columns):
         self.best_model = best_model
         self.metrics = metrics
         self.all_models = all_models
+        self.output_columns = output_columns
+
+    def set_output_columns(self, output_columns):
+        """
+        Sets the output column names
+        :param output_columns:
+        """
+        self.output_columns = output_columns
+        self.best_model.setOutputCols(output_columns)
+        for m in self.all_models:
+            m.setOutputCols(output_columns)
+        return self
 
     def transform(self, dataset):
         """
@@ -224,13 +236,19 @@ class ModelSelectionResult(object):
         """
         return self.best_model
 
+    def get_best_model_history(self):
+        """ Get best model training history
+        :return:
+        """
+        return self.best_model.getHistory()
+
     def get_all_models(self):
         """ Returns a list of all models
         :return: list[CerebroKerasModel]
         """
         return self.all_models
 
-    def get_metrics(self):
+    def get_all_model_history(self):
         """ Returns a list of model training metrics
         :return: list[Dict]
         """

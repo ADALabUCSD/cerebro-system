@@ -37,7 +37,7 @@ class TestHyperOpt(unittest.TestCase):
         df = spark.read.format("libsvm").load("./tests/sample_libsvm_data.txt").repartition(8)
         df.printSchema()
 
-        backend = SparkBackend(spark_context=spark.sparkContext, num_proc=3)
+        backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
         store = LocalStore('/tmp')
 
         def estimator_gen_fn(params):
@@ -67,7 +67,7 @@ class TestHyperOpt(unittest.TestCase):
 
         hyperopt = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
                             num_models=3, num_epochs=1, validation=0.25, evaluation_metric='loss',
-                            feature_column='features', label_column='label', logdir='/tmp/logs')
+                            feature_columns=['features'], label_columns=['label'], logdir='/tmp/logs')
 
         model = hyperopt.fit(df)
         output_df = model.transform(df)

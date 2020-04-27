@@ -445,7 +445,7 @@ def _train_val_split(df, validation):
 
 def _create_dataset(store, df, feature_columns, label_columns,
                            validation, sample_weight_col, compress_sparse,
-                           num_partitions, num_processes, verbose, dataset_idx):
+                           num_partitions, num_workers, verbose, dataset_idx):
         train_data_path = store.get_train_data_path(dataset_idx)
         val_data_path = store.get_val_data_path(dataset_idx)
         if verbose:
@@ -470,7 +470,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
         train_df, val_df, validation_ratio = _train_val_split(df, validation)
 
         train_partitions = max(int(num_partitions * (1.0 - validation_ratio)),
-                               num_processes)
+                               num_workers)
         if verbose:
             print('train_partitions={}'.format(train_partitions))
 
@@ -482,7 +482,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
 
         if val_df:
             val_partitions = max(int(num_partitions * validation_ratio),
-                                 num_processes)
+                                 num_workers)
             if verbose:
                 print('val_partitions={}'.format(val_partitions))
 
@@ -524,18 +524,18 @@ def check_validation(validation, df=None):
                              .format(type(validation)))
 
 
-def prepare_data(num_processes, store, df, label_columns, feature_columns,
+def prepare_data(num_workers, store, df, label_columns, feature_columns,
                  validation=None, sample_weight_col=None, compress_sparse=False,
                  partitions_per_process=10, verbose=0, dataset_idx=None):
     check_validation(validation, df=df)
-    if num_processes <= 0 or partitions_per_process <= 0:
-        raise ValueError('num_proc={} and partitions_per_process={} must both be > 0'
-                         .format(num_processes, partitions_per_process))
+    if num_workers <= 0 or partitions_per_process <= 0:
+        raise ValueError('num_workers={} and partitions_per_process={} must both be > 0'
+                         .format(num_workers, partitions_per_process))
 
     if not label_columns:
         raise ValueError('Parameter label_columns cannot be None or empty')
 
-    num_partitions = num_processes * partitions_per_process
+    num_partitions = num_workers * partitions_per_process
     if verbose:
         print('num_partitions={}'.format(num_partitions))
 
@@ -552,7 +552,7 @@ def prepare_data(num_processes, store, df, label_columns, feature_columns,
 
     return _create_dataset(store, df, feature_columns, label_columns,
                                          validation, sample_weight_col, compress_sparse,
-                                         num_partitions, num_processes, verbose, dataset_idx)
+                                         num_partitions, num_workers, verbose, dataset_idx)
 
 
 def to_list(var, length):

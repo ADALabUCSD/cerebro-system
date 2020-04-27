@@ -24,8 +24,8 @@ class Backend(object):
     from the Spark application running the HorovodEstimator.
     """
 
-    def num_processes(self):
-        """Returns the number of processes to use for training."""
+    def num_workers(self):
+        """Returns the number of workers to use for training."""
         raise NotImplementedError()
 
     def initialize_workers(self):
@@ -53,25 +53,25 @@ class Backend(object):
         """Teardown workers"""
         raise NotImplementedError()
 
-    def prepare_data(self, store, dataset, validation, label_column='label', feature_column='features',
+    def prepare_data(self, store, dataset, validation, label_columns=['label'], feature_columns=['features'],
                      compress_sparse=False, verbose=2):
         """
         Prepare data by writing out into persistent storage
         :param store:
         :param dataset:
         :param validation:
-        :param label_column:
-        :param feature_column:
+        :param label_columns:
+        :param feature_columns:
         :param compress_sparse:
         :param verbose:
         """
         raise NotImplementedError()
 
-    def get_metadata_from_parquet(self, store, label_column='label', feature_column='features'):
+    def get_metadata_from_parquet(self, store, label_columns=['label'], feature_columns=['features']):
         """
         Get metadata from existing data in the persistent storage
         :param store:
-        :param label_column:
-        :param feature_column:
+        :param label_columns:
+        :param feature_columns:
         """
         raise NotImplementedError()

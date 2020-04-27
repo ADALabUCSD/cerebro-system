@@ -41,7 +41,7 @@ TOTAL_BUFFER_MEMORY_CAP_GIB = constants.TOTAL_BUFFER_MEMORY_CAP_GIB
 BYTES_PER_GIB = constants.BYTES_PER_GIB
 
 
-def default_num_proc():
+def default_num_workers():
     spark_context = pyspark.SparkContext._active_spark_context
     return spark_context.defaultParallelism
 
@@ -49,11 +49,11 @@ def default_num_proc():
 class SparkBackend(Backend):
     """Uses `horovod.spark.run` to execute the distributed training `fn`."""
 
-    def __init__(self, spark_context=None, num_proc=None, start_timeout=600, disk_cache_size=20480, verbose=1):
+    def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=20480, verbose=1):
         """
         Args:
             spark_context: Spark context
-            num_proc: Number of Cerebro workers.  Defaults to `spark.default.parallelism`.
+            num_workers: Number of Cerebro workers.  Defaults to `spark.default.parallelism`.
             start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
                        If not set, falls back to `CEREBRO_SPARK_START_TIMEOUT` environment variable value.
                        If it is not set as well, defaults to 600 seconds.
@@ -81,15 +81,15 @@ class SparkBackend(Backend):
                                 'running in a PySpark session?')
         self.spark_context = spark_context
 
-        if num_proc is None:
-            num_proc = spark_context.defaultParallelism
+        if num_workers is None:
+            num_workers = spark_context.defaultParallelism
             if settings.verbose >= 1:
-                print('Running %d processes (inferred from spark.default.parallelism)...' % num_proc)
+                print('Running %d processes (inferred from spark.default.parallelism)...' % num_workers)
         else:
             if settings.verbose >= 1:
-                print('Running %d processes...' % num_proc)
+                print('Running %d processes...' % num_workers)
 
-        settings.num_proc = num_proc
+        settings.num_workers = num_workers
         self.settings = settings
 
         self.workers_initialized = False
@@ -103,7 +103,7 @@ class SparkBackend(Backend):
         """Initialize Spark tasks"""
         result_queue = queue.Queue(1)
         spark_job_group = 'cerebro.spark.run.%d' % job_id.next_job_id()
-        driver = service_driver.SparkDriverService(self.settings.num_proc, self.settings.key, self.settings.nics)
+        driver = service_driver.SparkDriverService(self.settings.num_workers, self.settings.key, self.settings.nics)
         driver_client = service_driver.SparkDriverClient(driver.addresses(), self.settings.key, self.settings.verbose)
 
         _make_spark_thread(self.spark_context, spark_job_group, driver, result_queue, self.settings)
@@ -114,7 +114,7 @@ class SparkBackend(Backend):
         task_clients = [service_task.SparkTaskClient(index,
                                                      driver.task_addresses_for_driver(index),
                                                      self.settings.key, self.settings.verbose) for index in
-                        range(self.settings.num_proc)]
+                        range(self.settings.num_workers)]
         for task_client in task_clients:
             task_client.notify_initial_registration_complete()
 
@@ -139,7 +139,7 @@ class SparkBackend(Backend):
         """
         if self.workers_initialized:
             remote_store = store.to_remote(self.spark_job_group, dataset_idx)
-            shard_count = self.num_processes()
+            shard_count = self.num_workers()
             _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, dataset_idx)
             data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size,
                                                self.disk_cache_size)
@@ -156,19 +156,19 @@ class SparkBackend(Backend):
         sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col) \
                               for model in models]
 
-        model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self.num_processes())]
+        model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self.num_workers())]
         # take a random ordering
         random.shuffle(model_worker_pairs)
 
         model_states = {i: False for i in range(len(models))}
-        worker_states = {i: False for i in range(self.num_processes())}
-        model_on_worker = [-1 for _ in range(self.num_processes())]
+        worker_states = {i: False for i in range(self.num_workers())}
+        model_on_worker = [-1 for _ in range(self.num_workers())]
 
         model_results = {model.getRunId(): None for model in models}
 
         while len(model_worker_pairs) > 0:
 
-            for w in range(self.num_processes()):
+            for w in range(self.num_workers()):
                 # worker idle
                 if not worker_states[w]:
                     m = _get_runnable_model(w, model_worker_pairs, model_states)
@@ -222,39 +222,39 @@ class SparkBackend(Backend):
         self.workers_initialized = False
         self.data_loaders_initialized = False
 
-    def get_metadata_from_parquet(self, store, label_column='label', feature_column='features'):
+    def get_metadata_from_parquet(self, store, label_columns=['label'], feature_columns=['features']):
         """
         Get metadata from the data in the persistent storage.
         :param store:
-        :param label_column:
-        :param feature_column:
+        :param label_columns:
+        :param feature_columns:
         :return:
         """
-        return util.get_simple_meta_from_parquet(store, [label_column, feature_column])
+        return util.get_simple_meta_from_parquet(store, label_columns + feature_columns)
 
-    def prepare_data(self, store, dataset, validation, label_column='label', feature_column='features',
+    def prepare_data(self, store, dataset, validation, label_columns=['label'], feature_columns=['features'],
                      compress_sparse=False, verbose=2, dataset_idx=None):
         """
         Prepare data by writing out into persistent storage
         :param store:
         :param dataset:
         :param validation:
-        :param label_column:
-        :param feature_column:
+        :param label_columns:
+        :param feature_columns:
         :param compress_sparse:
         :param verbose:
         :param dataset_idx:
         """
-        return util.prepare_data(self.num_processes(), store, dataset, [label_column], [feature_column], validation,
+        return util.prepare_data(self.num_workers(), store, dataset, label_columns, feature_columns, validation,
                                  partitions_per_process=1, compress_sparse=compress_sparse, verbose=verbose,
                                  dataset_idx=dataset_idx)
 
-    def num_processes(self):
+    def num_workers(self):
         """
             Get number of processes/tasks
         :return:
         """
-        return self.settings.num_proc
+        return self.settings.num_workers
 
 
 def _get_runnable_model(worker, model_worker_pairs, model_states):
@@ -268,7 +268,7 @@ def _get_runnable_model(worker, model_worker_pairs, model_states):
 def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns):
     train_rows, val_rows, metadata, avg_row_size = \
         util.get_simple_meta_from_parquet(store,
-                                          schema_cols=[label_columns, feature_columns],
+                                          schema_cols=label_columns + feature_columns,
                                           sample_weight_col=None,
                                           dataset_idx=dataset_idx)
     estimator._check_params(metadata)
@@ -280,7 +280,7 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
         serialized_model = estimator._compile_model(keras_utils)
 
     trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx,
-                                train_rows, val_rows, backend.num_processes())
+                                train_rows, val_rows, backend.num_workers())
     return trainer
 
 
@@ -318,15 +318,15 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
 
 def _make_spark_thread(spark_context, spark_job_group, driver, result_queue,
                        settings):
-    """Creates `settings.num_proc` Spark tasks in a parallel thread."""
+    """Creates `settings.num_workers` Spark tasks in a parallel thread."""
 
     def run_spark():
-        """Creates `settings.num_proc` Spark tasks, each executing `_task_fn` and waits for them to terminate."""
+        """Creates `settings.num_workers` Spark tasks, each executing `_task_fn` and waits for them to terminate."""
         try:
             spark_context.setJobGroup(spark_job_group,
                                       "Cerebro Spark Run",
                                       interruptOnCancel=True)
-            procs = spark_context.range(0, numSlices=settings.num_proc)
+            procs = spark_context.range(0, numSlices=settings.num_workers)
             # We assume that folks caring about security will enable Spark RPC
             # encryption, thus ensuring that key that is passed here remains
             # secret.
@@ -365,7 +365,7 @@ def _make_mapper(driver_addresses, settings):
 
 
 def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx, train_rows, val_rows,
-                      num_proc):
+                      num_workers):
     # Estimator parameters
     label_columns = estimator.getLabelCols()
     feature_columns = estimator.getFeatureCols()
@@ -408,7 +408,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
         # FIXME: Enable sub-epoch data shuffling
         # if not user_shuffle_buffer_size:
         #     shuffle_buffer_size = calculate_shuffle_buffer_size(
-        #         hvd, avg_row_size, train_rows / num_proc)
+        #         hvd, avg_row_size, train_rows / num_workers)
         # else:
         #     shuffle_buffer_size = user_shuffle_buffer_size
 
@@ -431,12 +431,12 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
             if os.path.exists(ckpt_file):
                 model.load_weights(ckpt_file)
 
-            steps_per_epoch = int(math.ceil(train_rows / batch_size / num_proc))
+            steps_per_epoch = int(math.ceil(train_rows / batch_size / num_workers))
 
             # math.ceil because if val_rows is smaller than batch_size we still get the at least
             # one step. float(val_rows) because val_rows/batch_size evaluates to zero before
             # math.ceil
-            validation_steps = int(math.ceil(float(val_rows) / batch_size / num_proc))
+            validation_steps = int(math.ceil(float(val_rows) / batch_size / num_workers))
 
             schema_fields = feature_columns + label_columns
             if sample_weight_col:

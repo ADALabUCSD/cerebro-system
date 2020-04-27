@@ -18,7 +18,7 @@
 class Settings(object):
 
     def __init__(self, verbose=0, ssh_port=None, extra_mpi_args=None, tcp_flag=None,
-                 binding_args=None, key=None, timeout=None, num_hosts=None, num_proc=None,
+                 binding_args=None, key=None, timeout=None, num_hosts=None, num_workers=None,
                  hosts=None, output_filename=None, run_func_mode=None, nics=None, polling_period=2):
         """
         :param verbose: level of verbosity
@@ -38,8 +38,8 @@ class Settings(object):
         :type timeout: horovod.run.common.util.timeout.Timeout
         :param num_hosts: number of horovod hosts
         :type num_hosts: int
-        :param num_proc: number of horovod processes (-np)
-        :type num_proc: int
+        :param num_workers: number of horovod processes (-np)
+        :type num_workers: int
         :param hosts: string of hostname with slots number
         :type hosts: string
         :param output_filename: optional filename to redirect stdout / stderr by process
@@ -57,7 +57,7 @@ class Settings(object):
         self.key = key
         self.timeout = timeout
         self.num_hosts = num_hosts
-        self.num_proc = num_proc
+        self.num_workers = num_workers
         self.hosts = hosts
         self.output_filename = output_filename
         self.run_func_mode = run_func_mode

@@ -53,10 +53,10 @@ class HyperOpt(ModelSelection):
     """Performs HyperOpt[https://github.com/hyperopt/hyperopt] search using the given param grid"""
 
     def __init__(self, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, validation=0.25,
-                 evaluation_metric='loss', label_column='label', feature_column='features', logdir='./logs',
+                 evaluation_metric='loss', label_columns=['label'], feature_columns=['features'], logdir='./logs',
                  parallelism=None, verbose=2):
         super(HyperOpt, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
-                                       label_column, feature_column, logdir, verbose)
+                                       label_columns, feature_columns, logdir, verbose)
 
         if is_larger_better(evaluation_metric):
             raise Exception('HyperOpt supports only minimizing evaluation metrics (e.g., loss)')
@@ -66,7 +66,7 @@ class HyperOpt(ModelSelection):
         self.hyperopt_search_space = _validate_and_generate_hyperopt_search_space(search_space)
 
         if parallelism is None:
-            parallelism = backend.num_processes()
+            parallelism = backend.num_workers()
         self.parallelism = parallelism
         self.num_params = num_models
         self.num_epochs = num_epochs
@@ -110,12 +110,12 @@ class HyperOpt(ModelSelection):
 
             # Trains the models up to the number of epochs specified. For each iteration also performs validation
             for epoch in range(self.num_epochs):
-                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_col,
-                                                                 self.label_col)
+                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
+                                                                 self.label_cols)
                 update_model_results(estimator_results, epoch_results)
 
-                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_col,
-                                                                 self.label_col, is_train=False)
+                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
+                                                                 self.label_cols, is_train=False)
                 update_model_results(estimator_results, epoch_results)
 
                 self._log_epoch_metrics_to_tensorboard(estimators, estimator_results)
@@ -137,4 +137,4 @@ class HyperOpt(ModelSelection):
                        all_estimators]
         best_model = models[np.argmin(val_metrics)]
 
-        return ModelSelectionResult(best_model, estimator_results, models)
+        return ModelSelectionResult(best_model, estimator_results, models, [x+"__output" for x in self.label_cols])

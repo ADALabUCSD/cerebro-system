@@ -66,7 +66,7 @@ class RegisterTaskRequest(object):
 class SparkDriverService:
     NAME = 'driver service'
 
-    def __init__(self, num_proc, key, nics):
+    def __init__(self, num_workers, key, nics):
         self._service_name = SparkDriverService.NAME
         self._wire = Wire(key)
         self._nics = nics
@@ -79,7 +79,7 @@ class SparkDriverService:
         self._thread.daemon = True
         self._thread.start()
 
-        self._num_proc = num_proc
+        self._num_workers = num_workers
         self._all_task_addresses = {}
         self._task_addresses_for_driver = {}
         self._task_host_hash_indices = {}
@@ -149,7 +149,7 @@ class SparkDriverService:
     def wait_for_initial_registration(self, timeout):
         self._wait_cond.acquire()
         try:
-            while len(self._all_task_addresses) < self._num_proc:
+            while len(self._all_task_addresses) < self._num_workers:
                 self._wait_cond.wait(timeout.remaining())
                 timeout.check_time_out_for('tasks to start')
         finally:
@@ -163,7 +163,7 @@ class SparkDriverService:
         if isinstance(req, RegisterTaskRequest):
             self._wait_cond.acquire()
             try:
-                assert 0 <= req.index < self._num_proc
+                assert 0 <= req.index < self._num_workers
                 self._all_task_addresses[req.index] = req.task_addresses
                 # Just use source address for service for fast probing.
                 self._task_addresses_for_driver[req.index] = \
@@ -211,7 +211,7 @@ class SparkDriverService:
     def wait_for_initial_registration(self, timeout):
         self._wait_cond.acquire()
         try:
-            while len(self._all_task_addresses) < self._num_proc:
+            while len(self._all_task_addresses) < self._num_workers:
                 self.check_for_spark_job_failure()
                 self._wait_cond.wait(timeout.remaining())
                 timeout.check_time_out_for('Spark tasks to start')
