@@ -80,24 +80,24 @@ search_space = {
 }
 
 # Instantiate model selection object
-hyperopt = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
             num_models=30, num_epochs=10, validation=0.25, evaluation_metric='loss',
             feature_column='features', label_column='label', logdir='/tmp/logs')
                   
 # Perform model selection                  
-hyperopt_output = hyperopt.fit(train_df)
+model_selection_output = model_selection.fit(train_df)
 
 # Inspect model selection results
-best_model = hyperopt_output.get_best_model()
+best_model = model_selection_output.get_best_model()
 best_model_keras = best_model.keras()
 
 pred = best_model_keras.predict([np.ones([1, 692], dtype=np.float32)])
 
-all_models = hyperopt_output.get_all_models()
-model_training_metrics = hyperopt_output.get_metrics()
+all_models = model_selection_output.get_all_models()
+model_training_metrics = model_selection_output.get_metrics()
 
 # Perform inference using the best model
-output_df = hyperopt_output.transform(test_df)
+output_df = model_selection_output.transform(test_df)
 output_df.select('label', 'label__output').show(n=10)
 
 ```
@@ -114,6 +114,47 @@ other models and their training metrics history. The model transformer can be us
 The user provided Store object is used to store all model checkpoints, all intermediate representations of the training 
 data, and metrics logs (for Tensorboard). Cerebro currently supports stores for HDFS
 and local filesystems.
+
+
+Training on Existing Parquet Datasets
+-------------------------------------
+
+If your data is already in the Parquet format and you wish to perform model selection using Cerebro, you
+can do so without needing to reprocess the data in Spark. Using `.fit_on_parquet()`, you can train directly
+on an existing Parquet dataset:
+
+```python
+backend = SparkBackend(spark_context=spark.sparkContext, num_proc=3)
+store = HDFSStore(train_path='/user/username/training_dataset', val_path='/user/username/val_dataset')
+...
+
+# Instantiate model selection object
+model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+            num_models=30, num_epochs=10, evaluation_metric='loss', logdir='/tmp/logs')
+                  
+# Perform model selection                  
+model_selection_output = model_selection.fit_on_prepared_data()
+
+```
+
+The resulting ``model_selection_output`` can then be used the same way as any Spark Transformer, or you can extract
+ the underlying Keras model and use it outside of Spark.
+ 
+This approach will work on datasets created using ``backend.prepare_data``. It will also work with
+any Parquet file that contains no Spark user-defined data types (like ``DenseVector`` or ``SparseVector``).  It's
+recommended to use ``prepare_data`` to ensure the data is properly prepared for training even if you have an existing
+dataset in Parquet format.  Using ``prepare_data`` allows you to properly partition the dataset for the number of
+training processes you intend to use, as well as compress large sparse data columns:
+
+```python
+backend = SparkBackend(spark_context=spark.sparkContext)
+store = HDFSStore(train_path='/user/username/training_dataset', val_path='/user/username/val_dataset')
+backend.prepare_data(store, train_df, validation=0.25, feature_column='features', label_column='label')
+
+```
+
+Once the data has been prepared, you can reuse it in future Spark applications without needing to call
+``backend.prepare_data`` again.
 
 
 Spark Cluster Setup
