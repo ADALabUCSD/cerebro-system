@@ -45,10 +45,6 @@ parser.add_argument('--master',
                          'supplying `-c <NUM_GPUS>` in Spark Standalone mode')
 parser.add_argument('--num-workers', type=int,
                     help='number of workers for training, default: `spark.default.parallelism`')
-parser.add_argument('--learning_rate', type=float, default=0.0001,
-                    help='initial learning rate')
-parser.add_argument('--batch-size', type=int, default=100,
-                    help='batch size')
 parser.add_argument('--epochs', type=int, default=100,
                     help='number of epochs to train')
 parser.add_argument('--num-models', type=int, default=64,
