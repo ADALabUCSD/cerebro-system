@@ -19,8 +19,8 @@ resource-efficient manner. Detailed technical information about ``Cerebro`` can 
 [Technical Report](https://adalabucsd.github.io/papers/TR_2020_Cerebro.pdf).
 
 
-Installation
-------------
+Install
+-------
 
 The best way to install the ``Cerebro`` is via pip.
 
