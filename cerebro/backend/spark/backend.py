@@ -190,13 +190,17 @@ class SparkBackend(Backend):
                             worker_states[w] = False
                             model_on_worker[w] = -1
 
-                            res = status.sub_epoch_result['result']
-                            run_id = models[m].getRunId()
-                            if model_results[run_id] is None:
-                                model_results[run_id] = res
+                            if status.sub_epoch_result['status'] == 'FAILED':
+                                # Application Error
+                                raise Exception(status.sub_epoch_result['error'])
                             else:
-                                for k in model_results[run_id]:
-                                    model_results[run_id][k].append(res[k][0])
+                                res = status.sub_epoch_result['result']
+                                run_id = models[m].getRunId()
+                                if model_results[run_id] is None:
+                                    model_results[run_id] = res
+                                else:
+                                    for k in model_results[run_id]:
+                                        model_results[run_id][k].append(res[k][0])
 
             time.sleep(self.settings.polling_period)
 
