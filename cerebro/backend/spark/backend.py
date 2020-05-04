@@ -56,7 +56,7 @@ class SparkBackend(Backend):
             start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
                        If not set, falls back to `CEREBRO_SPARK_START_TIMEOUT` environment variable value.
                        If it is not set as well, defaults to 600 seconds.
-            disk_cache_size: Size of the disk data cache in GBs.
+            disk_cache_size: Size of the disk data cache in GBs (default 10GB).
             verbose: Debug output verbosity (0-2). Defaults to 1..
         """
 
