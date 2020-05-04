@@ -33,9 +33,9 @@ class HDFSStore(FilesystemStore):
 
     Initialized from a `prefix_path` that can take one of the following forms:
 
-    1. "hdfs://namenode01:8020/user/test/horovod"
-    2. "hdfs:///user/test/horovod"
-    3. "/user/test/horovod"
+    1. "hdfs://namenode01:8020/user/test/Cerebro"
+    2. "hdfs:///user/test/Cerebro"
+    3. "/user/test/Cerebro"
 
     The full path (including prefix, host, and port) will be used for all reads and writes to HDFS through Spark. If
     host and port are not provided, they will be omitted. If prefix is not provided (case 3), it will be prefixed to

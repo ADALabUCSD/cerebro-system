@@ -22,7 +22,6 @@ import os
 import random
 import threading
 import time
-from distutils.version import LooseVersion
 
 import h5py
 import numpy as np
@@ -49,7 +48,7 @@ def default_num_workers():
 class SparkBackend(Backend):
     """Uses `horovod.spark.run` to execute the distributed training `fn`."""
 
-    def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=20480, verbose=1):
+    def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10, verbose=1):
         """
         Args:
             spark_context: Spark context
@@ -57,13 +56,13 @@ class SparkBackend(Backend):
             start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
                        If not set, falls back to `CEREBRO_SPARK_START_TIMEOUT` environment variable value.
                        If it is not set as well, defaults to 600 seconds.
-            disk_cache_size: Size of the disk data cache in MBs.
+            disk_cache_size: Size of the disk data cache in GBs.
             verbose: Debug output verbosity (0-2). Defaults to 1..
         """
 
         tmout = timeout.Timeout(start_timeout,
                                 message='Timed out waiting for {activity}. Please check that you have '
-                                        'enough resources to run all Horovod processes. Each Horovod '
+                                        'enough resources to run all Cerebro processes. Each Cerebro '
                                         'process runs in a Spark task. You may need to increase the '
                                         'start_timeout parameter to a larger value if your Spark resources '
                                         'are allocated on-demand.')
@@ -72,7 +71,7 @@ class SparkBackend(Backend):
                                            timeout=tmout,
                                            run_func_mode=True)
 
-        self.disk_cache_size = disk_cache_size
+        self.disk_cache_size_bytes = disk_cache_size * 1024 * 1024 * 1024
 
         if spark_context is None:
             spark_context = pyspark.SparkContext._active_spark_context
@@ -142,7 +141,7 @@ class SparkBackend(Backend):
             shard_count = self.num_workers()
             _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, dataset_idx)
             data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size,
-                                               self.disk_cache_size)
+                                               self.disk_cache_size_bytes)
 
             for task_client in self.task_clients:
                 task_client.initialize_data_loaders(data_readers_fn)
