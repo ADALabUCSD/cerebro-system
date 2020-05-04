@@ -255,10 +255,10 @@ class SparkTaskClient:
         self._addresses = self._probe(task_addresses)
         if not self._addresses:
             raise NoValidAddressesFound(
-                'Horovodrun was unable to connect to {service_name} on any '
+                'Cerebro was unable to connect to {service_name} on any '
                 'of the following addresses: {addresses}.\n\n'
                 'One possible cause of this problem is that '
-                'horovodrun currently requires every host to have at '
+                'Cerebro currently requires every host to have at '
                 'least one routable network interface with the same '
                 'name across all of the hosts. '
                 'You can run \"ifconfig -a\" '
