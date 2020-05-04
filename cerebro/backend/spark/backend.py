@@ -84,10 +84,10 @@ class SparkBackend(Backend):
         if num_workers is None:
             num_workers = spark_context.defaultParallelism
             if settings.verbose >= 1:
-                print('Running %d processes (inferred from spark.default.parallelism)...' % num_workers)
+                print('Running %d workers (inferred from spark.default.parallelism)...' % num_workers)
         else:
             if settings.verbose >= 1:
-                print('Running %d processes...' % num_workers)
+                print('Running %d workers...' % num_workers)
 
         settings.num_workers = num_workers
         self.settings = settings
