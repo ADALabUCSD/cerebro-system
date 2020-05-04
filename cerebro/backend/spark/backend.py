@@ -192,6 +192,7 @@ class SparkBackend(Backend):
 
                             if status.sub_epoch_result['status'] == 'FAILED':
                                 # Application Error
+                                self.teardown_workers()
                                 raise Exception(status.sub_epoch_result['error'])
                             else:
                                 res = status.sub_epoch_result['result']
