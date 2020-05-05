@@ -81,15 +81,15 @@ class Wire(object):
         message = cloudpickle.dumps(obj)
         digest = secret.compute_digest(self._key, message)
         wfile.write(digest)
-        # Pack message length into 4-byte integer.
-        wfile.write(struct.pack('i', len(message)))
+        # Pack message length into 8-byte integer.
+        wfile.write(struct.pack('l', len(message)))
         wfile.write(message)
         wfile.flush()
 
     def read(self, rfile):
         digest = rfile.read(secret.DIGEST_LENGTH)
-        # Unpack message length into 4-byte integer.
-        message_len = struct.unpack('i', rfile.read(4))[0]
+        # Unpack message length into 8-byte integer.
+        message_len = struct.unpack('l', rfile.read(8))[0]
         message = rfile.read(message_len)
         if not secret.check_digest(self._key, message, digest):
             raise Exception('Security error: digest did not match the message.')
