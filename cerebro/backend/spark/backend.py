@@ -46,7 +46,7 @@ def default_num_workers():
 
 
 class SparkBackend(Backend):
-    """Uses `horovod.spark.run` to execute the distributed training `fn`."""
+    """Spark backend implementing Cerebro model hopping"""
 
     def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10, verbose=1):
         """
