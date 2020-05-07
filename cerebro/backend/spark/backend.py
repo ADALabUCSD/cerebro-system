@@ -48,7 +48,7 @@ def default_num_workers():
 class SparkBackend(Backend):
     """Spark backend implementing Cerebro model hopping"""
 
-    def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10, verbose=1):
+    def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10, verbose=1, nics=None):
         """
         Args:
             spark_context: Spark context
@@ -57,6 +57,8 @@ class SparkBackend(Backend):
                        If it is not set as well, defaults to 600 seconds.
             disk_cache_size: Size of the disk data cache in GBs (default 10GB).
             verbose: Debug output verbosity (0-2). Defaults to 1..
+            nics: List of NIC names, will only use these for communications. If None is specified, use any
+                avaliable networking interfaces (default None)
         """
 
         tmout = timeout.Timeout(start_timeout,
@@ -68,7 +70,8 @@ class SparkBackend(Backend):
         settings = spark_settings.Settings(verbose=verbose,
                                            key=secret.make_secret_key(),
                                            timeout=tmout,
-                                           run_func_mode=True)
+                                           run_func_mode=True,
+                                           nics=nics)
 
         self.disk_cache_size_bytes = disk_cache_size * 1024 * 1024 * 1024
 
