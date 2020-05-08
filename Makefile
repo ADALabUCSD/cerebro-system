@@ -27,5 +27,8 @@ publish: clean build
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 	#twine upload dist/*
 
+gen-docs:
+	cd docs-src && rm -rf build/* && make html && cp -r build/html/* ../docs && cd ..
+
 clean:
 	rm -rf build dist cerebro.egg-info .cache .pytest_cache

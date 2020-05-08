@@ -13,6 +13,23 @@
 # limitations under the License.
 # ==============================================================================
 
+"""
+cerebro.tune
+============
+This module contains several AutoML/Model Selection procedures and utility functions for defining search spaces.
+"""
+
 from .base import hp_choice, hp_uniform, hp_quniform, hp_loguniform, hp_qloguniform
 from .grid import GridSearch, RandomSearch
 from .hyperopt import HyperOpt
+
+
+hp_choice.__module__ = "cerebro.tune"
+hp_uniform.__module__ = "cerebro.tune"
+hp_quniform.__module__ = "cerebro.tune"
+hp_loguniform.__module__ = "cerebro.tune"
+hp_qloguniform.__module__ = "cerebro.tune"
+
+GridSearch.__module__ = "cerebro.tune"
+RandomSearch.__module__ = "cerebro.tune"
+HyperOpt.__module__ = "cerebro.tune"

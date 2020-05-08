@@ -1,0 +1,383 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cerebro API &#8212; Cerebro  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Getting Started" href="quick_start.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-cerebro.keras">
+<span id="cerebro-api"></span><h1>Cerebro API<a class="headerlink" href="#module-cerebro.keras" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="cerebro-keras">
+<h2>cerebro.keras<a class="headerlink" href="#cerebro-keras" title="Permalink to this headline">¶</a></h2>
+<p>This module contains Keras abstractions for Cerebro.</p>
+<dl class="py class">
+<dt id="cerebro.keras.SparkEstimator">
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.keras.</code><code class="sig-name descname">SparkEstimator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">custom_objects</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">optimizer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">loss</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">loss_weights</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sample_weight_col</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metrics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">callbacks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">transformation_fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkEstimator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cerebro Spark Estimator for fitting Keras models to a DataFrame.</p>
+<p>Supports <cite>tf.keras</cite> &gt;= 2.1.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model</strong> – Keras model to train.</p></li>
+<li><p><strong>custom_objects</strong> – Optional dictionary mapping names (strings) to custom classes or functions to be considered
+during serialization/deserialization.</p></li>
+<li><p><strong>optimizer</strong> – Keras optimizer to be converted into a <cite>hvd.DistributedOptimizer</cite> for training.</p></li>
+<li><p><strong>loss</strong> – Keras loss or list of losses.</p></li>
+<li><p><strong>loss_weights</strong> – Optional list of float weight values to assign each loss.</p></li>
+<li><p><strong>sample_weight_col</strong> – Optional column indicating the weight of each sample.</p></li>
+<li><p><strong>metrics</strong> – Optional metrics to record.</p></li>
+<li><p><strong>callbacks</strong> – Keras callbacks.</p></li>
+<li><p><strong>batch_size</strong> – Number of rows from the DataFrame per batch.</p></li>
+<li><p><strong>shuffle_buffer_size</strong> – Optional size of in-memory shuffle buffer in rows. Allocating a larger buffer size
+increases randomness of shuffling at the cost of more host memory. Defaults to estimating
+with an assumption of 4GB of memory per host.</p></li>
+<li><p><strong>transformation_fn</strong> – Optional function that takes a row as its parameter
+and returns a modified row that is then fed into the
+train or validation step. This transformation is
+applied after batching. See Petastorm [TransformSpec](<a class="reference external" href="https://github.com/uber/petastorm/blob/master/petastorm/transform.py">https://github.com/uber/petastorm/blob/master/petastorm/transform.py</a>)
+for more details. Note that this fucntion constructs
+another function which should perform the
+transformation.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py class">
+<dt id="cerebro.keras.SparkModel">
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.keras.</code><code class="sig-name descname">SparkModel</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">history</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">model</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">custom_objects</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">run_id</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">_metadata</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">_floatx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spark Transformer wrapping a Keras model, used for making predictions on a DataFrame.</p>
+<p>Retrieve the underlying Keras model by calling <cite>keras_model.getModel()</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>history</strong> – List of metrics, one entry per epoch during training.</p></li>
+<li><p><strong>model</strong> – Trained Keras model.</p></li>
+<li><p><strong>feature_columns</strong> – List of feature column names.</p></li>
+<li><p><strong>label_columns</strong> – List of label column names.</p></li>
+<li><p><strong>custom_objects</strong> – Keras custom objects.</p></li>
+<li><p><strong>run_id</strong> – ID of the run used to train the model.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py method">
+<dt id="cerebro.keras.SparkModel.keras">
+<code class="sig-name descname">keras</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkModel.keras" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the trained model in Keras format.
+:return: TensorFlow Keras Model</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cerebro.keras.SparkModel.transform">
+<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkModel.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms the input dataset with optional parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset</strong> – input dataset, which is an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code></p></li>
+<li><p><strong>params</strong> – an optional param map that overrides embedded params.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>transformed dataset</p>
+</dd>
+</dl>
+<div class="versionadded">
+<p><span class="versionmodified added">New in version 1.3.0.</span></p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-cerebro.tune"></span><div class="section" id="cerebro-tune">
+<h2>cerebro.tune<a class="headerlink" href="#cerebro-tune" title="Permalink to this headline">¶</a></h2>
+<p>This module contains several AutoML/Model Selection procedures and utility functions for defining search spaces.</p>
+<dl class="py class">
+<dt id="cerebro.tune.GridSearch">
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">GridSearch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">backend</span></em>, <em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">estimator_gen_fn</span></em>, <em class="sig-param"><span class="n">search_space</span></em>, <em class="sig-param"><span class="n">num_epochs</span></em>, <em class="sig-param"><span class="n">validation</span><span class="o">=</span><span class="default_value">0.25</span></em>, <em class="sig-param"><span class="n">evaluation_metric</span><span class="o">=</span><span class="default_value">'loss'</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">logdir</span><span class="o">=</span><span class="default_value">'./logs'</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.GridSearch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs grid search using the given param grid</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="cerebro.tune.HyperOpt">
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">HyperOpt</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">backend</span></em>, <em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">estimator_gen_fn</span></em>, <em class="sig-param"><span class="n">search_space</span></em>, <em class="sig-param"><span class="n">num_models</span></em>, <em class="sig-param"><span class="n">num_epochs</span></em>, <em class="sig-param"><span class="n">validation</span><span class="o">=</span><span class="default_value">0.25</span></em>, <em class="sig-param"><span class="n">evaluation_metric</span><span class="o">=</span><span class="default_value">'loss'</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">logdir</span><span class="o">=</span><span class="default_value">'./logs'</span></em>, <em class="sig-param"><span class="n">parallelism</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.HyperOpt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs HyperOpt[<a class="reference external" href="https://github.com/hyperopt/hyperopt">https://github.com/hyperopt/hyperopt</a>] search using the given param grid</p>
+</dd></dl>
+
+<dl class="py class">
+<dt id="cerebro.tune.RandomSearch">
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">RandomSearch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">backend</span></em>, <em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">estimator_gen_fn</span></em>, <em class="sig-param"><span class="n">search_space</span></em>, <em class="sig-param"><span class="n">num_models</span></em>, <em class="sig-param"><span class="n">num_epochs</span></em>, <em class="sig-param"><span class="n">validation</span><span class="o">=</span><span class="default_value">0.25</span></em>, <em class="sig-param"><span class="n">evaluation_metric</span><span class="o">=</span><span class="default_value">'loss'</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">logdir</span><span class="o">=</span><span class="default_value">'./logs'</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">2</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.RandomSearch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Performs Random Search over the param grid</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cerebro.tune.hp_choice">
+<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_choice</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">options</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_choice" title="Permalink to this definition">¶</a></dt>
+<dd><p>categorical options
+:param options:
+:return:</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cerebro.tune.hp_loguniform">
+<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_loguniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_loguniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Log uniform distribution bounded by min and max
+:param min:
+:param max:
+:return:</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cerebro.tune.hp_qloguniform">
+<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_qloguniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em>, <em class="sig-param"><span class="n">q</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_qloguniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>quantized log uniform distribution with a quantum of q, bounded by min and max
+:param min:
+:param max:
+:param q:
+:return:</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cerebro.tune.hp_quniform">
+<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_quniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em>, <em class="sig-param"><span class="n">q</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_quniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>quantized uniform distribution with a quantum of q, bounded by min and max
+:param min:
+:param max:
+:param q:
+:return:</p>
+</dd></dl>
+
+<dl class="py function">
+<dt id="cerebro.tune.hp_uniform">
+<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_uniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_uniform" title="Permalink to this definition">¶</a></dt>
+<dd><p>uniform distribution bounded by min and max
+:param min:
+:param max:
+:return:</p>
+</dd></dl>
+
+</div>
+<span class="target" id="module-cerebro.backend"></span><div class="section" id="cerebro-backend">
+<h2>cerebro.backend<a class="headerlink" href="#cerebro-backend" title="Permalink to this headline">¶</a></h2>
+<p>This module contains different execution backends for Cerebro.</p>
+<dl class="py class">
+<dt id="cerebro.backend.SparkBackend">
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.backend.</code><code class="sig-name descname">SparkBackend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">spark_context</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">num_workers</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">start_timeout</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">disk_cache_size</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">nics</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend" title="Permalink to this definition">¶</a></dt>
+<dd><p>Spark backend implementing Cerebro model hopping</p>
+<dl class="py method">
+<dt id="cerebro.backend.SparkBackend.get_metadata_from_parquet">
+<code class="sig-name descname">get_metadata_from_parquet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.get_metadata_from_parquet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get metadata from the data in the persistent storage.
+:param store:
+:param label_columns:
+:param feature_columns:
+:return:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cerebro.backend.SparkBackend.initialize_data_loaders">
+<code class="sig-name descname">initialize_data_loaders</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset_idx</span></em>, <em class="sig-param"><span class="n">schema_fields</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.initialize_data_loaders" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>store</strong> – </p></li>
+<li><p><strong>dataset_idx</strong> – </p></li>
+<li><p><strong>schema_fields</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cerebro.backend.SparkBackend.initialize_workers">
+<code class="sig-name descname">initialize_workers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.initialize_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize Spark tasks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cerebro.backend.SparkBackend.num_workers">
+<code class="sig-name descname">num_workers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.num_workers" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div><p>Get number of processes/tasks</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cerebro.backend.SparkBackend.prepare_data">
+<code class="sig-name descname">prepare_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">validation</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">compress_sparse</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">dataset_idx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepare data by writing out into persistent storage
+:param store:
+:param dataset:
+:param validation:
+:param label_columns:
+:param feature_columns:
+:param compress_sparse:
+:param verbose:
+:param dataset_idx:</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cerebro.backend.SparkBackend.teardown_workers">
+<code class="sig-name descname">teardown_workers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.teardown_workers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Teardown Spark tasks</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="cerebro.backend.SparkBackend.train_for_one_epoch">
+<code class="sig-name descname">train_for_one_epoch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">models</span></em>, <em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset_idx</span></em>, <em class="sig-param"><span class="n">feature_col</span></em>, <em class="sig-param"><span class="n">label_col</span></em>, <em class="sig-param"><span class="n">is_train</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.train_for_one_epoch" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="simple">
+<dt>Takes a set of Keras models and trains for one epoch. If is_train is False, validation is performed</dt><dd><p>instead of training.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>models</strong> – </p></li>
+<li><p><strong>store</strong> – </p></li>
+<li><p><strong>dataset_idx</strong> – </p></li>
+<li><p><strong>feature_col</strong> – </p></li>
+<li><p><strong>label_col</strong> – </p></li>
+<li><p><strong>is_train</strong> – </p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<span class="target" id="module-cerebro.storage"></span><div class="section" id="cerebro-storage">
+<h2>cerebro.storage<a class="headerlink" href="#cerebro-storage" title="Permalink to this headline">¶</a></h2>
+<p>This module contains different storage backends for Cerebro.</p>
+<dl class="py class">
+<dt id="cerebro.storage.HDFSStore">
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">HDFSStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">user</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">kerb_ticket</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">extra_conf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">temp_dir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.HDFSStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses HDFS as a store of intermediate data and training artifacts.</p>
+<p>Initialized from a <cite>prefix_path</cite> that can take one of the following forms:</p>
+<ol class="arabic simple">
+<li><p>“hdfs://namenode01:8020/user/test/Cerebro”</p></li>
+<li><p>“hdfs:///user/test/Cerebro”</p></li>
+<li><p>“/user/test/Cerebro”</p></li>
+</ol>
+<p>The full path (including prefix, host, and port) will be used for all reads and writes to HDFS through Spark. If
+host and port are not provided, they will be omitted. If prefix is not provided (case 3), it will be prefixed to
+the full path regardless.</p>
+<p>The localized path (without prefix, host, and port) will be used for interaction with PyArrow. Parsed host and port
+information will be used to initialize PyArrow <cite>HadoopFilesystem</cite> if they are not provided through the <cite>host</cite> and
+<cite>port</cite> arguments to this initializer. These parameters will default to <cite>default</cite> and <cite>0</cite> if neither the path URL
+nor the arguments provide this information.</p>
+<dl class="py method">
+<dt id="cerebro.storage.HDFSStore.sync_fn">
+<code class="sig-name descname">sync_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">run_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.HDFSStore.sync_fn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a function that synchronises given path recursively into run path for <cite>run_id</cite>.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt id="cerebro.storage.LocalStore">
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">LocalStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.LocalStore" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses the local filesystem as a store of intermediate data and training artifacts.</p>
+<dl class="py method">
+<dt id="cerebro.storage.LocalStore.sync_fn">
+<code class="sig-name descname">sync_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">run_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.LocalStore.sync_fn" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a function that synchronises given path recursively into run path for <cite>run_id</cite>.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">What is Cerebro?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Getting Started</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Cerebro API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#cerebro-keras">cerebro.keras</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cerebro-tune">cerebro.tune</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cerebro-backend">cerebro.backend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#cerebro-storage">cerebro.storage</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="quick_start.html" title="previous chapter">Getting Started</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, UC Regents.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/api.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

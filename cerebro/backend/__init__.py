@@ -13,4 +13,12 @@
 # limitations under the License.
 # ==============================================================================
 
+"""
+cerebro.backend
+===============
+This module contains different execution backends for Cerebro.
+"""
+
 from .spark.backend import SparkBackend
+
+SparkBackend.__module__ = "cerebro.backend"

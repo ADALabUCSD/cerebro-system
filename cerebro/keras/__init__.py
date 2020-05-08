@@ -14,7 +14,17 @@
 # limitations under the License.
 # ==============================================================================
 
+"""
+cerebro.keras
+=============
+This module contains Keras abstractions for Cerebro.
+"""
+
+
 from __future__ import absolute_import
 
 from .spark.estimator import SparkEstimator
 from .spark.estimator import SparkModel
+
+SparkEstimator.__module__ = "cerebro.keras"
+SparkModel.__module__ = "cerebro.keras"

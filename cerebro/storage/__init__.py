@@ -13,5 +13,15 @@
 # limitations under the License.
 # ==============================================================================
 
+"""
+cerebro.storage
+===============
+This module contains different storage backends for Cerebro.
+"""
+
+
 from .hdfs import HDFSStore
 from .local import LocalStore
+
+HDFSStore.__module__ = "cerebro.storage"
+LocalStore.__module__ = "cerebro.storage"

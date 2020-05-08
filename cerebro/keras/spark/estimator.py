@@ -169,7 +169,7 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
                      CerebroEstimator):
     """Cerebro Spark Estimator for fitting Keras models to a DataFrame.
 
-    Supports standalone `keras` and `tf.keras`, and TensorFlow 1.X and 2.X.
+    Supports `tf.keras` >= 2.1.
 
     Args:
         model: Keras model to train.
