@@ -1,4 +1,4 @@
-# Copyright 2020 University of California Regents. All Rights Reserved.
+# Copyright 2020 Supun Nakandala, Yuhao Zhang, and Arun Kumar. All Rights Reserved.
 # Copyright 2019 Uber Technologies, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");

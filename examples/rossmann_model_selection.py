@@ -1,4 +1,4 @@
-# Copyright 2020 University of California Regents. All Rights Reserved.
+# Copyright 2020 Supun Nakandala, Yuhao Zhang, and Arun Kumar. All Rights Reserved.
 # Copyright 2017 onwards, fast.ai, Inc.
 # Modifications copyright (C) 2019 Uber Technologies, Inc.
 #

@@ -1,4 +1,4 @@
-# Copyright 2020 University of California Regents. All Rights Reserved.
+# Copyright 2020 Supun Nakandala, Yuhao Zhang, and Arun Kumar. All Rights Reserved.
 # Copyright 2019 Uber Technologies, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -52,7 +52,7 @@ class HDFSStore(FilesystemStore):
 
     def __init__(self, prefix_path,
                  host=None, port=None, user=None, kerb_ticket=None,
-                 extra_conf=None, temp_dir=None, *args, **kwargs):
+                 driver='libhdfs', extra_conf=None, temp_dir=None, *args, **kwargs):
         self._temp_dir = temp_dir
 
         prefix, url_host, url_port, path, path_offset = self.parse_url(prefix_path)
@@ -65,6 +65,7 @@ class HDFSStore(FilesystemStore):
                                  port=port,
                                  user=user,
                                  kerb_ticket=kerb_ticket,
+                                 driver=driver,
                                  extra_conf=extra_conf)
         self._hdfs = self._get_filesystem_fn()()
 
