@@ -19,7 +19,7 @@ from recommonmark.parser import CommonMarkParser
 # -- Project information -----------------------------------------------------
 
 project = 'Cerebro'
-copyright = '2020, UC Regents'
+copyright = '2020, Supun Nakandala, Yuhao Zhang, Arun Kumar'
 author = 'Supun Nakandala, Yuhao Zhang, Arun Kumar'
 
 
