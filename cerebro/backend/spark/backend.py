@@ -48,7 +48,8 @@ def default_num_workers():
 class SparkBackend(Backend):
     """Spark backend implementing Cerebro model hopping"""
 
-    def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10, verbose=1, nics=None):
+    def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10,
+                 max_input_queue_size=10, input_queue_num_proc=1, nics=None, verbose=1):
         """
         Args:
             spark_context: Spark context
@@ -56,9 +57,11 @@ class SparkBackend(Backend):
             start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
                        If it is not set as well, defaults to 600 seconds.
             disk_cache_size: Size of the disk data cache in GBs (default 10GB).
-            verbose: Debug output verbosity (0-2). Defaults to 1..
+            max_input_queue_size: Used for input generator input. Maximum size for the generator queue (defaule 10).
+            input_queue_num_proc: Maximum number of processes to spin up when using process-based threading for data loading (default 1).
             nics: List of NIC names, will only use these for communications. If None is specified, use any
                 avaliable networking interfaces (default None)
+            verbose: Debug output verbosity (0-2). Defaults to 1..
         """
 
         tmout = timeout.Timeout(start_timeout,
@@ -70,10 +73,10 @@ class SparkBackend(Backend):
         settings = spark_settings.Settings(verbose=verbose,
                                            key=secret.make_secret_key(),
                                            timeout=tmout,
-                                           run_func_mode=True,
+                                           disk_cache_size_bytes=disk_cache_size * 1024 * 1024 * 1024,
+                                           input_queue_num_proc=input_queue_num_proc,
+                                           max_input_queue_size=max_input_queue_size,
                                            nics=nics)
-
-        self.disk_cache_size_bytes = disk_cache_size * 1024 * 1024 * 1024
 
         if spark_context is None:
             spark_context = pyspark.SparkContext._active_spark_context
@@ -143,7 +146,7 @@ class SparkBackend(Backend):
             shard_count = self.num_workers()
             _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, dataset_idx)
             data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size,
-                                               self.disk_cache_size_bytes)
+                                               self.settings.disk_cache_size_bytes)
 
             for task_client in self.task_clients:
                 task_client.initialize_data_loaders(data_readers_fn)
@@ -154,7 +157,9 @@ class SparkBackend(Backend):
                             'first!')
 
     def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
-        sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col, self.settings.verbose) \
+        sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col,
+                                                  self.settings.max_input_queue_size, self.settings.input_queue_num_proc,
+                                                  self.settings.verbose) \
                               for model in models]
 
         model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self.num_workers())]
@@ -271,7 +276,8 @@ def _get_runnable_model(worker, model_worker_pairs, model_states):
     return -1
 
 
-def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns, verbose=0):
+def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns,
+                        max_input_queue_size, input_queue_num_proc, verbose=0):
     train_rows, val_rows, metadata, avg_row_size = \
         util.get_simple_meta_from_parquet(store,
                                           schema_cols=label_columns + feature_columns,
@@ -286,7 +292,7 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
         serialized_model = estimator._compile_model(keras_utils)
 
     trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx,
-                                train_rows, val_rows, backend.num_workers(), verbose)
+                                train_rows, val_rows, backend.num_workers(), max_input_queue_size, input_queue_num_proc, verbose)
     return trainer
 
 
@@ -371,7 +377,7 @@ def _make_mapper(driver_addresses, settings):
 
 
 def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx, train_rows, val_rows,
-                      num_workers, verbose=0):
+                      num_workers, max_input_queue_size, input_queue_num_proc, verbose=0):
     # Estimator parameters
     label_columns = estimator.getLabelCols()
     feature_columns = estimator.getFeatureCols()
@@ -392,8 +398,8 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     make_dataset = keras_utils.make_dataset_fn(
         feature_columns, label_columns, sample_weight_col, metadata,
         input_shapes, output_shapes, output_names, batch_size)
-    fit_sub_epoch_fn = keras_utils.fit_sub_epoch_fn()
-    eval_sub_epoch_fn = keras_utils.eval_sub_epoch_fn()
+    fit_sub_epoch_fn = keras_utils.fit_sub_epoch_fn(max_input_queue_size, input_queue_num_proc)
+    eval_sub_epoch_fn = keras_utils.eval_sub_epoch_fn(max_input_queue_size, input_queue_num_proc)
     transformation_fn = estimator.getTransformationFn()
     transformation = transformation_fn if transformation_fn else None
 

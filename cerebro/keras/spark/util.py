@@ -33,7 +33,7 @@ class TFKerasUtil(object):
     type = TF_KERAS
 
     @staticmethod
-    def fit_sub_epoch_fn():
+    def fit_sub_epoch_fn(max_input_queue_size, input_queue_num_proc):
         def fn(starting_epoch, model, train_data, steps_per_epoch, callbacks, verbose):
             return model.fit(
                 train_data,
@@ -41,13 +41,20 @@ class TFKerasUtil(object):
                 steps_per_epoch=steps_per_epoch,
                 callbacks=callbacks,
                 verbose=verbose,
-                epochs=starting_epoch+1)
+                epochs=starting_epoch+1,
+                use_multiprocessing=True,
+                max_queue_size=max_input_queue_size,
+                workers=input_queue_num_proc)
         return fn
 
     @staticmethod
-    def eval_sub_epoch_fn():
-        def fn(starting_epoch, model, val_data, validation_steps, callbacks, verbose):
-            return model.evaluate(val_data, steps=validation_steps, callbacks=callbacks, verbose=verbose)
+    def eval_sub_epoch_fn(max_input_queue_size, input_queue_num_proc):
+        def fn(_, model, val_data, validation_steps, callbacks, verbose):
+            return model.evaluate(val_data, steps=validation_steps, callbacks=callbacks,
+                                  use_multiprocessing=True,
+                                  max_queue_size=max_input_queue_size,
+                                  workers=input_queue_num_proc,
+                                  verbose=verbose)
 
         return fn
 
