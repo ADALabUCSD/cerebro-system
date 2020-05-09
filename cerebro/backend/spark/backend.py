@@ -146,8 +146,7 @@ class SparkBackend(Backend):
             shard_count = self.num_workers()
             _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, dataset_idx)
             data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size,
-                                               self.settings.disk_cache_size_bytes,
-                                               self.settings.max_input_queue_size, self.settings.input_queue_num_proc)
+                                               self.settings.disk_cache_size_bytes)
 
             for task_client in self.task_clients:
                 task_client.initialize_data_loaders(data_readers_fn)
@@ -297,8 +296,7 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
     return trainer
 
 
-def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cache_size_limit,
-                     max_input_queue_size, input_queue_num_proc):
+def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cache_size_limit):
     def _data_readers(index):
         from petastorm import make_batch_reader
 
@@ -308,8 +306,6 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                          cur_shard=index,
                                          shard_count=shard_count,
                                          hdfs_driver=PETASTORM_HDFS_DRIVER,
-                                         reader_pool_type='process',
-                                         workers_count=input_queue_num_proc,
                                          schema_fields=schema_fields,
                                          cache_type='local-disk',
                                          cache_size_limit=cache_size_limit,
@@ -320,8 +316,6 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                            cur_shard=index,
                                            shard_count=shard_count,
                                            hdfs_driver=PETASTORM_HDFS_DRIVER,
-                                           reader_pool_type='process',
-                                           workers_count=input_queue_num_proc,
                                            schema_fields=schema_fields,
                                            cache_type='local-disk',
                                            cache_size_limit=cache_size_limit,
