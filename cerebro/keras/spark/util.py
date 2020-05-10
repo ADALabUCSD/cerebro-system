@@ -80,10 +80,10 @@ class TFKerasUtil(object):
             label_columns, input_shapes, output_shapes, output_names)
 
         def fn(reader, shuffle_buffer_size, shuffle=False):
-            # from petastorm.tf_utils import make_petastorm_dataset
-            # dataset = make_petastorm_dataset(reader).unbatch()
+            from petastorm.tf_utils import make_petastorm_dataset
+            dataset = make_petastorm_dataset(reader).unbatch()
 
-            dataset = _make_petastorm_dataset(reader).unbatch()
+            # dataset = _make_petastorm_dataset(reader).unbatch()
 
             if shuffle:
                 dataset = dataset.shuffle(shuffle_buffer_size)
