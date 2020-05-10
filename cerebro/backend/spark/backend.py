@@ -73,7 +73,7 @@ class SparkBackend(Backend):
         settings = spark_settings.Settings(verbose=verbose,
                                            key=secret.make_secret_key(),
                                            timeout=tmout,
-                                           disk_cache_size_bytes=disk_cache_size * 1024 * 1024 * 1024,
+                                           disk_cache_size_bytes=disk_cache_size * constants.BYTES_PER_GIB,
                                            input_queue_num_proc=input_queue_num_proc,
                                            max_input_queue_size=max_input_queue_size,
                                            nics=nics)
