@@ -23,6 +23,8 @@ ARRAY = 'array'
 CUSTOM_SPARSE = 'custom_sparse_format'
 NOCHANGE = 'nochange'
 
+PARQUET_ROW_GROUP_SIZE_MB = 8
+
 MIXED_SPARSE_DENSE_VECTOR = 'mixed_sparse_dense_vector'
 SPARSE_VECTOR = 'sparse_vector'
 DENSE_VECTOR = 'dense_vector'
