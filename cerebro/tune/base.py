@@ -20,7 +20,6 @@ from tensorboard.plugins.hparams import api as hp
 
 import numpy as np
 
-
 np.random.seed(2020)
 
 
@@ -116,7 +115,7 @@ class _HPQLogUnifrom(_HP):
         if min >= max:
             raise Exception('min should be smaller than max')
 
-        if q >= (max-min):
+        if q >= (max - min):
             raise Exception('q should be smaller than (max-min)')
 
         self.min = min
@@ -182,13 +181,18 @@ class ModelSelection(object):
 
         # initialize backend and data loaders
         self.backend.initialize_workers()
+        if self.verbose > 0: print('completed initializing workers')
+
         self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
+        if self.verbose > 0: print('completed initializing data loaded')
+
         try:
             result = self._fit_on_prepared_data(dataset_index, metadata)
             return result
         finally:
             # teardown the backend workers
             self.backend.teardown_workers()
+            if self.verbose > 0: print('stopped workers')
 
     def _fit_on_prepared_data(self):
         raise NotImplementedError('method not implemented')
@@ -263,7 +267,6 @@ class ModelSelectionResult(object):
 
     def get_history(self):
         return self.get_best_model_history()
-
 
     def get_best_model_history(self):
         """ Get best model training history
