@@ -40,17 +40,24 @@ class TFKerasUtil(object):
     @staticmethod
     def fit_sub_epoch_fn(max_input_queue_size, input_queue_num_proc):
         def fn(starting_epoch, model, train_data, steps_per_epoch, callbacks, verbose):
+            import time
             print('===> Before fit')
+            for i in range(10):
+                begin_time = time.time()
+                next(train_data)
+                print('Elapsed time: {}'.format(time.time() - begin_time))
+
             return model.fit(
                 train_data,
                 initial_epoch=starting_epoch,
                 steps_per_epoch=steps_per_epoch,
                 callbacks=callbacks,
                 verbose=verbose,
-                epochs=starting_epoch + 1,
-                use_multiprocessing=True,
-                max_queue_size=max_input_queue_size,
-                workers=input_queue_num_proc)
+                epochs=starting_epoch + 1
+                # use_multiprocessing=True,
+                # max_queue_size=max_input_queue_size,
+                # workers=input_queue_num_proc
+            )
 
         return fn
 
