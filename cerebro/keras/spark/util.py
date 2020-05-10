@@ -90,7 +90,7 @@ class TFKerasUtil(object):
 
             # Decompress sparse data if necessary
             if has_sparse_col:
-                dataset = dataset.batch(1).map(reshape)
+                dataset = dataset.batch(1).map(reshape, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
             dataset = dataset.batch(batch_size) \
                 .map(prep_data_tf_keras, num_parallel_calls=tf.data.experimental.AUTOTUNE) \
