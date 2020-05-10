@@ -475,7 +475,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
 
     spark = SparkSession.builder.getOrCreate()
     with materialize_dataset(spark, train_data_path, petastorm_schema, constants.PARQUET_ROW_GROUP_SIZE_MB):
-        train_rdd = train_df.rdd.map(lambda x: x.asDict()).map(lambda x: {k: np.array([x[k]]) for k in x}) \
+        train_rdd = train_df.rdd.map(lambda x: x.asDict()).map(lambda x: {k: np.array([x[k]], dtype=np.float64) for k in x}) \
             .map(lambda x: dict_to_spark_row(petastorm_schema, x))
 
         spark.createDataFrame(train_rdd, petastorm_schema.as_spark_schema()) \
@@ -491,7 +491,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
             print('val_partitions={}'.format(val_partitions))
 
         with materialize_dataset(spark, val_data_path, petastorm_schema, 8):
-            val_rdd = val_df.rdd.map(lambda x: x.asDict()).map(lambda x: {k: np.array([x[k]]) for k in x}) \
+            val_rdd = val_df.rdd.map(lambda x: x.asDict()).map(lambda x: {k: np.array([x[k]], dtype=np.float64) for k in x}) \
                 .map(lambda x: dict_to_spark_row(petastorm_schema, x))
 
             spark.createDataFrame(val_rdd, petastorm_schema.as_spark_schema()) \
