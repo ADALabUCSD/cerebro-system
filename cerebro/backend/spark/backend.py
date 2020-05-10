@@ -49,7 +49,7 @@ class SparkBackend(Backend):
     """Spark backend implementing Cerebro model hopping"""
 
     def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10,
-                 max_input_queue_size=10, input_queue_num_proc=1, nics=None, verbose=1):
+                 nics=None, verbose=1):
         """
         Args:
             spark_context: Spark context
@@ -57,8 +57,6 @@ class SparkBackend(Backend):
             start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
                        If it is not set as well, defaults to 600 seconds.
             disk_cache_size: Size of the disk data cache in GBs (default 10GB).
-            max_input_queue_size: Used for input generator input. Maximum size for the generator queue (defaule 10).
-            input_queue_num_proc: Maximum number of processes to spin up when using process-based threading for data loading (default 1).
             nics: List of NIC names, will only use these for communications. If None is specified, use any
                 avaliable networking interfaces (default None)
             verbose: Debug output verbosity (0-2). Defaults to 1..
@@ -74,8 +72,6 @@ class SparkBackend(Backend):
                                            key=secret.make_secret_key(),
                                            timeout=tmout,
                                            disk_cache_size_bytes=disk_cache_size * constants.BYTES_PER_GIB,
-                                           input_queue_num_proc=input_queue_num_proc,
-                                           max_input_queue_size=max_input_queue_size,
                                            nics=nics)
 
         if spark_context is None:
@@ -158,7 +154,6 @@ class SparkBackend(Backend):
 
     def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
         sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col,
-                                                  self.settings.max_input_queue_size, self.settings.input_queue_num_proc,
                                                   self.settings.verbose) \
                               for model in models]
 
@@ -276,8 +271,7 @@ def _get_runnable_model(worker, model_worker_pairs, model_states):
     return -1
 
 
-def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns,
-                        max_input_queue_size, input_queue_num_proc, verbose=0):
+def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns, verbose=0):
     train_rows, val_rows, metadata, avg_row_size = \
         util.get_simple_meta_from_parquet(store,
                                           schema_cols=label_columns + feature_columns,
@@ -292,7 +286,8 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
         serialized_model = estimator._compile_model(keras_utils)
 
     trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx,
-                                train_rows, val_rows, backend.num_workers(), max_input_queue_size, input_queue_num_proc, verbose)
+                                train_rows, val_rows, backend.num_workers(),
+                                verbose)
     return trainer
 
 
@@ -303,29 +298,25 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
         PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 
         train_reader = make_reader(remote_store.train_data_path, shuffle_row_groups=False, num_epochs=None,
-                                         cur_shard=index,
-                                         shard_count=shard_count,
-                                         hdfs_driver=PETASTORM_HDFS_DRIVER,
-                                         schema_fields=schema_fields,
-                                         workers_count=10,
-                                         # reader_pool_type='process',
-                                         cache_type='local-disk',
-                                         cache_size_limit=cache_size_limit,
-                                         cache_row_size_estimate=avg_row_size,
-                                         cache_extra_settings={'cleanup': True, 'shards': 1})
+                                   cur_shard=index,
+                                   shard_count=shard_count,
+                                   hdfs_driver=PETASTORM_HDFS_DRIVER,
+                                   schema_fields=schema_fields,
+                                   cache_type='local-disk',
+                                   cache_size_limit=cache_size_limit,
+                                   cache_row_size_estimate=avg_row_size,
+                                   cache_extra_settings={'cleanup': True})
 
         if remote_store.val_data_path != '' and remote_store.val_data_path is not None:
             val_reader = make_reader(remote_store.val_data_path, shuffle_row_groups=False, num_epochs=None,
-                                           cur_shard=index,
-                                           shard_count=shard_count,
-                                           hdfs_driver=PETASTORM_HDFS_DRIVER,
-                                           schema_fields=schema_fields,
-                                           workers_count=10,
-                                           # reader_pool_type='process',
-                                           cache_type='local-disk',
-                                           cache_size_limit=cache_size_limit,
-                                           cache_row_size_estimate=avg_row_size,
-                                           cache_extra_settings={'cleanup': True, 'shards': 1})
+                                     cur_shard=index,
+                                     shard_count=shard_count,
+                                     hdfs_driver=PETASTORM_HDFS_DRIVER,
+                                     schema_fields=schema_fields,
+                                     cache_type='local-disk',
+                                     cache_size_limit=cache_size_limit,
+                                     cache_row_size_estimate=avg_row_size,
+                                     cache_extra_settings={'cleanup': True})
         else:
             val_reader = None
 
@@ -383,7 +374,7 @@ def _make_mapper(driver_addresses, settings):
 
 
 def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx, train_rows, val_rows,
-                      num_workers, max_input_queue_size, input_queue_num_proc, verbose=0):
+                      num_workers, verbose=0):
     # Estimator parameters
     label_columns = estimator.getLabelCols()
     feature_columns = estimator.getFeatureCols()
@@ -392,7 +383,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     sample_weight_col = estimator.getSampleWeightCol()
     custom_objects = estimator.getCustomObjects()
     user_shuffle_buffer_size = estimator.getShufflingBufferSize()
-    metrics_names = [name.__name__ if callable(name) else name for name in  estimator.getMetrics()]
+    metrics_names = [name.__name__ if callable(name) else name for name in estimator.getMetrics()]
     model_logs_dir = estimator.getLogsDir()
     user_verbose = estimator.getVerbose()
 
@@ -404,8 +395,8 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     make_dataset = keras_utils.make_dataset_fn(
         feature_columns, label_columns, sample_weight_col, metadata,
         input_shapes, output_shapes, output_names, batch_size)
-    fit_sub_epoch_fn = keras_utils.fit_sub_epoch_fn(max_input_queue_size, input_queue_num_proc)
-    eval_sub_epoch_fn = keras_utils.eval_sub_epoch_fn(max_input_queue_size, input_queue_num_proc)
+    fit_sub_epoch_fn = keras_utils.fit_sub_epoch_fn()
+    eval_sub_epoch_fn = keras_utils.eval_sub_epoch_fn()
     transformation_fn = estimator.getTransformationFn()
     transformation = transformation_fn if transformation_fn else None
 

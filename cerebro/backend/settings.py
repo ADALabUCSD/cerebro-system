@@ -18,7 +18,7 @@
 class Settings(object):
 
     def __init__(self, verbose=0, key=None, timeout=None, num_workers=None, nics=None,
-                 disk_cache_size_bytes=10*1024*1024*1024, input_queue_num_proc=1, max_input_queue_size=10, polling_period=2):
+                 disk_cache_size_bytes=10*1024*1024*1024, polling_period=2):
         """
         :param verbose: level of verbosity
         :type verbose: int
@@ -31,10 +31,6 @@ class Settings(object):
         :type num_workers: int
         :param disk_cache_size_bytes: Size of the disk data cache in GBs (default 10GB).
         :type disk_cache_size_bytes: int
-        :param max_input_queue_size: Used for input generator input. Maximum size for the generator queue (defaule 10).
-        :type max_input_queue_size: int
-        :param input_queue_num_proc: Maximum number of processes to spin up when using process-based threading for data loading (default 1).
-        :type input_queue_num_proc: int
         :param nics: specify the NICs to be used for tcp network communication.
         :type nics: string
         """
@@ -45,5 +41,3 @@ class Settings(object):
         self.nics = nics
         self.polling_period = polling_period
         self.disk_cache_size_bytes = disk_cache_size_bytes
-        self.input_queue_num_proc = input_queue_num_proc
-        self.max_input_queue_size = max_input_queue_size
