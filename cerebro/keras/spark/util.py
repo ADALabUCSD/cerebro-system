@@ -17,17 +17,12 @@
 from __future__ import absolute_import
 
 import io
-import warnings
 
 import h5py
-import datetime
-import numpy as np
 import tensorflow as tf
-from calendar import timegm
-from decimal import Decimal
 
-from .. import optimizer
 from . import params
+from .. import optimizer
 from ...backend import codec
 from ...backend import constants
 
@@ -47,10 +42,10 @@ class TFKerasUtil(object):
                 steps_per_epoch=steps_per_epoch,
                 callbacks=callbacks,
                 verbose=verbose,
-                epochs=starting_epoch + 1
+                epochs=starting_epoch + 1,
                 # use_multiprocessing=True,
-                # max_queue_size=max_input_queue_size,
-                # workers=input_queue_num_proc
+                max_queue_size=max_input_queue_size,
+                workers=input_queue_num_proc
             )
 
         return fn
@@ -82,8 +77,6 @@ class TFKerasUtil(object):
         def fn(reader, shuffle_buffer_size, shuffle=False):
             from petastorm.tf_utils import make_petastorm_dataset
             dataset = make_petastorm_dataset(reader).unbatch()
-
-            # dataset = _make_petastorm_dataset(reader).unbatch()
 
             if shuffle:
                 dataset = dataset.shuffle(shuffle_buffer_size)
@@ -160,151 +153,6 @@ class TFKerasUtil(object):
 
         return reshape
 
-
-########################################################################################################################
-
-
-def _make_petastorm_dataset(reader):
-    def dequeue_sample_impl():
-        if reader.last_row_consumed:
-            # This means that Dataset is trying to create a new instance of the generator. Can not do that
-            # (nor want to do that) since this is an expensive operation. num_epochs is a more efficient way
-            # to do this.
-            raise RuntimeError('Multiple iterations over make_petastorm_dataset are not supported. '
-                               'Multiple iterations can be triggered by calling \'repeat\' method of Datset class.'
-                               'Use Reader\'s num_epochs contructor arguments to set number of iterations.')
-        for row in reader:
-            yield _sanitize_field_tf_types(row)
-
-    flat_dataset = tf.data.Dataset.from_generator(dequeue_sample_impl, tuple(_schema_to_tf_dtypes(reader.schema)))
-
-    # Don't write this function as a inline lambda like `dataset.map(lambda row: _set_shape_to_named_tuple(...))`,
-    # It can avoid this error: https://github.com/tensorflow/tensorflow/issues/30149
-    def set_shape(row):
-        return _set_shape_to_named_tuple(reader.schema, row, reader.batched_output)
-
-    schema_tuple = reader.schema._get_namedtuple()
-    named_tuple_dataset = flat_dataset \
-        .map(schema_tuple, num_parallel_calls=tf.data.experimental.AUTOTUNE) \
-        .map(set_shape, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-    return named_tuple_dataset
-
-
-def _set_shape_to_named_tuple(schema, fields, batched_output):
-    """Assign static shape for all tensors"""
-    fields_as_dict = fields._asdict()
-    _set_shape(schema, fields_as_dict, batched_output)
-    return schema.make_namedtuple_tf(**fields_as_dict)
-
-
-def _set_shape(schema, fields_as_dict, batched_output=None):
-    # Assign static shape for all tensors
-    # Workaround of an issue described here:
-    # https://stackoverflow.com/questions/49161316/trailing-x00-characters-in-tensor-when-numpy-string-array-is-returned-from-tf
-    for k in fields_as_dict.keys():
-        unischema_field = schema.fields[k]
-
-        if fields_as_dict[k].get_shape().dims is None:
-            if batched_output:
-                shape = (None,) + unischema_field.shape
-            else:
-                shape = unischema_field.shape
-            # Set static shape
-            fields_as_dict[k].set_shape(shape)
-
-
-def _schema_to_tf_dtypes(schema):
-    """Returns schema as a list of tensorflow dtypes.
-    :param schema: The schema.
-    :return: List of tensorflow dtypes.
-    """
-    return [_numpy_to_tf_dtypes(f.numpy_dtype) for f in schema.fields.values()]
-
-
-# Mapping of identical datatypes in numpy-ish and tensorflow-ish
-_NUMPY_TO_TF_DTYPES_MAPPING = {
-    np.bool: tf.bool,
-    np.int8: tf.int8,
-    np.int16: tf.int16,
-    np.int32: tf.int32,
-    np.int64: tf.int64,
-    np.uint8: tf.uint8,
-    np.uint16: tf.int32,
-    np.uint32: tf.int64,
-    np.float32: tf.float32,
-    np.float64: tf.float64,
-    np.string_: tf.string,
-    np.unicode_: tf.string,
-    np.str_: tf.string,
-    np.bool_: tf.bool,
-    Decimal: tf.string,
-    np.datetime64: tf.int64,
-}
-
-
-def _numpy_to_tf_dtypes(numpy_dtype):
-    """Returns a tensorflow dtype object corresponding to numpy's dtype.
-    A :class:`ValueError` is raised if there is no known mapping between the types
-    :param numpy_dtype: numpy dtype object
-    :return: tensorflow dtype object
-    """
-    if numpy_dtype in _NUMPY_TO_TF_DTYPES_MAPPING:
-        if numpy_dtype == np.unicode_ and sys.version_info >= (3, 0):
-            warnings.warn("Tensorflow will convert all unicode strings back to bytes type. "
-                          "You may need to decode values.", UnicodeWarning)
-        return _NUMPY_TO_TF_DTYPES_MAPPING[numpy_dtype]
-    else:
-        raise ValueError('Unknown mapping of numpy {} to tensorflow dtype'.format(numpy_dtype))
-
-
-def date_to_nsec_from_epoch(dt):
-    return timegm(dt.timetuple()) * 1000000000
-
-
-_date_to_nsec_from_epoch_vectorized = np.vectorize(date_to_nsec_from_epoch)
-
-
-def _sanitize_field_tf_types(sample):
-    """Takes a named tuple and casts/promotes types unknown to TF to the types that are known.
-    Three casts that are currently implemented
-      - Decimal to string
-      - uint16 to int32
-      - np.datetime64 to int64, as nanoseconds since unix epoch
-    :param sample: named tuple or a dictionary
-    :return: same type as the input with values casted to types supported by Tensorflow
-    """
-    next_sample_dict = sample._asdict()
-
-    for k, v in next_sample_dict.items():
-        if v is None:
-            raise RuntimeError('Encountered "{}"=None. Tensorflow does not support None values as a tensor.'
-                               'Consider filtering out these rows using a predicate.'.format(k))
-        # Assuming conversion to the same numpy type is trivial and dirty cheap
-        if isinstance(v, Decimal):
-            # Normalizing decimals only to get rid of the trailing zeros (makes testing easier, assuming has
-            # no other effect)
-            next_sample_dict[k] = str(v.normalize())
-        elif isinstance(v, np.ndarray) and np.issubdtype(v.dtype, np.datetime64):
-            # Convert to nanoseconds from POSIX epoch
-            next_sample_dict[k] = (v - np.datetime64('1970-01-01T00:00:00.0')) \
-                .astype('timedelta64[ns]').astype(np.int64)
-        elif isinstance(v, np.ndarray) and v.dtype == np.uint16:
-            next_sample_dict[k] = v.astype(np.int32)
-        elif isinstance(v, np.ndarray) and v.dtype == np.uint32:
-            next_sample_dict[k] = v.astype(np.int64)
-        elif isinstance(v, np.ndarray) and v.dtype.type in (np.bytes_, np.unicode_):
-            if v.size != 0:
-                next_sample_dict[k] = v.tolist()
-        elif isinstance(v, np.ndarray) and v.dtype.kind == 'O' and isinstance(v[0], datetime.date):
-            # Pyarrow 0.12.1 started returning python datetime.date when parquet column is a DateType() column.
-            # Convert values in such column into nsec from epoch int64.
-            next_sample_dict[k] = _date_to_nsec_from_epoch_vectorized(v)
-
-    # Construct object of the same type as the input
-    return sample.__class__(**next_sample_dict)
-
-
-########################################################################################################################
 
 def _prep_data_fn(has_sparse_col, sample_weight_col, feature_columns, label_columns,
                   input_shapes, output_shapes, output_names):
