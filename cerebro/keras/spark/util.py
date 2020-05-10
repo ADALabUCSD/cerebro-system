@@ -44,8 +44,8 @@ class TFKerasUtil(object):
                 verbose=verbose,
                 epochs=starting_epoch + 1,
                 # use_multiprocessing=True,
-                max_queue_size=max_input_queue_size,
-                workers=input_queue_num_proc
+                # max_queue_size=max_input_queue_size,
+                # workers=input_queue_num_proc
             )
 
         return fn
@@ -54,9 +54,9 @@ class TFKerasUtil(object):
     def eval_sub_epoch_fn(max_input_queue_size, input_queue_num_proc):
         def fn(_, model, val_data, validation_steps, callbacks, verbose):
             return model.evaluate(val_data, steps=validation_steps, callbacks=callbacks,
-                                  use_multiprocessing=True,
-                                  max_queue_size=max_input_queue_size,
-                                  workers=input_queue_num_proc,
+                                  # use_multiprocessing=True,
+                                  # max_queue_size=max_input_queue_size,
+                                  # workers=input_queue_num_proc,
                                   verbose=verbose)
 
         return fn
