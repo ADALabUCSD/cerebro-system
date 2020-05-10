@@ -307,8 +307,8 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                          shard_count=shard_count,
                                          hdfs_driver=PETASTORM_HDFS_DRIVER,
                                          schema_fields=schema_fields,
-                                         cache_type='local-disk',
-                                         cache_size_limit=cache_size_limit,
+                                         # cache_type='local-disk',
+                                         # cache_size_limit=cache_size_limit,
                                          cache_row_size_estimate=avg_row_size)
 
         if remote_store.val_data_path != '' and remote_store.val_data_path is not None:
@@ -317,8 +317,8 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                            shard_count=shard_count,
                                            hdfs_driver=PETASTORM_HDFS_DRIVER,
                                            schema_fields=schema_fields,
-                                           cache_type='local-disk',
-                                           cache_size_limit=cache_size_limit,
+                                           # cache_type='local-disk',
+                                           # cache_size_limit=cache_size_limit,
                                            cache_row_size_estimate=avg_row_size)
         else:
             val_reader = None

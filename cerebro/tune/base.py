@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 
+import logging
 import os
 from distutils.version import LooseVersion
 import tensorflow as tf
@@ -164,19 +165,19 @@ class ModelSelection(object):
 
         # initialize backend and data loaders
         self.backend.initialize_workers()
-        if self.verbose > 0: print('completed initializing workers')
+        if self.verbose > 0: logging.info('Completed initializing workers...')
 
         self.backend.initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
-        if self.verbose > 0: print('completed initializing data loaded')
+        if self.verbose > 0: logging.info('Completed initializing data loaders...')
 
         try:
-            if self.verbose > 0: print('launching model selection workload')
+            if self.verbose > 0: logging.info('Launching model selection workload...')
             result = self._fit_on_prepared_data(None, metadata)
             return result
         finally:
             # teardown the backend workers
             self.backend.teardown_workers()
-            if self.verbose > 0: print('stopped workers')
+            if self.verbose > 0: logging.info('stopped workers')
 
     def fit_on_prepared_data(self, dataset_index=None):
         """
@@ -187,13 +188,13 @@ class ModelSelection(object):
 
         # initialize backend and data loaders
         self.backend.initialize_workers()
-        if self.verbose > 0: print('completed initializing workers')
+        if self.verbose > 0: logging.info('Completed initializing workers...')
 
         self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
-        if self.verbose > 0: print('completed initializing data loaded')
+        if self.verbose > 0: logging.info('Completed initializing data loaders...')
 
         try:
-            if self.verbose > 0: print('launching model selection workload')
+            if self.verbose > 0: logging.info('Launching model selection workload...')
             result = self._fit_on_prepared_data(dataset_index, metadata)
             return result
         finally:
