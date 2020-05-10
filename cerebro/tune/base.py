@@ -164,13 +164,10 @@ class ModelSelection(object):
 
         # initialize backend and data loaders
         self.backend.initialize_workers()
-        if self.verbose > 0: print('Completed initializing workers...')
 
         self.backend.initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
-        if self.verbose > 0: print('Completed initializing data loaders...')
 
         try:
-            if self.verbose > 0: print('Launching model selection workload...')
             result = self._fit_on_prepared_data(None, metadata)
             return result
         finally:
@@ -187,13 +184,10 @@ class ModelSelection(object):
 
         # initialize backend and data loaders
         self.backend.initialize_workers()
-        if self.verbose > 0: print('Completed initializing workers...')
 
         self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
-        if self.verbose > 0: print('Completed initializing data loaders...')
 
         try:
-            if self.verbose > 0: print('Launching model selection workload...')
             result = self._fit_on_prepared_data(dataset_index, metadata)
             return result
         finally:
