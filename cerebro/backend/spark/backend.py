@@ -413,6 +413,9 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     remote_store = store.to_remote(run_id, dataset_idx)
 
     def train(data_reader, is_train, starting_epoch, local_task_index=0):
+
+        print('===> In the train function')
+
         begin_time = time.time()
         tf.keras.backend.set_floatx(floatx)
         pin_gpu(local_task_index)
@@ -455,7 +458,9 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
                 schema_fields.append(sample_weight_col)
 
             if is_train:
+                print('===> Before making dataset')
                 train_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
+                print('===> After making dataset')
                 initialization_time = time.time() - begin_time
                 begin_time = time.time()
                 result = fit_sub_epoch_fn(starting_epoch, model, train_data, steps_per_epoch, callbacks,
