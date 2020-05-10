@@ -306,13 +306,13 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                          cur_shard=index,
                                          shard_count=shard_count,
                                          hdfs_driver=PETASTORM_HDFS_DRIVER,
-                                         schema_fields=schema_fields,
-                                         workers_count=10,
+                                         schema_fields=schema_fields)#,
+                                         # workers_count=10
                                          # reader_pool_type='process',
-                                         cache_type='local-disk',
-                                         cache_size_limit=cache_size_limit,
-                                         cache_row_size_estimate=avg_row_size,
-                                         cache_extra_settings={'cleanup': True, 'shards': 1})
+                                         # cache_type='local-disk',
+                                         # cache_size_limit=cache_size_limit,
+                                         # cache_row_size_estimate=avg_row_size,
+                                         # cache_extra_settings={'cleanup': True, 'shards': 1})
 
         if remote_store.val_data_path != '' and remote_store.val_data_path is not None:
             val_reader = make_reader(remote_store.val_data_path, shuffle_row_groups=False, num_epochs=None,
