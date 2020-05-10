@@ -173,7 +173,6 @@ class ModelSelection(object):
         finally:
             # teardown the backend workers
             self.backend.teardown_workers()
-            if self.verbose > 0: print('stopped workers')
 
     def fit_on_prepared_data(self, dataset_index=None):
         """
@@ -193,7 +192,6 @@ class ModelSelection(object):
         finally:
             # teardown the backend workers
             self.backend.teardown_workers()
-            if self.verbose > 0: print('stopped workers')
 
     def _fit_on_prepared_data(self):
         raise NotImplementedError('method not implemented')
