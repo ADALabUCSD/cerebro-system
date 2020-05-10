@@ -456,8 +456,10 @@ def _create_dataset(store, df, feature_columns, label_columns,
         to_petastorm = to_petastorm_fn(schema_cols, metadata)
         df = df.rdd.map(to_petastorm).toDF()
 
+    train_df, val_df, validation_ratio = _train_val_split(df, validation)
+
     unischema_fields = []
-    metadata = _get_metadata(df)
+    metadata = _get_metadata(train_df)
     for k in metadata.keys():
         type = spark_to_petastorm_type(metadata[k]['spark_data_type'])
         shape = petastorm_unischema_shape(metadata[k]['shape'])
@@ -465,10 +467,6 @@ def _create_dataset(store, df, feature_columns, label_columns,
         unischema_fields.append(UnischemaField(k, type, shape, codec, False))
 
     petastorm_schema = Unischema('petastorm_schema', unischema_fields)
-
-    print(petastorm_schema.as_spark_schema())
-
-    train_df, val_df, validation_ratio = _train_val_split(df, validation)
 
     train_partitions = max(int(num_partitions * (1.0 - validation_ratio)),
                            num_workers)
