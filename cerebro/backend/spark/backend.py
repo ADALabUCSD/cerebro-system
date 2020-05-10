@@ -310,7 +310,8 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                          workers_count=10,
                                          cache_type='local-disk',
                                          cache_size_limit=cache_size_limit,
-                                         cache_row_size_estimate=avg_row_size)
+                                         cache_row_size_estimate=avg_row_size,
+                                         cache_extra_settings={'cleanup': True, 'shards': 1})
 
         if remote_store.val_data_path != '' and remote_store.val_data_path is not None:
             val_reader = make_batch_reader(remote_store.val_data_path, shuffle_row_groups=False, num_epochs=None,
@@ -321,7 +322,8 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                            workers_count=10,
                                            cache_type='local-disk',
                                            cache_size_limit=cache_size_limit,
-                                           cache_row_size_estimate=avg_row_size)
+                                           cache_row_size_estimate=avg_row_size,
+                                           cache_extra_settings={'cleanup': True, 'shards': 1})
         else:
             val_reader = None
 
