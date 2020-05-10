@@ -47,10 +47,10 @@ class TFKerasUtil(object):
                 steps_per_epoch=steps_per_epoch,
                 callbacks=callbacks,
                 verbose=verbose,
-                epochs=starting_epoch + 1,
+                epochs=starting_epoch + 1
                 # use_multiprocessing=True,
-                max_queue_size=max_input_queue_size,
-                workers=input_queue_num_proc
+                # max_queue_size=max_input_queue_size,
+                # workers=input_queue_num_proc
             )
 
         return fn
