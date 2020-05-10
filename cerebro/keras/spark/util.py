@@ -83,7 +83,9 @@ class TFKerasUtil(object):
             if has_sparse_col:
                 dataset = dataset.batch(1).map(reshape)
 
-            dataset = dataset.batch(batch_size).map(prep_data_tf_keras)
+            dataset = dataset.batch(batch_size)\
+                .map(prep_data_tf_keras, num_parallel_calls=tf.data.experimental.AUTOTUNE)\
+                .prefetch(tf.data.experimental.AUTOTUNE)
             return dataset
         return fn
 
