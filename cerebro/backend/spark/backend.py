@@ -51,7 +51,10 @@ class KerasStepCounter(tf.keras.callbacks.Callback):
     def __init__(self):
         self.counter = 0
 
-    def on_batch_end(self, batch, logs={}):
+    def on_train_batch_begin(self, batch, logs={}):
+        self.counter += 1
+
+    def on_test_batch_begin(self, batch, logs={}):
         self.counter += 1
 
     def get_step_count(self):
