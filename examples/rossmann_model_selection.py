@@ -44,7 +44,7 @@ parser.add_argument('--master',
                          'should be set up to provide a Spark task per multiple CPU cores, or per GPU, e.g. by'
                          'supplying `-c <NUM_GPUS>` in Spark Standalone mode')
 parser.add_argument('--num-workers', type=int,
-                    help='number of workers for training, default: `spark.default.parallelism`')
+                    help='number of workers for training, default: `spark.default.parallelism`', default=1)
 parser.add_argument('--learning_rate', type=float, default=0.0001,
                     help='initial learning rate')
 parser.add_argument('--batch-size', type=int, default=100,
@@ -79,8 +79,8 @@ print('================')
 conf = SparkConf().setAppName('Rossmann Model Selection').set('spark.sql.shuffle.partitions', '16')
 if args.master:
     conf.setMaster(args.master)
-elif args.num_proc:
-    conf.setMaster('local[{}]'.format(args.num_proc))
+elif args.num_workers:
+    conf.setMaster('local[{}]'.format(args.num_workers))
 spark = SparkSession.builder.config(conf=conf).getOrCreate()
 
 train_csv = spark.read.csv('%s/train.csv' % args.data_dir, header=True)
@@ -326,7 +326,7 @@ print('Model selection')
 print('==============')
 
 
-backend = SparkBackend(spark_context=spark.sparkContext, num_workers=args._num_workers)
+backend = SparkBackend(spark_context=spark.sparkContext, num_workers=args.num_workers)
 store = LocalStore(args.work_dir)
 
 
@@ -390,7 +390,7 @@ search_space = {
 # Instantiate model selection object
 model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
                            num_models=args.num_models, num_epochs=args.epochs, validation='Validation', evaluation_metric='loss',
-                           feature_columns=all_cols, label_columns=['Sales'], parallelism=args._num_workers * 2, logdir='/tmp/logs')
+                           feature_columns=all_cols, label_columns=['Sales'], parallelism=args.num_workers)
 
 model = model_selection.fit(train_df).set_output_columns(['Sales'])
 
