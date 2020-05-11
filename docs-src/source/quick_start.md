@@ -63,7 +63,7 @@ search_space = {
 # Instantiate model selection object
 model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
             num_models=30, num_epochs=10, validation=0.25, evaluation_metric='loss',
-            feature_columns=['features'], label_columns=['label'], logdir='/tmp/logs')
+            feature_columns=['features'], label_columns=['label'])
 
 # Perform model selection. Returns best model
 model = model_selection.fit(train_df)
@@ -104,11 +104,11 @@ data, and training metrics (for Tensorboard). Cerebro currently supports stores 
 
 
 ### Visualizing the Model Selection Process
-Cerebro logs model training metrics into the ``<prefix_path>/logs`` directory of your Storage object.
+Cerebro logs model training metrics into the ``<prefix_path>/runs/logs`` directory of your Storage object.
 To visualize the model selection process, launch a Tensorboard instance as follows:
 
 ```bash
-tensorboard --logdir <prefix_path>/logs
+tensorboard --logdir <prefix_path>/runs/logs
 ```
 
 ![tensorboard](images/tensorboard.png)
@@ -126,7 +126,7 @@ store = LocalStore(prefix_path='/user/username/experiments', train_path='/user/u
 
 # Instantiate model selection object
 model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
-            num_models=30, num_epochs=10, evaluation_metric='loss', logdir='/tmp/logs')
+            num_models=30, num_epochs=10, evaluation_metric='loss')
 
 # Perform model selection
 model_selection_output = model_selection.fit_on_prepared_data()
