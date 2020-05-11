@@ -436,7 +436,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
                     num_partitions, num_workers, dataset_idx, parquet_row_group_size_mb, verbose):
     train_data_path = store.get_train_data_path(dataset_idx)
     val_data_path = store.get_val_data_path(dataset_idx)
-    if verbose:
+    if verbose >= 1:
         print('writing dataframes')
         print('train_data_path={}'.format(train_data_path))
         print('val_data_path={}'.format(val_data_path))
@@ -469,7 +469,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
 
     train_partitions = max(int(num_partitions * (1.0 - validation_ratio)),
                            num_workers)
-    if verbose:
+    if verbose >= 1:
         print('train_partitions={}'.format(train_partitions))
 
     spark = SparkSession.builder.getOrCreate()
@@ -486,7 +486,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
     if val_df:
         val_partitions = max(int(num_partitions * validation_ratio),
                              num_workers)
-        if verbose:
+        if verbose >= 1:
             print('val_partitions={}'.format(val_partitions))
 
         with materialize_dataset(spark, val_data_path, petastorm_schema, 8):
@@ -512,8 +512,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
         if verbose:
             print('val_rows={}'.format(val_rows))
 
-    # metadata = metadata or pq_metadata
-    return train_rows, val_rows, metadata, avg_row_size
+    return train_rows, val_rows, pq_metadata, avg_row_size
 
 
 def check_validation(validation, df=None):
@@ -543,7 +542,7 @@ def prepare_data(num_workers, store, df, label_columns, feature_columns,
         raise ValueError('Parameter label_columns cannot be None or empty')
 
     num_partitions = num_workers * partitions_per_process
-    if verbose:
+    if verbose >= 1:
         print('num_partitions={}'.format(num_partitions))
 
     for col in label_columns:
