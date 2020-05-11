@@ -452,7 +452,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
 
         with remote_store.get_local_output_dir() as run_output_dir:
             step_counter_callback = KerasStepCounter()
-            callbacks = [step_counter_callback]
+            callbacks = []#[step_counter_callback]
             callbacks = callbacks + user_callbacks
             ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
             # restore model from checkpoint if it exists
@@ -501,7 +501,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
                     'train' if is_train else 'valid',
                     initialization_time, training_time, finalization_time))
 
-            return (result, step_counter_callback.get_step_count())
+            return (result, 1)#step_counter_callback.get_step_count())
 
     return train
 
