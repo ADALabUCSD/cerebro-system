@@ -61,7 +61,7 @@ with an assumption of 4GB of memory per host.</p></li>
 <li><p><strong>transformation_fn</strong> – Optional function that takes a row as its parameter
 and returns a modified row that is then fed into the
 train or validation step. This transformation is
-applied after batching. See Petastorm [TransformSpec](<a class="reference external" href="https://github.com/uber/petastorm/blob/master/petastorm/transform.py">https://github.com/uber/petastorm/blob/master/petastorm/transform.py</a>)
+applied after batching. See Petastorm TransformSpec
 for more details. Note that this fucntion constructs
 another function which should perform the
 transformation.</p></li>
@@ -90,28 +90,26 @@ transformation.</p></li>
 <dl class="py method">
 <dt id="cerebro.keras.SparkModel.keras">
 <code class="sig-name descname">keras</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkModel.keras" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the trained model in Keras format.
-:return: TensorFlow Keras Model</p>
+<dd><p>Returns the trained model in Keras format.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>TensorFlow Keras Model</p>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt id="cerebro.keras.SparkModel.transform">
 <code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkModel.transform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transforms the input dataset with optional parameters.</p>
+<dd><p>Transform the given datafram using the traing ML model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> – input dataset, which is an instance of <code class="xref py py-class docutils literal notranslate"><span class="pre">pyspark.sql.DataFrame</span></code></p></li>
-<li><p><strong>params</strong> – an optional param map that overrides embedded params.</p></li>
-</ul>
+<dd class="field-odd"><p><strong>df</strong> – Input Dataframe</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>transformed dataset</p>
+<dd class="field-even"><p>Transformed Dataframe</p>
 </dd>
 </dl>
-<div class="versionadded">
-<p><span class="versionmodified added">New in version 1.3.0.</span></p>
-</div>
 </dd></dl>
 
 </dd></dl>
@@ -190,87 +188,37 @@ transformation.</p></li>
 <p>This module contains different execution backends for Cerebro.</p>
 <dl class="py class">
 <dt id="cerebro.backend.SparkBackend">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.backend.</code><code class="sig-name descname">SparkBackend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">spark_context</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">num_workers</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">start_timeout</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">disk_cache_size</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">max_input_queue_size</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">input_queue_num_proc</span><span class="o">=</span><span class="default_value">1</span></em>, <em class="sig-param"><span class="n">nics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.backend.</code><code class="sig-name descname">SparkBackend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">spark_context</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">num_workers</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">start_timeout</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">disk_cache_size</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">nics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Spark backend implementing Cerebro model hopping</p>
-<dl class="py method">
-<dt id="cerebro.backend.SparkBackend.get_metadata_from_parquet">
-<code class="sig-name descname">get_metadata_from_parquet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.get_metadata_from_parquet" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get metadata from the data in the persistent storage.
-:param store:
-:param label_columns:
-:param feature_columns:
-:return:</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="cerebro.backend.SparkBackend.initialize_data_loaders">
-<code class="sig-name descname">initialize_data_loaders</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset_idx</span></em>, <em class="sig-param"><span class="n">schema_fields</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.initialize_data_loaders" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>store</strong> – </p></li>
-<li><p><strong>dataset_idx</strong> – </p></li>
-<li><p><strong>schema_fields</strong> – </p></li>
+<li><p><strong>spark_context</strong> – Spark context</p></li>
+<li><p><strong>num_workers</strong> – Number of Cerebro workers.  Defaults to <cite>spark.default.parallelism</cite>.</p></li>
+<li><p><strong>start_timeout</strong> – Timeout for Spark tasks to spawn, register and start running the code, in seconds.
+If it is not set as well, defaults to 600 seconds.</p></li>
+<li><p><strong>disk_cache_size</strong> – Size of the disk data cache in GBs (default 10GB).</p></li>
+<li><p><strong>nics</strong> – List of NIC names, will only use these for communications. If None is specified, use any
+available networking interfaces (default None)</p></li>
+<li><p><strong>verbose</strong> – Debug output verbosity (0-2). Defaults to 1..</p></li>
 </ul>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py method">
-<dt id="cerebro.backend.SparkBackend.initialize_workers">
-<code class="sig-name descname">initialize_workers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.initialize_workers" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize Spark tasks</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="cerebro.backend.SparkBackend.num_workers">
-<code class="sig-name descname">num_workers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.num_workers" title="Permalink to this definition">¶</a></dt>
-<dd><blockquote>
-<div><p>Get number of processes/tasks</p>
-</div></blockquote>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><p></p>
-</dd>
-</dl>
-</dd></dl>
-
 <dl class="py method">
 <dt id="cerebro.backend.SparkBackend.prepare_data">
 <code class="sig-name descname">prepare_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">validation</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">compress_sparse</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">dataset_idx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Prepare data by writing out into persistent storage
-:param store:
-:param dataset:
-:param validation:
-:param label_columns:
-:param feature_columns:
-:param compress_sparse:
-:param verbose:
-:param dataset_idx:</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="cerebro.backend.SparkBackend.teardown_workers">
-<code class="sig-name descname">teardown_workers</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.teardown_workers" title="Permalink to this definition">¶</a></dt>
-<dd><p>Teardown Spark tasks</p>
-</dd></dl>
-
-<dl class="py method">
-<dt id="cerebro.backend.SparkBackend.train_for_one_epoch">
-<code class="sig-name descname">train_for_one_epoch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">models</span></em>, <em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset_idx</span></em>, <em class="sig-param"><span class="n">feature_col</span></em>, <em class="sig-param"><span class="n">label_col</span></em>, <em class="sig-param"><span class="n">is_train</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.train_for_one_epoch" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="simple">
-<dt>Takes a set of Keras models and trains for one epoch. If is_train is False, validation is performed</dt><dd><p>instead of training.</p>
-</dd>
-</dl>
+<dd><p>Prepare data by writing out into persistent storage</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>models</strong> – </p></li>
 <li><p><strong>store</strong> – </p></li>
+<li><p><strong>dataset</strong> – </p></li>
+<li><p><strong>validation</strong> – </p></li>
+<li><p><strong>label_columns</strong> – </p></li>
+<li><p><strong>feature_columns</strong> – </p></li>
+<li><p><strong>compress_sparse</strong> – </p></li>
+<li><p><strong>verbose</strong> – </p></li>
 <li><p><strong>dataset_idx</strong> – </p></li>
-<li><p><strong>feature_col</strong> – </p></li>
-<li><p><strong>label_col</strong> – </p></li>
-<li><p><strong>is_train</strong> – </p></li>
 </ul>
 </dd>
 </dl>
@@ -284,7 +232,7 @@ transformation.</p></li>
 <p>This module contains different storage backends for Cerebro.</p>
 <dl class="py class">
 <dt id="cerebro.storage.HDFSStore">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">HDFSStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">user</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">kerb_ticket</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">driver</span><span class="o">=</span><span class="default_value">'libhdfs'</span></em>, <em class="sig-param"><span class="n">extra_conf</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">temp_dir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.HDFSStore" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">HDFSStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">train_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">val_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">runs_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">save_runs</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">temp_dir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">user</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">kerb_ticket</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">driver</span><span class="o">=</span><span class="default_value">'libhdfs'</span></em>, <em class="sig-param"><span class="n">extra_conf</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.HDFSStore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses HDFS as a store of intermediate data and training artifacts.</p>
 <p>Initialized from a <cite>prefix_path</cite> that can take one of the following forms:</p>
 <ol class="arabic simple">
@@ -299,24 +247,12 @@ the full path regardless.</p>
 information will be used to initialize PyArrow <cite>HadoopFilesystem</cite> if they are not provided through the <cite>host</cite> and
 <cite>port</cite> arguments to this initializer. These parameters will default to <cite>default</cite> and <cite>0</cite> if neither the path URL
 nor the arguments provide this information.</p>
-<dl class="py method">
-<dt id="cerebro.storage.HDFSStore.sync_fn">
-<code class="sig-name descname">sync_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">run_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.HDFSStore.sync_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a function that synchronises given path recursively into run path for <cite>run_id</cite>.</p>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="py class">
 <dt id="cerebro.storage.LocalStore">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">LocalStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="o">*</span><span class="n">args</span></em>, <em class="sig-param"><span class="o">**</span><span class="n">kwargs</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.LocalStore" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">LocalStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">train_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">val_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">runs_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">save_runs</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.LocalStore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses the local filesystem as a store of intermediate data and training artifacts.</p>
-<dl class="py method">
-<dt id="cerebro.storage.LocalStore.sync_fn">
-<code class="sig-name descname">sync_fn</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">run_id</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.LocalStore.sync_fn" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a function that synchronises given path recursively into run path for <cite>run_id</cite>.</p>
-</dd></dl>
-
 </dd></dl>
 
 </div>

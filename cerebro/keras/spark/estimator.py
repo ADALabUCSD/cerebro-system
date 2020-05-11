@@ -188,7 +188,7 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         transformation_fn: Optional function that takes a row as its parameter
                            and returns a modified row that is then fed into the
                            train or validation step. This transformation is
-                           applied after batching. See Petastorm [TransformSpec](https://github.com/uber/petastorm/blob/master/petastorm/transform.py)
+                           applied after batching. See Petastorm TransformSpec
                            for more details. Note that this fucntion constructs
                            another function which should perform the
                            transformation.
@@ -432,8 +432,12 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
     def _get_floatx(self):
         return self.getOrDefault(self._floatx)
 
-    # To run locally on OS X, need export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
     def transform(self, df):
+        """ Transform the given datafram using the traing ML model
+
+        :param df: Input Dataframe
+        :return: Transformed Dataframe
+        """
         keras_utils = self._get_keras_utils()
         floatx = self._get_floatx()
         serialized_model = keras_utils.serialize_model(self.getModel())
@@ -513,6 +517,7 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
 
     def keras(self):
         """ Returns the trained model in Keras format.
+
             :return: TensorFlow Keras Model
         """
         if self.model is not None:

@@ -15,7 +15,6 @@
 # ==============================================================================
 
 from __future__ import absolute_import
-
 import numpy as np
 import pyarrow as pa
 from pyspark.sql import SparkSession

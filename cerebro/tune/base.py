@@ -163,35 +163,35 @@ class ModelSelection(object):
             compress_sparse=False, verbose=self.verbose, dataset_idx=None)  # no multiple datasets. Hence ids=None.
 
         # initialize backend and data loaders
-        self.backend.initialize_workers()
+        self.backend._initialize_workers()
 
-        self.backend.initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
+        self.backend._initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
 
         try:
             result = self._fit_on_prepared_data(None, metadata)
             return result
         finally:
             # teardown the backend workers
-            self.backend.teardown_workers()
+            self.backend._teardown_workers()
 
     def fit_on_prepared_data(self, dataset_index=None):
         """
         Trains ML models on already preapred data
         :return:
         """
-        _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
+        _, _, metadata, _ = self.backend._get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
 
         # initialize backend and data loaders
-        self.backend.initialize_workers()
+        self.backend._initialize_workers()
 
-        self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
+        self.backend._initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
 
         try:
             result = self._fit_on_prepared_data(dataset_index, metadata)
             return result
         finally:
             # teardown the backend workers
-            self.backend.teardown_workers()
+            self.backend._teardown_workers()
 
     def _fit_on_prepared_data(self):
         raise NotImplementedError('method not implemented')

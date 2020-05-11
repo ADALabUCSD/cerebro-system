@@ -68,7 +68,7 @@ class HyperOpt(ModelSelection):
         self.hyperopt_search_space = _validate_and_generate_hyperopt_search_space(search_space)
 
         if parallelism is None:
-            parallelism = backend.num_workers()
+            parallelism = backend._num_workers()
         self.parallelism = parallelism
         self.num_params = num_models
         self.num_epochs = num_epochs
@@ -112,12 +112,12 @@ class HyperOpt(ModelSelection):
 
             # Trains the models up to the number of epochs specified. For each iteration also performs validation
             for epoch in range(self.num_epochs):
-                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
-                                                                 self.label_cols)
+                epoch_results = self.backend._train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
+                                                                  self.label_cols)
                 update_model_results(estimator_results, epoch_results)
 
-                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
-                                                                 self.label_cols, is_train=False)
+                epoch_results = self.backend._train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
+                                                                  self.label_cols, is_train=False)
                 update_model_results(estimator_results, epoch_results)
 
                 self._log_epoch_metrics_to_tensorboard(estimators, estimator_results)

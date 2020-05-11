@@ -24,19 +24,19 @@ class Backend(object):
     from the Spark application running the CerebroEstimator.
     """
 
-    def num_workers(self):
+    def _num_workers(self):
         """Returns the number of workers to use for training."""
         raise NotImplementedError()
 
-    def initialize_workers(self):
+    def _initialize_workers(self):
         """Initialize workers"""
         raise NotImplementedError()
 
-    def initialize_data_loaders(self, store, dataset_idx, schema_fields):
+    def _initialize_data_loaders(self, store, dataset_idx, schema_fields):
         """Initialize data loaders"""
         raise NotImplementedError()
 
-    def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
+    def _train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
         """
         Takes a set of Keras models and trains for one epoch. If is_train is False, validation is performed
          instead of training.
@@ -49,7 +49,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def teardown_workers(self):
+    def _teardown_workers(self):
         """Teardown workers"""
         raise NotImplementedError()
 
@@ -67,7 +67,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def get_metadata_from_parquet(self, store, label_columns=['label'], feature_columns=['features']):
+    def _get_metadata_from_parquet(self, store, label_columns=['label'], feature_columns=['features']):
         """
         Get metadata from existing data in the persistent storage
         :param store:

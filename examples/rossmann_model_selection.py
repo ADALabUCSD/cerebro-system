@@ -326,7 +326,7 @@ print('Model selection')
 print('==============')
 
 
-backend = SparkBackend(spark_context=spark.sparkContext, num_workers=args.num_workers)
+backend = SparkBackend(spark_context=spark.sparkContext, num_workers=args._num_workers)
 store = LocalStore(args.work_dir)
 
 
@@ -389,8 +389,8 @@ search_space = {
 
 # Instantiate model selection object
 model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
-            num_models=args.num_models, num_epochs=args.epochs, validation='Validation', evaluation_metric='loss',
-            feature_columns=all_cols, label_columns=['Sales'], parallelism=args.num_workers*2, logdir='/tmp/logs')
+                           num_models=args.num_models, num_epochs=args.epochs, validation='Validation', evaluation_metric='loss',
+                           feature_columns=all_cols, label_columns=['Sales'], parallelism=args._num_workers * 2, logdir='/tmp/logs')
 
 model = model_selection.fit(train_df).set_output_columns(['Sales'])
 

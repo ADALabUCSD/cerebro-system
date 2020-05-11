@@ -102,7 +102,7 @@ class Store(object):
     def get_local_output_dir_fn(self, run_id):
         raise NotImplementedError()
 
-    def sync_fn(self, run_id):
+    def _sync_fn(self, run_id):
         """Returns a function that synchronises given path recursively into run path for `run_id`."""
         raise NotImplementedError()
 
@@ -130,7 +130,7 @@ class Store(object):
             'checkpoint_filename': self.get_checkpoint_filename(),
             'logs_subdir': self.get_logs_subdir(),
             'get_local_output_dir': self.get_local_output_dir_fn(run_id),
-            'sync': self.sync_fn(run_id)
+            'sync': self._sync_fn(run_id)
         }
 
 

@@ -28,12 +28,12 @@ from .base import FilesystemStore
 
 class LocalStore(FilesystemStore):
     """Uses the local filesystem as a store of intermediate data and training artifacts."""
-
     FS_PREFIX = 'file://'
 
-    def __init__(self, prefix_path, *args, **kwargs):
+    def __init__(self, prefix_path, train_path=None, val_path=None, runs_path=None, save_runs=True):
         self._fs = pa.LocalFileSystem()
-        super(LocalStore, self).__init__(prefix_path, *args, **kwargs)
+        super(LocalStore, self).__init__(prefix_path, train_path=train_path, val_path=val_path, runs_path=runs_path,
+                                         save_runs=save_runs)
 
     def path_prefix(self):
         return self.FS_PREFIX
@@ -57,12 +57,13 @@ class LocalStore(FilesystemStore):
 
         return local_run_path
 
-    def sync_fn(self, run_id):
+    def _sync_fn(self, run_id):
         run_path = self.get_localized_path(self.get_run_path(run_id))
 
         def fn(local_run_path):
             # No-op for LocalStore since the `local_run_path` will be the same as the run path
             assert run_path == local_run_path
+
         return fn
 
     @classmethod
