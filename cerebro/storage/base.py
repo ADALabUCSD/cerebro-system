@@ -102,7 +102,7 @@ class Store(object):
     def get_local_output_dir_fn(self, run_id):
         raise NotImplementedError()
 
-    def _sync_fn(self, run_id):
+    def sync_fn(self, run_id):
         """Returns a function that synchronises given path recursively into run path for `run_id`."""
         raise NotImplementedError()
 
@@ -122,7 +122,6 @@ class Store(object):
             'train_data_path': self.get_train_data_path(dataset_idx),
             'val_data_path': self.get_val_data_path(dataset_idx),
             'test_data_path': self.get_test_data_path(dataset_idx),
-            'saving_runs': self.saving_runs(),
             'runs_path': self.get_runs_path(),
             'run_path': self.get_run_path(run_id),
             'checkpoint_path': self.get_checkpoint_path(run_id),
@@ -130,20 +129,20 @@ class Store(object):
             'checkpoint_filename': self.get_checkpoint_filename(),
             'logs_subdir': self.get_logs_subdir(),
             'get_local_output_dir': self.get_local_output_dir_fn(run_id),
-            'sync': self._sync_fn(run_id)
+            'get_local_logs_dir': self.get_local_output_dir_fn("logs"),
+            'sync': self.sync_fn(run_id)
         }
 
 
 class FilesystemStore(Store):
     """Abstract class for stores that use a filesystem for underlying storage."""
 
-    def __init__(self, prefix_path, train_path=None, val_path=None, test_path=None, runs_path=None, save_runs=True):
+    def __init__(self, prefix_path, train_path=None, val_path=None, test_path=None, runs_path=None):
         self.prefix_path = self.get_full_path(prefix_path)
         self._train_path = self._get_full_path_or_default(train_path, 'intermediate_train_data')
         self._val_path = self._get_full_path_or_default(val_path, 'intermediate_val_data')
         self._test_path = self._get_full_path_or_default(test_path, 'intermediate_test_data')
         self._runs_path = self._get_full_path_or_default(runs_path, 'runs')
-        self._save_runs = save_runs
         super(FilesystemStore, self).__init__()
 
     def exists(self, path):
@@ -172,9 +171,6 @@ class FilesystemStore(Store):
     def get_test_data_path(self, idx=None):
         return '{}.{}'.format(self._test_path, idx) if idx is not None else self._test_path
 
-    def saving_runs(self):
-        return self._save_runs
-
     def get_runs_path(self):
         return self._runs_path
 
@@ -182,12 +178,10 @@ class FilesystemStore(Store):
         return os.path.join(self.get_runs_path(), run_id)
 
     def get_checkpoint_path(self, run_id):
-        return os.path.join(self.get_run_path(run_id), self.get_checkpoint_filename()) \
-            if self._save_runs else None
+        return os.path.join(self.get_run_path(run_id), self.get_checkpoint_filename())
 
     def get_logs_path(self, run_id):
-        return os.path.join(self.get_run_path(run_id), self.get_logs_subdir()) \
-            if self._save_runs else None
+        return os.path.join(self.get_run_path(run_id), self.get_logs_subdir())
 
     def get_checkpoint_filename(self):
         return 'checkpoint.h5'

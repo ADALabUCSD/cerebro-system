@@ -50,7 +50,7 @@ class HDFSStore(FilesystemStore):
     FS_PREFIX = 'hdfs://'
     URL_PATTERN = '^(?:(.+://))?(?:([^/:]+))?(?:[:]([0-9]+))?(?:(.+))?$'
 
-    def __init__(self, prefix_path, train_path=None, val_path=None, runs_path=None, save_runs=True, temp_dir=None,
+    def __init__(self, prefix_path, train_path=None, val_path=None, runs_path=None, temp_dir=None,
                  host=None, port=None, user=None, kerb_ticket=None,
                  driver='libhdfs', extra_conf=None):
         self._temp_dir = temp_dir
@@ -69,8 +69,7 @@ class HDFSStore(FilesystemStore):
                                  extra_conf=extra_conf)
         self._hdfs = self._get_filesystem_fn()()
 
-        super(HDFSStore, self).__init__(prefix_path, train_path=train_path, val_path=val_path, runs_path=runs_path,
-                                        save_runs=save_runs)
+        super(HDFSStore, self).__init__(prefix_path, train_path=train_path, val_path=val_path, runs_path=runs_path)
 
     def parse_url(self, url):
         match = re.search(self.URL_PATTERN, url)
@@ -104,7 +103,7 @@ class HDFSStore(FilesystemStore):
 
         return local_run_path
 
-    def _sync_fn(self, run_id):
+    def sync_fn(self, run_id):
         class SyncState(object):
             def __init__(self):
                 self.fs = None

@@ -44,56 +44,56 @@ def estimator_gen_fn(params):
 
 class TestGridSearch(unittest.TestCase):
 
-    # def test_grid_search(self):
-    #     spark = SparkSession \
-    #         .builder \
-    #         .master("local[3]") \
-    #         .appName("Python Spark SQL basic example") \
-    #         .getOrCreate()
-    #
-    #     # Load training data
-    #     df = spark.read.format("libsvm").load("./tests/sample_libsvm_data.txt").repartition(8)
-    #     df.printSchema()
-    #
-    #     backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
-    #     store = LocalStore('/tmp')
-    #
-    #     search_space = {'lr': hp_choice([0.01, 0.001, 0.0001])}
-    #
-    #     grid_search = GridSearch(backend, store, estimator_gen_fn, search_space, 1,
-    #                              validation=0.25, evaluation_metric='loss',
-    #                              feature_columns=['features'], label_columns=['label'], logdir='/tmp/logs')
-    #
-    #     model = grid_search.fit(df)
-    #     output_df = model.transform(df)
-    #     output_df.select('label', 'label__output').show(n=10)
-    #
-    # def test_random_search(self):
-    #     spark = SparkSession \
-    #         .builder \
-    #         .master("local[3]") \
-    #         .appName("Python Spark SQL basic example") \
-    #         .getOrCreate()
-    #
-    #     # Load training data
-    #     df = spark.read.format("libsvm").load("./tests/sample_libsvm_data.txt").repartition(8)
-    #     df.printSchema()
-    #
-    #     backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
-    #     store = LocalStore('/tmp')
-    #
-    #
-    #     ######## Random Search ###########
-    #     search_space = {'lr': hp_choice([0.01, 0.001, 0.0001])}
-    #
-    #     random_search = RandomSearch(backend, store, estimator_gen_fn, search_space, 3, 1,
-    #                                  validation=0.25,
-    #                                  evaluation_metric='loss',
-    #                                  feature_columns=['features'], label_columns=['label'], logdir='/tmp/logs')
-    #     model = random_search.fit(df)
-    #
-    #     output_df = model.transform(df)
-    #     output_df.select('label', 'label__output').show(n=10)
+    def test_grid_search(self):
+        spark = SparkSession \
+            .builder \
+            .master("local[3]") \
+            .appName("Python Spark SQL basic example") \
+            .getOrCreate()
+
+        # Load training data
+        df = spark.read.format("libsvm").load("./tests/sample_libsvm_data.txt").repartition(8)
+        df.printSchema()
+
+        backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
+        store = LocalStore('/tmp')
+
+        search_space = {'lr': hp_choice([0.01, 0.001, 0.0001])}
+
+        grid_search = GridSearch(backend, store, estimator_gen_fn, search_space, 1,
+                                 validation=0.25, evaluation_metric='loss',
+                                 feature_columns=['features'], label_columns=['label'])
+
+        model = grid_search.fit(df)
+        output_df = model.transform(df)
+        output_df.select('label', 'label__output').show(n=10)
+
+    def test_random_search(self):
+        spark = SparkSession \
+            .builder \
+            .master("local[3]") \
+            .appName("Python Spark SQL basic example") \
+            .getOrCreate()
+
+        # Load training data
+        df = spark.read.format("libsvm").load("./tests/sample_libsvm_data.txt").repartition(8)
+        df.printSchema()
+
+        backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
+        store = LocalStore('/tmp')
+
+
+        ######## Random Search ###########
+        search_space = {'lr': hp_choice([0.01, 0.001, 0.0001])}
+
+        random_search = RandomSearch(backend, store, estimator_gen_fn, search_space, 3, 1,
+                                     validation=0.25,
+                                     evaluation_metric='loss',
+                                     feature_columns=['features'], label_columns=['label'])
+        model = random_search.fit(df)
+
+        output_df = model.transform(df)
+        output_df.select('label', 'label__output').show(n=10)
 
     def test_prepare_data(self):
         spark = SparkSession \
@@ -107,8 +107,8 @@ class TestGridSearch(unittest.TestCase):
         df.printSchema()
 
         backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
-        store = LocalStore('/tmp')#, train_path='/tmp/train_data', val_path='/tmp/val_data')
-        backend.prepare_data(store, df, validation=0.25, feature_columns=['features'], label_columns=['label'], compress_sparse=False, verbose=1, dataset_idx=None)
+        store = LocalStore('/tmp', train_path='/tmp/train_data', val_path='/tmp/val_data')
+        backend.prepare_data(store, df, validation=0.25, feature_columns=['features'], label_columns=['label'])
 
         ######## Random Search ###########
         search_space = {'lr': hp_choice([0.01, 0.001, 0.0001])}
@@ -116,7 +116,7 @@ class TestGridSearch(unittest.TestCase):
         random_search = RandomSearch(backend, store, estimator_gen_fn, search_space, 3, 1,
                                      validation=0.25,
                                      evaluation_metric='loss',
-                                     feature_columns=['features'], label_columns=['label'], logdir='/tmp/logs')
+                                     feature_columns=['features'], label_columns=['label'])
         model = random_search.fit_on_prepared_data()
 
         output_df = model.transform(df)

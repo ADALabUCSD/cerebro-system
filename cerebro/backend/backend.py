@@ -28,15 +28,15 @@ class Backend(object):
         """Returns the number of workers to use for training."""
         raise NotImplementedError()
 
-    def _initialize_workers(self):
+    def initialize_workers(self):
         """Initialize workers"""
         raise NotImplementedError()
 
-    def _initialize_data_loaders(self, store, dataset_idx, schema_fields):
+    def initialize_data_loaders(self, store, dataset_idx, schema_fields):
         """Initialize data loaders"""
         raise NotImplementedError()
 
-    def _train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
+    def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
         """
         Takes a set of Keras models and trains for one epoch. If is_train is False, validation is performed
          instead of training.
@@ -49,7 +49,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def _teardown_workers(self):
+    def teardown_workers(self):
         """Teardown workers"""
         raise NotImplementedError()
 
@@ -67,7 +67,7 @@ class Backend(object):
         """
         raise NotImplementedError()
 
-    def _get_metadata_from_parquet(self, store, label_columns=['label'], feature_columns=['features']):
+    def get_metadata_from_parquet(self, store, label_columns=['label'], feature_columns=['features']):
         """
         Get metadata from existing data in the persistent storage
         :param store:

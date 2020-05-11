@@ -206,19 +206,18 @@ available networking interfaces (default None)</p></li>
 </dl>
 <dl class="py method">
 <dt id="cerebro.backend.SparkBackend.prepare_data">
-<code class="sig-name descname">prepare_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">validation</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">compress_sparse</span><span class="o">=</span><span class="default_value">False</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">2</span></em>, <em class="sig-param"><span class="n">dataset_idx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">prepare_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">validation</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">parquet_row_group_size_mb</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">dataset_idx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prepare data by writing out into persistent storage</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>store</strong> – </p></li>
-<li><p><strong>dataset</strong> – </p></li>
-<li><p><strong>validation</strong> – </p></li>
-<li><p><strong>label_columns</strong> – </p></li>
-<li><p><strong>feature_columns</strong> – </p></li>
-<li><p><strong>compress_sparse</strong> – </p></li>
-<li><p><strong>verbose</strong> – </p></li>
-<li><p><strong>dataset_idx</strong> – </p></li>
+<li><p><strong>store</strong> – Cerebro storage object (e.g., LocalStorage, HDFSStorage).</p></li>
+<li><p><strong>dataset</strong> – Spark DataFrame.</p></li>
+<li><p><strong>validation</strong> – Fraction of validation data (e.g., 0.25) or name of the DataFrame column indicating validation.</p></li>
+<li><p><strong>label_columns</strong> – List of label/output columns (default=[‘label’]).</p></li>
+<li><p><strong>feature_columns</strong> – List of feature columns (default=[‘features’]).</p></li>
+<li><p><strong>parquet_row_group_size_mb</strong> – Parquet row group size in MBs (default 8 MB) .</p></li>
+<li><p><strong>dataset_idx</strong> – Dataset index if storing multiple datasets in the same directory.</p></li>
 </ul>
 </dd>
 </dl>
@@ -232,7 +231,7 @@ available networking interfaces (default None)</p></li>
 <p>This module contains different storage backends for Cerebro.</p>
 <dl class="py class">
 <dt id="cerebro.storage.HDFSStore">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">HDFSStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">train_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">val_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">runs_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">save_runs</span><span class="o">=</span><span class="default_value">True</span></em>, <em class="sig-param"><span class="n">temp_dir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">user</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">kerb_ticket</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">driver</span><span class="o">=</span><span class="default_value">'libhdfs'</span></em>, <em class="sig-param"><span class="n">extra_conf</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.HDFSStore" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">HDFSStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">train_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">val_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">runs_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">temp_dir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">user</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">kerb_ticket</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">driver</span><span class="o">=</span><span class="default_value">'libhdfs'</span></em>, <em class="sig-param"><span class="n">extra_conf</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.HDFSStore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses HDFS as a store of intermediate data and training artifacts.</p>
 <p>Initialized from a <cite>prefix_path</cite> that can take one of the following forms:</p>
 <ol class="arabic simple">
@@ -251,7 +250,7 @@ nor the arguments provide this information.</p>
 
 <dl class="py class">
 <dt id="cerebro.storage.LocalStore">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">LocalStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">train_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">val_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">runs_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">save_runs</span><span class="o">=</span><span class="default_value">True</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.LocalStore" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">LocalStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">train_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">val_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">runs_path</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.LocalStore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses the local filesystem as a store of intermediate data and training artifacts.</p>
 </dd></dl>
 

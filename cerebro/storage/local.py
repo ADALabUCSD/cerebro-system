@@ -30,10 +30,9 @@ class LocalStore(FilesystemStore):
     """Uses the local filesystem as a store of intermediate data and training artifacts."""
     FS_PREFIX = 'file://'
 
-    def __init__(self, prefix_path, train_path=None, val_path=None, runs_path=None, save_runs=True):
+    def __init__(self, prefix_path, train_path=None, val_path=None, runs_path=None):
         self._fs = pa.LocalFileSystem()
-        super(LocalStore, self).__init__(prefix_path, train_path=train_path, val_path=val_path, runs_path=runs_path,
-                                         save_runs=save_runs)
+        super(LocalStore, self).__init__(prefix_path, train_path=train_path, val_path=val_path, runs_path=runs_path)
 
     def path_prefix(self):
         return self.FS_PREFIX
@@ -57,7 +56,24 @@ class LocalStore(FilesystemStore):
 
         return local_run_path
 
-    def _sync_fn(self, run_id):
+    def get_local_logs_dir_fn(self):
+        log_path = self.get_localized_path(self.get_run_path("logs"))
+
+        @contextlib.contextmanager
+        def local_logs_path():
+            if not os.path.exists(log_path):
+                try:
+                    os.makedirs(log_path, mode=0o755)
+                except OSError as e:
+                    # Race condition from workers on the same host: ignore
+                    if e.errno != errno.EEXIST:
+                        raise
+            yield log_path
+
+        return local_logs_path
+
+
+    def sync_fn(self, run_id):
         run_path = self.get_localized_path(self.get_run_path(run_id))
 
         def fn(local_run_path):

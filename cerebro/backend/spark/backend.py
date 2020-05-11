@@ -111,7 +111,7 @@ class SparkBackend(Backend):
         self.spark_job_group = None
         self.data_loaders_initialized = False
 
-    def _initialize_workers(self):
+    def initialize_workers(self):
         """Initializes Cerebro workers"""
         result_queue = queue.Queue(1)
         spark_job_group = 'cerebro.spark.run.%d' % job_id.next_job_id()
@@ -142,7 +142,7 @@ class SparkBackend(Backend):
         self.spark_job_group = spark_job_group
         self.workers_initialized = True
 
-    def _initialize_data_loaders(self, store, dataset_idx, schema_fields):
+    def initialize_data_loaders(self, store, dataset_idx, schema_fields):
         """
         :param store:
         :param dataset_idx:
@@ -163,7 +163,7 @@ class SparkBackend(Backend):
             raise Exception('Spark tasks not initialized for Cerebro. Please run SparkBackend.initialize_workers() '
                             'first!')
 
-    def _train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
+    def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
         sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col,
                                                   self.settings.verbose) \
                               for model in models]
@@ -206,7 +206,7 @@ class SparkBackend(Backend):
 
                             if status.sub_epoch_result['status'] == 'FAILED':
                                 # Application Error
-                                self._teardown_workers()
+                                self.teardown_workers()
                                 raise Exception(status.sub_epoch_result['error'])
                             else:
                                 res, steps = status.sub_epoch_result['result']
@@ -230,12 +230,12 @@ class SparkBackend(Backend):
         for run_id in model_results:
             res = model_results[run_id]
             steps = model_sub_epoch_steps[run_id]
-            for k,s in zip(res, steps):
-                res[k] = np.sum([rk*s for rk in res[k]])/np.sum(steps)
+            for k, s in zip(res, steps):
+                res[k] = np.sum([rk * s for rk in res[k]]) / np.sum(steps)
 
         return model_results
 
-    def _teardown_workers(self):
+    def teardown_workers(self):
         """Teardown Spark tasks"""
         for task_client in self.task_clients:
             task_client.notify_workload_complete()
@@ -243,7 +243,7 @@ class SparkBackend(Backend):
         self.workers_initialized = False
         self.data_loaders_initialized = False
 
-    def _get_metadata_from_parquet(self, store, label_columns=['label'], feature_columns=['features']):
+    def get_metadata_from_parquet(self, store, label_columns=['label'], feature_columns=['features']):
         """
         Get metadata from the data in the persistent storage.
         :param store:
@@ -254,22 +254,20 @@ class SparkBackend(Backend):
         return util.get_simple_meta_from_parquet(store, label_columns + feature_columns)
 
     def prepare_data(self, store, dataset, validation, label_columns=['label'], feature_columns=['features'],
-                     compress_sparse=False, verbose=2, dataset_idx=None):
+                     parquet_row_group_size_mb=8, dataset_idx=None):
         """
         Prepare data by writing out into persistent storage
 
-        :param store:
-        :param dataset:
-        :param validation:
-        :param label_columns:
-        :param feature_columns:
-        :param compress_sparse:
-        :param verbose:
-        :param dataset_idx:
+        :param store: Cerebro storage object (e.g., LocalStorage, HDFSStorage).
+        :param dataset: Spark DataFrame.
+        :param validation: Fraction of validation data (e.g., 0.25) or name of the DataFrame column indicating validation.
+        :param label_columns: List of label/output columns (default=['label']).
+        :param feature_columns: List of feature columns (default=['features']).
+        :param parquet_row_group_size_mb: Parquet row group size in MBs (default 8 MB) .
+        :param dataset_idx: Dataset index if storing multiple datasets in the same directory.
         """
         return util.prepare_data(self._num_workers(), store, dataset, label_columns, feature_columns, validation,
-                                 partitions_per_process=1, compress_sparse=compress_sparse, verbose=verbose,
-                                 dataset_idx=dataset_idx)
+                                 partitions_per_process=1, dataset_idx=dataset_idx, verbose=self.settings.verbose)
 
     def _num_workers(self):
         """
@@ -302,8 +300,7 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
         serialized_model = estimator._compile_model(keras_utils)
 
     trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx,
-                                train_rows, val_rows, backend._num_workers(),
-                                verbose)
+                                train_rows, val_rows, backend._num_workers())
     return trainer
 
 
@@ -390,7 +387,7 @@ def _make_mapper(driver_addresses, settings):
 
 
 def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx, train_rows, val_rows,
-                      num_workers, verbose=0):
+                      num_workers):
     # Estimator parameters
     label_columns = estimator.getLabelCols()
     feature_columns = estimator.getFeatureCols()
@@ -400,7 +397,6 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     custom_objects = estimator.getCustomObjects()
     user_shuffle_buffer_size = estimator.getShufflingBufferSize()
     metrics_names = [name.__name__ if callable(name) else name for name in estimator.getMetrics()]
-    model_logs_dir = estimator.getLogsDir()
     user_verbose = estimator.getVerbose()
 
     # Model parameters
@@ -452,7 +448,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
 
         with remote_store.get_local_output_dir() as run_output_dir:
             step_counter_callback = KerasStepCounter()
-            callbacks = []#[step_counter_callback]
+            callbacks = [step_counter_callback]
             callbacks = callbacks + user_callbacks
             ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
             # restore model from checkpoint if it exists
@@ -492,8 +488,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
 
             tf.keras.backend.clear_session()
 
-            if remote_store.saving_runs:
-                remote_store.sync(run_output_dir)
+            remote_store.sync(run_output_dir)
             finalization_time = time.time() - begin_time
 
             if verbose >= 1:
@@ -501,7 +496,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
                     'train' if is_train else 'valid',
                     initialization_time, training_time, finalization_time))
 
-            return (result, 1)#step_counter_callback.get_step_count())
+            return (result, step_counter_callback.get_step_count())
 
     return train
 

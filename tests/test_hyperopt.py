@@ -67,7 +67,7 @@ class TestHyperOpt(unittest.TestCase):
 
         hyperopt = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
                             num_models=3, num_epochs=1, validation=0.25, evaluation_metric='loss',
-                            feature_columns=['features'], label_columns=['label'], logdir='/tmp/logs')
+                            feature_columns=['features'], label_columns=['label'])
 
         model = hyperopt.fit(df)
         output_df = model.transform(df)

@@ -433,7 +433,7 @@ def _train_val_split(df, validation):
 
 def _create_dataset(store, df, feature_columns, label_columns,
                     validation, sample_weight_col, compress_sparse,
-                    num_partitions, num_workers, verbose, dataset_idx):
+                    num_partitions, num_workers, dataset_idx, parquet_row_group_size_mb, verbose):
     train_data_path = store.get_train_data_path(dataset_idx)
     val_data_path = store.get_val_data_path(dataset_idx)
     if verbose:
@@ -473,7 +473,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
         print('train_partitions={}'.format(train_partitions))
 
     spark = SparkSession.builder.getOrCreate()
-    with materialize_dataset(spark, train_data_path, petastorm_schema, constants.PARQUET_ROW_GROUP_SIZE_MB):
+    with materialize_dataset(spark, train_data_path, petastorm_schema, parquet_row_group_size_mb):
         train_rdd = train_df.rdd.map(lambda x: x.asDict()).map(lambda x: {k: np.array([x[k]], dtype=np.float64) for k in x}) \
             .map(lambda x: dict_to_spark_row(petastorm_schema, x))
 
@@ -512,7 +512,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
         if verbose:
             print('val_rows={}'.format(val_rows))
 
-    metadata = metadata or pq_metadata
+    # metadata = metadata or pq_metadata
     return train_rows, val_rows, metadata, avg_row_size
 
 
@@ -533,7 +533,7 @@ def check_validation(validation, df=None):
 
 def prepare_data(num_workers, store, df, label_columns, feature_columns,
                  validation=None, sample_weight_col=None, compress_sparse=False,
-                 partitions_per_process=10, verbose=0, dataset_idx=None):
+                 partitions_per_process=10, parquet_row_group_size_mb=8, dataset_idx=None, verbose=0):
     check_validation(validation, df=df)
     if num_workers <= 0 or partitions_per_process <= 0:
         raise ValueError('num_workers={} and partitions_per_process={} must both be > 0'
@@ -559,7 +559,7 @@ def prepare_data(num_workers, store, df, label_columns, feature_columns,
 
     return _create_dataset(store, df, feature_columns, label_columns,
                            validation, sample_weight_col, compress_sparse,
-                           num_partitions, num_workers, verbose, dataset_idx)
+                           num_partitions, num_workers, dataset_idx, parquet_row_group_size_mb, verbose)
 
 
 def to_list(var, length):

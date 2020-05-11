@@ -60,8 +60,6 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
                        typeConverter=TypeConverters.toInt)
     epochs = Param(Params._dummy(), 'epochs', 'epochs', typeConverter=TypeConverters.toInt)
 
-    logs_dir = Param(Params._dummy(), 'logs_dir', 'logs_dir', typeConverter=TypeConverters.toString)
-
     """shuffle_buffer_size: Optional size of in-memory shuffle buffer in rows. Allocating a larger buffer size
                                  increases randomness of shuffling at the cost of more host memory. Defaults to estimating
                                  with an assumption of 4GB of memory per host."""
@@ -108,7 +106,6 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
             epochs=0,
             verbose=1,
             callbacks=[],
-            logs_dir='./logs',
             shuffle_buffer_size=None,
             run_id=None,
             transformation_fn=None
@@ -208,12 +205,6 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
 
     def getEpochs(self):
         return self.getOrDefault(self.epochs)
-
-    def setLogsDir(self, value):
-        return self._set(logs_dir=value)
-
-    def getLogsDir(self):
-        return self.getOrDefault(self.logs_dir)
 
     def setVerbose(self, value):
         return self._set(verbose=value)

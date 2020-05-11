@@ -291,7 +291,7 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         store = self.getStore()
         last_ckpt_path = store.get_checkpoint_path(run_id)
 
-        if self.getVerbose():
+        if self.getVerbose() >= 1:
             print('Resuming training from last checkpoint: {}'.format(last_ckpt_path))
 
         model_bytes = store.read(last_ckpt_path)
@@ -471,7 +471,7 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
 
             def to_array(item):
                 if type(item) in [DenseVector or SparseVector]:
-                    return item.toArray()
+                    return np.array(item.toArray())
                 else:
                     return np.array(item)
 
@@ -485,6 +485,7 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
                 preds = model.predict_on_batch(
                     [to_array(row[feature_cols[i]]).reshape(input_shapes[i])
                      for i in range(len(feature_cols))])
+
                 preds = [to_numpy(item) for item in preds]
 
                 for label_col, output_col, pred, in zip(label_cols, output_cols, preds):
@@ -506,8 +507,10 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
                         value = pred[0]
                         python_type = spark.util.spark_scalar_to_python_type(col_type)
                         if issubclass(python_type, numbers.Integral):
-                            value = round(value)
-                        field = python_type(value)
+                            field = round(value.item())
+                        else:
+                            field = value.item()
+                        # field = python_type(value)
 
                     fields[output_col] = field
 
