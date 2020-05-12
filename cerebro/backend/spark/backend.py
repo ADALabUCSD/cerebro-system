@@ -384,7 +384,6 @@ def _make_mapper(driver_addresses, settings):
             yield 0
         finally:
             task.shutdown()
-            # yield _task_fn(index, driver_addresses, settings)
 
     return _mapper
 
