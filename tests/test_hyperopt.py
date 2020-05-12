@@ -26,7 +26,7 @@ from cerebro.tune import HyperOpt, hp_choice, hp_uniform, hp_quniform, hp_qlogun
 
 
 class TestHyperOpt(unittest.TestCase):
-    def test_grid_search(self):
+    def test_hyperopt(self):
         spark = SparkSession \
             .builder \
             .master("local[3]") \

@@ -506,7 +506,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
             spark.sparkContext._jsc.hadoopConfiguration(),
             user=spark.sparkContext.sparkUser(),
                         hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
-        with materialize_dataset(spark, val_data_path, petastorm_schema, 8,
+        with materialize_dataset(spark, val_data_path, petastorm_schema, parquet_row_group_size_mb,
             filesystem_factory=val_resolver.filesystem_factory()):
             val_rdd = val_df.rdd.map(lambda x: x.asDict()).map(
                 lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
