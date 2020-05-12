@@ -27,7 +27,7 @@ from pyspark.sql.types import from_arrow_type
 from petastorm.unischema import Unischema, UnischemaField, dict_to_spark_row
 from petastorm.codecs import ScalarCodec, NdarrayCodec
 from petastorm.etl.dataset_metadata import materialize_dataset
-
+from petastorm.fs_utils import FilesystemResolver
 from .. import constants
 
 
@@ -473,7 +473,13 @@ def _create_dataset(store, df, feature_columns, label_columns,
         print('train_partitions={}'.format(train_partitions))
 
     spark = SparkSession.builder.getOrCreate()
-    with materialize_dataset(spark, train_data_path, petastorm_schema, parquet_row_group_size_mb):
+    # FIXME pass hdfs_driver from user interface instead of hardcoded PETASTORM_HDFS_DRIVER
+    train_resolver = FilesystemResolver(train_data_path,
+        spark.sparkContext._jsc.hadoopConfiguration(),
+        user=spark.sparkContext.sparkUser(),
+                       hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
+    with materialize_dataset(spark, train_data_path, petastorm_schema, parquet_row_group_size_mb,
+        filesystem_factory=train_resolver.filesystem_factory()):
         train_rdd = train_df.rdd.map(lambda x: x.asDict()).map(
             lambda x: {k: np.array([x[k]], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
             .map(lambda x: dict_to_spark_row(petastorm_schema, x))
@@ -489,8 +495,12 @@ def _create_dataset(store, df, feature_columns, label_columns,
                              num_workers)
         if verbose >= 1:
             print('val_partitions={}'.format(val_partitions))
-
-        with materialize_dataset(spark, val_data_path, petastorm_schema, 8):
+        val_resolver = FilesystemResolver(val_data_path,
+            spark.sparkContext._jsc.hadoopConfiguration(),
+            user=spark.sparkContext.sparkUser(),
+                        hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
+        with materialize_dataset(spark, val_data_path, petastorm_schema, 8,
+            filesystem_factory=val_resolver.filesystem_factory()):
             val_rdd = val_df.rdd.map(lambda x: x.asDict()).map(
                 lambda x: {k: np.array([x[k]], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
                 .map(lambda x: dict_to_spark_row(petastorm_schema, x))
