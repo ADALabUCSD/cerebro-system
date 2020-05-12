@@ -233,8 +233,8 @@ class SparkBackend(Backend):
         for run_id in model_results:
             res = model_results[run_id]
             steps = model_sub_epoch_steps[run_id]
-            for k, s in zip(res, steps):
-                res[k] = np.sum([rk * s for rk in res[k]]) / np.sum(steps)
+            for k in res:
+                res[k] = (np.sum([rk * steps[i] for i,rk in enumerate(res[k])]) / np.sum(steps))
 
         return model_results
 

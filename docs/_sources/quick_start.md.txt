@@ -167,7 +167,7 @@ and leverages the code of the notebook referenced in the article. The example is
 To run the example:
 
 ```bash
-$ wget https://raw.githubusercontent.com/horovod/horovod/master/examples/keras_spark_rossmann_estimator.py
+$ wget https://raw.githubusercontent.com/ADALabUCSD/cerebro-system/master/examples/rossmann_model_selection.py
 $ wget http://files.fast.ai/part2/lesson14/rossmann.tgz
 $ tar zxvf rossmann.tgz
 $ python3 rossmann_model_selection.py

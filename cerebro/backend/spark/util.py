@@ -121,9 +121,16 @@ def spark_to_petastorm_type(dtype):
 
 def petastorm_unischema_shape(shape):
     if shape == 1:
-        return (1,)
+        return ()
     else:
-        return (1, shape)
+        return (shape,)
+
+
+def petastorm_unischema_codec(shape, type):
+    if shape == 1:
+        return ScalarCodec(type())
+    else:
+        return NdarrayCodec()
 
 
 # def check_shape_compatibility(metadata, feature_columns, label_columns,
@@ -462,7 +469,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
     for k in metadata.keys():
         type = spark_to_petastorm_type(metadata[k]['spark_data_type'])
         shape = petastorm_unischema_shape(metadata[k]['shape'])
-        codec = NdarrayCodec()
+        codec = petastorm_unischema_codec(metadata[k]['shape'], metadata[k]['spark_data_type'])
         unischema_fields.append(UnischemaField(k, type, shape, codec, False))
 
     petastorm_schema = Unischema('petastorm_schema', unischema_fields)
@@ -475,7 +482,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
     spark = SparkSession.builder.getOrCreate()
     with materialize_dataset(spark, train_data_path, petastorm_schema, parquet_row_group_size_mb):
         train_rdd = train_df.rdd.map(lambda x: x.asDict()).map(
-            lambda x: {k: np.array([x[k]], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
+            lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
             .map(lambda x: dict_to_spark_row(petastorm_schema, x))
 
         spark.createDataFrame(train_rdd, petastorm_schema.as_spark_schema()) \
@@ -492,7 +499,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
 
         with materialize_dataset(spark, val_data_path, petastorm_schema, 8):
             val_rdd = val_df.rdd.map(lambda x: x.asDict()).map(
-                lambda x: {k: np.array([x[k]], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
+                lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
                 .map(lambda x: dict_to_spark_row(petastorm_schema, x))
 
             spark.createDataFrame(val_rdd, petastorm_schema.as_spark_schema()) \
