@@ -188,7 +188,7 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         transformation_fn: Optional function that takes a row as its parameter
                            and returns a modified row that is then fed into the
                            train or validation step. This transformation is
-                           applied after batching. See Petastorm [TransformSpec](https://github.com/uber/petastorm/blob/master/petastorm/transform.py)
+                           applied after batching. See Petastorm TransformSpec
                            for more details. Note that this fucntion constructs
                            another function which should perform the
                            transformation.
@@ -291,7 +291,7 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         store = self.getStore()
         last_ckpt_path = store.get_checkpoint_path(run_id)
 
-        if self.getVerbose():
+        if self.getVerbose() >= 1:
             print('Resuming training from last checkpoint: {}'.format(last_ckpt_path))
 
         model_bytes = store.read(last_ckpt_path)
@@ -432,8 +432,12 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
     def _get_floatx(self):
         return self.getOrDefault(self._floatx)
 
-    # To run locally on OS X, need export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
     def transform(self, df):
+        """ Transform the given datafram using the traing ML model
+
+        :param df: Input Dataframe
+        :return: Transformed Dataframe
+        """
         keras_utils = self._get_keras_utils()
         floatx = self._get_floatx()
         serialized_model = keras_utils.serialize_model(self.getModel())
@@ -467,7 +471,7 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
 
             def to_array(item):
                 if type(item) in [DenseVector or SparseVector]:
-                    return item.toArray()
+                    return np.array(item.toArray())
                 else:
                     return np.array(item)
 
@@ -481,6 +485,7 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
                 preds = model.predict_on_batch(
                     [to_array(row[feature_cols[i]]).reshape(input_shapes[i])
                      for i in range(len(feature_cols))])
+
                 preds = [to_numpy(item) for item in preds]
 
                 for label_col, output_col, pred, in zip(label_cols, output_cols, preds):
@@ -502,8 +507,10 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
                         value = pred[0]
                         python_type = spark.util.spark_scalar_to_python_type(col_type)
                         if issubclass(python_type, numbers.Integral):
-                            value = round(value)
-                        field = python_type(value)
+                            field = round(value.item())
+                        else:
+                            field = value.item()
+                        # field = python_type(value)
 
                     fields[output_col] = field
 
@@ -513,6 +520,7 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
 
     def keras(self):
         """ Returns the trained model in Keras format.
+
             :return: TensorFlow Keras Model
         """
         if self.model is not None:

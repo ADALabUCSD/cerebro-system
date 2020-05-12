@@ -26,7 +26,7 @@ from cerebro.tune import HyperOpt, hp_choice, hp_uniform, hp_quniform, hp_qlogun
 
 
 class TestHyperOpt(unittest.TestCase):
-    def test_grid_search(self):
+    def test_hyperopt(self):
         spark = SparkSession \
             .builder \
             .master("local[3]") \
@@ -67,7 +67,7 @@ class TestHyperOpt(unittest.TestCase):
 
         hyperopt = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
                             num_models=3, num_epochs=1, validation=0.25, evaluation_metric='loss',
-                            feature_columns=['features'], label_columns=['label'], logdir='/tmp/logs')
+                            feature_columns=['features'], label_columns=['label'])
 
         model = hyperopt.fit(df)
         output_df = model.transform(df)

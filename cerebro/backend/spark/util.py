@@ -15,15 +15,19 @@
 # ==============================================================================
 
 from __future__ import absolute_import
-
 import numpy as np
 import pyarrow as pa
+from pyspark.sql import SparkSession
 import pyspark.sql.functions as f
 from pyspark.ml.linalg import DenseVector, SparseVector, Vector, VectorUDT
 from pyspark.sql.types import ArrayType, BinaryType, BooleanType, FloatType, DoubleType, \
     IntegerType, LongType, NullType, StringType
 from pyspark.sql.types import from_arrow_type
 
+from petastorm.unischema import Unischema, UnischemaField, dict_to_spark_row
+from petastorm.codecs import ScalarCodec, NdarrayCodec
+from petastorm.etl.dataset_metadata import materialize_dataset
+from petastorm.fs_utils import FilesystemResolver
 from .. import constants
 
 
@@ -92,7 +96,7 @@ def pyarrow_to_spark_data_type(dtype):
     return type(from_arrow_type(dtype))
 
 
-def data_type_to_numpy(dtype):
+def spark_to_petastorm_type(dtype):
     if dtype == VectorUDT or dtype == SparseVector or dtype == DenseVector:
         return np.float64
     elif dtype == ArrayType:
@@ -115,48 +119,62 @@ def data_type_to_numpy(dtype):
         raise ValueError('Unrecognized data type: {}'.format(dtype))
 
 
-def check_shape_compatibility(metadata, feature_columns, label_columns,
-                              input_shapes=None, output_shapes=None):
-    # Check for model and input type incompatibility. Columns must have the same size
-    # (total number of elements) of the corresponding inputs.
-    feature_count = len(feature_columns)
-    if input_shapes is not None:
-        if feature_count != len(input_shapes):
-            raise ValueError('Feature column count {features} must equal '
-                             'model inputs count {inputs}'
-                             .format(features=feature_count, inputs=len(input_shapes)))
+def petastorm_unischema_shape(shape):
+    if shape == 1:
+        return ()
+    else:
+        return (shape,)
 
-        for idx, col, input_shape in zip(range(feature_count), feature_columns, input_shapes):
-            col_size = metadata[col]['shape']
-            if col_size is None:
-                # When training directly on Parquet, we do not compute shape metadata
-                continue
 
-            input_size = abs(np.prod(input_shape))
-            if col_size != input_size:
-                raise ValueError(
-                    'Feature column \'{col}\' with size {feature} must equal that of the '
-                    'model input at index {idx} with size {input}'
-                    .format(col=col, feature=col_size, idx=idx, input=input_size))
+def petastorm_unischema_codec(shape, type):
+    if shape == 1:
+        return ScalarCodec(type())
+    else:
+        return NdarrayCodec()
 
-    if output_shapes is not None:
-        label_count = len(label_columns)
-        if label_count != len(output_shapes):
-            raise ValueError('Label column count {labels} must equal '
-                             'model outputs count {outputs}'
-                             .format(labels=label_count, outputs=len(output_shapes)))
 
-        for idx, col, output_shape in zip(range(label_count), label_columns, output_shapes):
-            col_size = metadata[col]['shape']
-            if col_size is None:
-                # When training directly on Parquet, we do not compute shape metadata
-                continue
-
-            output_size = abs(np.prod(output_shape))
-            if col_size != output_size:
-                raise ValueError('Label column \'{col}\' with size {label} must equal that of the '
-                                 'model output at index {idx} with size {output}'
-                                 .format(col=col, label=col_size, idx=idx, output=output_size))
+# def check_shape_compatibility(metadata, feature_columns, label_columns,
+#                               input_shapes=None, output_shapes=None):
+#     # Check for model and input type incompatibility. Columns must have the same size
+#     # (total number of elements) of the corresponding inputs.
+#     feature_count = len(feature_columns)
+#     if input_shapes is not None:
+#         if feature_count != len(input_shapes):
+#             raise ValueError('Feature column count {features} must equal '
+#                              'model inputs count {inputs}'
+#                              .format(features=feature_count, inputs=len(input_shapes)))
+#
+#         for idx, col, input_shape in zip(range(feature_count), feature_columns, input_shapes):
+#             col_size = metadata[col]['shape']
+#             if col_size is None:
+#                 # When training directly on Parquet, we do not compute shape metadata
+#                 continue
+#
+#             input_size = abs(np.prod(input_shape))
+#             if col_size != input_size:
+#                 raise ValueError(
+#                     'Feature column \'{col}\' with size {feature} must equal that of the '
+#                     'model input at index {idx} with size {input}'
+#                         .format(col=col, feature=col_size, idx=idx, input=input_size))
+#
+#     if output_shapes is not None:
+#         label_count = len(label_columns)
+#         if label_count != len(output_shapes):
+#             raise ValueError('Label column count {labels} must equal '
+#                              'model outputs count {outputs}'
+#                              .format(labels=label_count, outputs=len(output_shapes)))
+#
+#         for idx, col, output_shape in zip(range(label_count), label_columns, output_shapes):
+#             col_size = metadata[col]['shape']
+#             if col_size is None:
+#                 # When training directly on Parquet, we do not compute shape metadata
+#                 continue
+#
+#             output_size = abs(np.prod(output_shape))
+#             if col_size != output_size:
+#                 raise ValueError('Label column \'{col}\' with size {label} must equal that of the '
+#                                  'model output at index {idx} with size {output}'
+#                                  .format(col=col, label=col_size, idx=idx, output=output_size))
 
 
 def _get_col_info(df):
@@ -239,28 +257,6 @@ def _get_metadata(df):
     """
     Infer the type and shape of all the columns and determines if what intermediate format they
     need to be converted to in case they are a vector.
-
-    Example return value:
-    {
-    'col1': {
-        'dtype': <type 'float'>,
-        'intermediate_format': 'nochange',
-        'max_size': 1,
-        'shape': 1
-        },
-     'col2': {
-        'dtype': <type 'float'>,
-        'intermediate_format': 'nochange',
-        'max_size': 1,
-        'shape': 1
-        },
-     'col3': {
-        'dtype': <class 'pyspark.ml.linalg.SparseVector'>,
-        'intermediate_format': 'custom_sparse_format',
-        'max_size': 37,
-        'shape': 56
-        }
-    }
     """
     all_col_types, col_shapes, col_max_sizes = _get_col_info(df)
 
@@ -320,7 +316,6 @@ def to_petastorm_fn(schema_cols, metadata):
 
     # Convert Spark Vectors into arrays so Petastorm can read them
     def to_petastorm(row):
-        import numpy as np
         from pyspark import Row
 
         converted = {}
@@ -444,69 +439,99 @@ def _train_val_split(df, validation):
 
 
 def _create_dataset(store, df, feature_columns, label_columns,
-                           validation, sample_weight_col, compress_sparse,
-                           num_partitions, num_workers, verbose, dataset_idx):
-        train_data_path = store.get_train_data_path(dataset_idx)
-        val_data_path = store.get_val_data_path(dataset_idx)
-        if verbose:
-            print('writing dataframes')
-            print('train_data_path={}'.format(train_data_path))
-            print('val_data_path={}'.format(val_data_path))
+                    validation, sample_weight_col, compress_sparse,
+                    num_partitions, num_workers, dataset_idx, parquet_row_group_size_mb, verbose):
+    train_data_path = store.get_train_data_path(dataset_idx)
+    val_data_path = store.get_val_data_path(dataset_idx)
+    if verbose >= 1:
+        print('writing dataframes')
+        print('train_data_path={}'.format(train_data_path))
+        print('val_data_path={}'.format(val_data_path))
 
-        schema_cols = feature_columns + label_columns
-        if sample_weight_col:
-            schema_cols.append(sample_weight_col)
-        if isinstance(validation, str):
-            schema_cols.append(validation)
-        df = df[schema_cols]
+    schema_cols = feature_columns + label_columns
+    if sample_weight_col:
+        schema_cols.append(sample_weight_col)
+    if isinstance(validation, str):
+        schema_cols.append(validation)
+    df = df[schema_cols]
 
-        metadata = None
-        if _has_vector_column(df):
-            if compress_sparse:
-                metadata = _get_metadata(df)
-            to_petastorm = to_petastorm_fn(schema_cols, metadata)
-            df = df.rdd.map(to_petastorm).toDF()
+    metadata = None
+    if _has_vector_column(df):
+        if compress_sparse:
+            metadata = _get_metadata(df)
+        to_petastorm = to_petastorm_fn(schema_cols, metadata)
+        df = df.rdd.map(to_petastorm).toDF()
 
-        train_df, val_df, validation_ratio = _train_val_split(df, validation)
+    train_df, val_df, validation_ratio = _train_val_split(df, validation)
 
-        train_partitions = max(int(num_partitions * (1.0 - validation_ratio)),
-                               num_workers)
-        if verbose:
-            print('train_partitions={}'.format(train_partitions))
+    unischema_fields = []
+    metadata = _get_metadata(train_df)
+    for k in metadata.keys():
+        type = spark_to_petastorm_type(metadata[k]['spark_data_type'])
+        shape = petastorm_unischema_shape(metadata[k]['shape'])
+        codec = petastorm_unischema_codec(metadata[k]['shape'], metadata[k]['spark_data_type'])
+        unischema_fields.append(UnischemaField(k, type, shape, codec, False))
 
-        train_df \
+    petastorm_schema = Unischema('petastorm_schema', unischema_fields)
+
+    train_partitions = max(int(num_partitions * (1.0 - validation_ratio)),
+                           num_workers)
+    if verbose >= 1:
+        print('train_partitions={}'.format(train_partitions))
+
+    spark = SparkSession.builder.getOrCreate()
+    # FIXME pass hdfs_driver from user interface instead of hardcoded PETASTORM_HDFS_DRIVER
+    train_resolver = FilesystemResolver(train_data_path,
+        spark.sparkContext._jsc.hadoopConfiguration(),
+        user=spark.sparkContext.sparkUser(),
+                       hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
+    with materialize_dataset(spark, train_data_path, petastorm_schema, parquet_row_group_size_mb,
+        filesystem_factory=train_resolver.filesystem_factory()):
+        train_rdd = train_df.rdd.map(lambda x: x.asDict()).map(
+            lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
+            .map(lambda x: dict_to_spark_row(petastorm_schema, x))
+
+        spark.createDataFrame(train_rdd, petastorm_schema.as_spark_schema()) \
             .coalesce(train_partitions) \
             .write \
             .mode('overwrite') \
             .parquet(train_data_path)
 
-        if val_df:
-            val_partitions = max(int(num_partitions * validation_ratio),
-                                 num_workers)
-            if verbose:
-                print('val_partitions={}'.format(val_partitions))
+    if val_df:
+        val_partitions = max(int(num_partitions * validation_ratio),
+                             num_workers)
+        if verbose >= 1:
+            print('val_partitions={}'.format(val_partitions))
+        val_resolver = FilesystemResolver(val_data_path,
+            spark.sparkContext._jsc.hadoopConfiguration(),
+            user=spark.sparkContext.sparkUser(),
+                        hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
+        with materialize_dataset(spark, val_data_path, petastorm_schema, parquet_row_group_size_mb,
+            filesystem_factory=val_resolver.filesystem_factory()):
+            val_rdd = val_df.rdd.map(lambda x: x.asDict()).map(
+                lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
+                .map(lambda x: dict_to_spark_row(petastorm_schema, x))
 
-            val_df \
+            spark.createDataFrame(val_rdd, petastorm_schema.as_spark_schema()) \
                 .coalesce(val_partitions) \
                 .write \
                 .mode('overwrite') \
                 .parquet(val_data_path)
 
-        train_rows, val_rows, pq_metadata, avg_row_size = get_simple_meta_from_parquet(
-            store, label_columns+feature_columns, sample_weight_col, dataset_idx)
+    train_rows, val_rows, pq_metadata, avg_row_size = get_simple_meta_from_parquet(
+        store, label_columns + feature_columns, sample_weight_col, dataset_idx)
 
-        if verbose:
-            print('train_rows={}'.format(train_rows))
-        if val_df:
-            if val_rows == 0:
-                raise ValueError(
-                    'Validation DataFrame does not any samples with validation param {}'
+    if verbose:
+        print('train_rows={}'.format(train_rows))
+    if val_df:
+        if val_rows == 0:
+            raise ValueError(
+                'Validation DataFrame does not any samples with validation param {}'
                     .format(validation))
-            if verbose:
-                print('val_rows={}'.format(val_rows))
+        if verbose:
+            print('val_rows={}'.format(val_rows))
 
-        metadata = metadata or pq_metadata
-        return train_rows, val_rows, metadata, avg_row_size
+    return train_rows, val_rows, pq_metadata, avg_row_size
 
 
 def check_validation(validation, df=None):
@@ -526,7 +551,7 @@ def check_validation(validation, df=None):
 
 def prepare_data(num_workers, store, df, label_columns, feature_columns,
                  validation=None, sample_weight_col=None, compress_sparse=False,
-                 partitions_per_process=10, verbose=0, dataset_idx=None):
+                 partitions_per_process=10, parquet_row_group_size_mb=8, dataset_idx=None, verbose=0):
     check_validation(validation, df=df)
     if num_workers <= 0 or partitions_per_process <= 0:
         raise ValueError('num_workers={} and partitions_per_process={} must both be > 0'
@@ -536,7 +561,7 @@ def prepare_data(num_workers, store, df, label_columns, feature_columns,
         raise ValueError('Parameter label_columns cannot be None or empty')
 
     num_partitions = num_workers * partitions_per_process
-    if verbose:
+    if verbose >= 1:
         print('num_partitions={}'.format(num_partitions))
 
     for col in label_columns:
@@ -551,8 +576,8 @@ def prepare_data(num_workers, store, df, label_columns, feature_columns,
                 raise ValueError('Feature column {} does not exist in the DataFrame'.format(col))
 
     return _create_dataset(store, df, feature_columns, label_columns,
-                                         validation, sample_weight_col, compress_sparse,
-                                         num_partitions, num_workers, verbose, dataset_idx)
+                           validation, sample_weight_col, compress_sparse,
+                           num_partitions, num_workers, dataset_idx, parquet_row_group_size_mb, verbose)
 
 
 def to_list(var, length):

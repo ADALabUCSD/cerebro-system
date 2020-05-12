@@ -24,7 +24,7 @@ class Backend(object):
     from the Spark application running the CerebroEstimator.
     """
 
-    def num_workers(self):
+    def _num_workers(self):
         """Returns the number of workers to use for training."""
         raise NotImplementedError()
 

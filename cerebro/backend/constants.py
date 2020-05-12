@@ -17,7 +17,6 @@
 from __future__ import absolute_import
 
 PETASTORM_HDFS_DRIVER = 'libhdfs'
-METRIC_PRINT_FREQUENCY = 1000  # to print metric every 1000 steps in verbose mode
 
 ARRAY = 'array'
 CUSTOM_SPARSE = 'custom_sparse_format'

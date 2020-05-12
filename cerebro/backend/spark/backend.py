@@ -45,21 +45,37 @@ def default_num_workers():
     return spark_context.defaultParallelism
 
 
-class SparkBackend(Backend):
-    """Spark backend implementing Cerebro model hopping"""
+class KerasStepCounter(tf.keras.callbacks.Callback):
+    """Helper callback to count the number of step in sub-epoch training"""
 
-    def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10, verbose=1, nics=None):
-        """
-        Args:
-            spark_context: Spark context
-            num_workers: Number of Cerebro workers.  Defaults to `spark.default.parallelism`.
-            start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
-                       If it is not set as well, defaults to 600 seconds.
-            disk_cache_size: Size of the disk data cache in GBs (default 10GB).
-            verbose: Debug output verbosity (0-2). Defaults to 1..
-            nics: List of NIC names, will only use these for communications. If None is specified, use any
-                avaliable networking interfaces (default None)
-        """
+    def __init__(self):
+        self.counter = 0
+
+    def on_train_batch_begin(self, batch, logs={}):
+        self.counter += 1
+
+    def on_test_batch_begin(self, batch, logs={}):
+        self.counter += 1
+
+    def get_step_count(self):
+        return self.counter
+
+
+class SparkBackend(Backend):
+    """Spark backend implementing Cerebro model hopping
+
+        :param spark_context: Spark context
+        :param num_workers: Number of Cerebro workers.  Defaults to `spark.default.parallelism`.
+        :param start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
+                   If it is not set as well, defaults to 600 seconds.
+        :param disk_cache_size: Size of the disk data cache in GBs (default 10GB).
+        :param nics: List of NIC names, will only use these for communications. If None is specified, use any
+            available networking interfaces (default None)
+        :param verbose: Debug output verbosity (0-2). Defaults to 1..
+    """
+
+    def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10,
+                 nics=None, verbose=1):
 
         tmout = timeout.Timeout(start_timeout,
                                 message='Timed out waiting for {activity}. Please check that you have '
@@ -70,10 +86,8 @@ class SparkBackend(Backend):
         settings = spark_settings.Settings(verbose=verbose,
                                            key=secret.make_secret_key(),
                                            timeout=tmout,
-                                           run_func_mode=True,
+                                           disk_cache_size_bytes=disk_cache_size * constants.BYTES_PER_GIB,
                                            nics=nics)
-
-        self.disk_cache_size_bytes = disk_cache_size * 1024 * 1024 * 1024
 
         if spark_context is None:
             spark_context = pyspark.SparkContext._active_spark_context
@@ -101,7 +115,7 @@ class SparkBackend(Backend):
         self.data_loaders_initialized = False
 
     def initialize_workers(self):
-        """Initialize Spark tasks"""
+        """Initializes Cerebro workers"""
         result_queue = queue.Queue(1)
         spark_job_group = 'cerebro.spark.run.%d' % job_id.next_job_id()
         driver = service_driver.SparkDriverService(self.settings.num_workers, self.settings.key, self.settings.nics)
@@ -133,17 +147,16 @@ class SparkBackend(Backend):
 
     def initialize_data_loaders(self, store, dataset_idx, schema_fields):
         """
-
         :param store:
         :param dataset_idx:
         :param schema_fields:
         """
         if self.workers_initialized:
             remote_store = store.to_remote(self.spark_job_group, dataset_idx)
-            shard_count = self.num_workers()
+            shard_count = self._num_workers()
             _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, dataset_idx)
             data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size,
-                                               self.disk_cache_size_bytes)
+                                               self.settings.disk_cache_size_bytes)
 
             for task_client in self.task_clients:
                 task_client.initialize_data_loaders(data_readers_fn)
@@ -154,22 +167,24 @@ class SparkBackend(Backend):
                             'first!')
 
     def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
-        sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col, self.settings.verbose) \
+        sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col,
+                                                  self.settings.verbose) \
                               for model in models]
 
-        model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self.num_workers())]
+        model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self._num_workers())]
         # take a random ordering
         random.shuffle(model_worker_pairs)
 
         model_states = {i: False for i in range(len(models))}
-        worker_states = {i: False for i in range(self.num_workers())}
-        model_on_worker = [-1 for _ in range(self.num_workers())]
+        worker_states = {i: False for i in range(self._num_workers())}
+        model_on_worker = [-1 for _ in range(self._num_workers())]
 
         model_results = {model.getRunId(): None for model in models}
+        model_sub_epoch_steps = {model.getRunId(): None for model in models}
 
         while len(model_worker_pairs) > 0:
 
-            for w in range(self.num_workers()):
+            for w in range(self._num_workers()):
                 # worker idle
                 if not worker_states[w]:
                     m = _get_runnable_model(w, model_worker_pairs, model_states)
@@ -197,13 +212,15 @@ class SparkBackend(Backend):
                                 self.teardown_workers()
                                 raise Exception(status.sub_epoch_result['error'])
                             else:
-                                res = status.sub_epoch_result['result']
+                                res, steps = status.sub_epoch_result['result']
                                 run_id = models[m].getRunId()
                                 if model_results[run_id] is None:
                                     model_results[run_id] = res
+                                    model_sub_epoch_steps[run_id] = [steps]
                                 else:
                                     for k in model_results[run_id]:
                                         model_results[run_id][k].append(res[k][0])
+                                    model_sub_epoch_steps[run_id].append(steps)
 
             time.sleep(self.settings.polling_period)
 
@@ -215,8 +232,9 @@ class SparkBackend(Backend):
         # aggregating the model metrics
         for run_id in model_results:
             res = model_results[run_id]
+            steps = model_sub_epoch_steps[run_id]
             for k in res:
-                res[k] = np.mean(res[k])
+                res[k] = (np.sum([rk * steps[i] for i,rk in enumerate(res[k])]) / np.sum(steps))
 
         return model_results
 
@@ -239,23 +257,22 @@ class SparkBackend(Backend):
         return util.get_simple_meta_from_parquet(store, label_columns + feature_columns)
 
     def prepare_data(self, store, dataset, validation, label_columns=['label'], feature_columns=['features'],
-                     compress_sparse=False, verbose=2, dataset_idx=None):
+                     parquet_row_group_size_mb=8, dataset_idx=None):
         """
         Prepare data by writing out into persistent storage
-        :param store:
-        :param dataset:
-        :param validation:
-        :param label_columns:
-        :param feature_columns:
-        :param compress_sparse:
-        :param verbose:
-        :param dataset_idx:
-        """
-        return util.prepare_data(self.num_workers(), store, dataset, label_columns, feature_columns, validation,
-                                 partitions_per_process=1, compress_sparse=compress_sparse, verbose=verbose,
-                                 dataset_idx=dataset_idx)
 
-    def num_workers(self):
+        :param store: Cerebro storage object (e.g., LocalStorage, HDFSStorage).
+        :param dataset: Spark DataFrame.
+        :param validation: Fraction of validation data (e.g., 0.25) or name of the DataFrame column indicating validation.
+        :param label_columns: List of label/output columns (default=['label']).
+        :param feature_columns: List of feature columns (default=['features']).
+        :param parquet_row_group_size_mb: Parquet row group size in MBs (default 8 MB) .
+        :param dataset_idx: Dataset index if storing multiple datasets in the same directory.
+        """
+        return util.prepare_data(self._num_workers(), store, dataset, label_columns, feature_columns, validation,
+                                 partitions_per_process=1, dataset_idx=dataset_idx, verbose=self.settings.verbose)
+
+    def _num_workers(self):
         """
             Get number of processes/tasks
         :return:
@@ -286,34 +303,36 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
         serialized_model = estimator._compile_model(keras_utils)
 
     trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx,
-                                train_rows, val_rows, backend.num_workers(), verbose)
+                                train_rows, val_rows, backend._num_workers())
     return trainer
 
 
 def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cache_size_limit):
     def _data_readers(index):
-        from petastorm import make_batch_reader
+        from petastorm import make_reader
 
         PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 
-        train_reader = make_batch_reader(remote_store.train_data_path, shuffle_row_groups=False, num_epochs=None,
-                                         cur_shard=index,
-                                         shard_count=shard_count,
-                                         hdfs_driver=PETASTORM_HDFS_DRIVER,
-                                         schema_fields=schema_fields,
-                                         cache_type='local-disk',
-                                         cache_size_limit=cache_size_limit,
-                                         cache_row_size_estimate=avg_row_size)
+        train_reader = make_reader(remote_store.train_data_path, shuffle_row_groups=False, num_epochs=None,
+                                   cur_shard=index,
+                                   shard_count=shard_count,
+                                   hdfs_driver=PETASTORM_HDFS_DRIVER,
+                                   schema_fields=schema_fields,
+                                   cache_type='local-disk',
+                                   cache_size_limit=cache_size_limit,
+                                   cache_row_size_estimate=avg_row_size,
+                                   cache_extra_settings={'cleanup': True})
 
         if remote_store.val_data_path != '' and remote_store.val_data_path is not None:
-            val_reader = make_batch_reader(remote_store.val_data_path, shuffle_row_groups=False, num_epochs=None,
-                                           cur_shard=index,
-                                           shard_count=shard_count,
-                                           hdfs_driver=PETASTORM_HDFS_DRIVER,
-                                           schema_fields=schema_fields,
-                                           cache_type='local-disk',
-                                           cache_size_limit=cache_size_limit,
-                                           cache_row_size_estimate=avg_row_size)
+            val_reader = make_reader(remote_store.val_data_path, shuffle_row_groups=False, num_epochs=None,
+                                     cur_shard=index,
+                                     shard_count=shard_count,
+                                     hdfs_driver=PETASTORM_HDFS_DRIVER,
+                                     schema_fields=schema_fields,
+                                     cache_type='local-disk',
+                                     cache_size_limit=cache_size_limit,
+                                     cache_row_size_estimate=avg_row_size,
+                                     cache_extra_settings={'cleanup': True})
         else:
             val_reader = None
 
@@ -365,13 +384,12 @@ def _make_mapper(driver_addresses, settings):
             yield 0
         finally:
             task.shutdown()
-            # yield _task_fn(index, driver_addresses, settings)
 
     return _mapper
 
 
 def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx, train_rows, val_rows,
-                      num_workers, verbose=0):
+                      num_workers):
     # Estimator parameters
     label_columns = estimator.getLabelCols()
     feature_columns = estimator.getFeatureCols()
@@ -380,8 +398,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     sample_weight_col = estimator.getSampleWeightCol()
     custom_objects = estimator.getCustomObjects()
     user_shuffle_buffer_size = estimator.getShufflingBufferSize()
-    metrics_names = [name.__name__ if callable(name) else name for name in  estimator.getMetrics()]
-    model_logs_dir = estimator.getLogsDir()
+    metrics_names = [name.__name__ if callable(name) else name for name in estimator.getMetrics()]
     user_verbose = estimator.getVerbose()
 
     # Model parameters
@@ -407,6 +424,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
     remote_store = store.to_remote(run_id, dataset_idx)
 
     def train(data_reader, is_train, starting_epoch, local_task_index=0):
+
         begin_time = time.time()
         tf.keras.backend.set_floatx(floatx)
         pin_gpu(local_task_index)
@@ -431,7 +449,9 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
         verbose = user_verbose
 
         with remote_store.get_local_output_dir() as run_output_dir:
-            callbacks = user_callbacks
+            step_counter_callback = KerasStepCounter()
+            callbacks = [step_counter_callback]
+            callbacks = callbacks + user_callbacks
             ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
             # restore model from checkpoint if it exists
             if os.path.exists(ckpt_file):
@@ -470,8 +490,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
 
             tf.keras.backend.clear_session()
 
-            if remote_store.saving_runs:
-                remote_store.sync(run_output_dir)
+            remote_store.sync(run_output_dir)
             finalization_time = time.time() - begin_time
 
             if verbose >= 1:
@@ -479,7 +498,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
                     'train' if is_train else 'valid',
                     initialization_time, training_time, finalization_time))
 
-            return result
+            return (result, step_counter_callback.get_step_count())
 
     return train
 

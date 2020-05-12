@@ -20,7 +20,6 @@ from tensorboard.plugins.hparams import api as hp
 
 import numpy as np
 
-
 np.random.seed(2020)
 
 
@@ -116,7 +115,7 @@ class _HPQLogUnifrom(_HP):
         if min >= max:
             raise Exception('min should be smaller than max')
 
-        if q >= (max-min):
+        if q >= (max - min):
             raise Exception('q should be smaller than (max-min)')
 
         self.min = min
@@ -138,7 +137,7 @@ class ModelSelection(object):
     """Cerebro model search base class"""
 
     def __init__(self, backend, store, validation, estimator_gen_fn, evaluation_metric, label_columns,
-                 feature_columns, logdir, verbose):
+                 feature_columns, verbose):
         if is_valid_evaluation_metric(evaluation_metric):
             self.evaluation_metric = evaluation_metric
         else:
@@ -146,26 +145,27 @@ class ModelSelection(object):
 
         self.backend = backend
         self.store = store
+        self.remote_store = store.to_remote("logs", None)
         self.validation = validation
         self.estimator_gen_fn = estimator_gen_fn
         self.label_cols = label_columns
         self.feature_cols = feature_columns
-        self.logdir = logdir
         self.verbose = verbose
 
     def fit(self, df):
         """
-        Trains ML models on the given data frame
+        Trains ML models on the given DataFrame
         :param df:
         :return:
         """
         _, _, metadata, _ = self.backend.prepare_data(
-            self.store, df, self.validation, label_columns=self.label_cols, feature_columns=self.feature_cols,
-            compress_sparse=False, verbose=self.verbose, dataset_idx=None)  # no multiple datasets. Hence ids=None.
+            self.store, df, self.validation, label_columns=self.label_cols, feature_columns=self.feature_cols)
 
         # initialize backend and data loaders
         self.backend.initialize_workers()
+
         self.backend.initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
+
         try:
             result = self._fit_on_prepared_data(None, metadata)
             return result
@@ -182,7 +182,9 @@ class ModelSelection(object):
 
         # initialize backend and data loaders
         self.backend.initialize_workers()
+
         self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
+
         try:
             result = self._fit_on_prepared_data(dataset_index, metadata)
             return result
@@ -205,19 +207,22 @@ class ModelSelection(object):
         est.setFeatureCols(self.feature_cols)
         est.setLabelCols(self.label_cols)
         est.setStore(self.store)
-        est.setLogsDir(os.path.join(self.logdir, est.getRunId()))
         return est
 
     def _log_epoch_metrics_to_tensorboard(self, estimators, estimator_results):
         # logging to TensorBoard
-        for est in estimators:
-            log_model_epoch_metrics(os.path.join(self.logdir, est.getRunId()), estimator_results[est.getRunId()],
-                                    est.getEpochs())
+        with self.remote_store.get_local_logs_dir() as logs_dir:
+            for est in estimators:
+                log_model_epoch_metrics(os.path.join(logs_dir, est.getRunId()), estimator_results[est.getRunId()],
+                                        est.getEpochs())
+            self.remote_store.sync(logs_dir)
 
     def _log_hp_to_tensorboard(self, estimators, hparams):
         # logging to TensorBoard
-        for i, est in enumerate(estimators):
-            log_model_hps(os.path.join(self.logdir, est.getRunId()), est.getRunId(), hparams[i])
+        with self.remote_store.get_local_logs_dir() as logs_dir:
+            for i, est in enumerate(estimators):
+                log_model_hps(os.path.join(logs_dir, est.getRunId()), est.getRunId(), hparams[i])
+            self.remote_store.sync(logs_dir)
 
 
 class ModelSelectionResult(object):
@@ -263,7 +268,6 @@ class ModelSelectionResult(object):
 
     def get_history(self):
         return self.get_best_model_history()
-
 
     def get_best_model_history(self):
         """ Get best model training history

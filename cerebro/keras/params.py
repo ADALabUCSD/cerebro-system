@@ -87,12 +87,6 @@ class CerebroEstimatorParams(object):
     def getEpochs(self):
         raise NotImplementedError('Abstract class. Method not implement!')
 
-    def setLogsDir(self, value):
-        raise NotImplementedError('Abstract class. Method not implement!')
-
-    def getLogsDir(self):
-        raise NotImplementedError('Abstract class. Method not implement!')
-
     def setVerbose(self, value):
         raise NotImplementedError('Abstract class. Method not implement!')
 

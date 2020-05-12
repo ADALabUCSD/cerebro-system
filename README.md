@@ -35,9 +35,9 @@ We used the following projects when building Cerebro.
 - [Petastorm](https://github.com/uber/petastorm): We use Petastorm to read Apache Parquet data from remote storage
  (e.g., HDFS)  
  
-Cite
-----
-If you use this software for research, plase cite the following paper:
+Publications
+------------
+If you use this software for research, plase cite the following papers:
 
 ```latex
 @inproceedings{nakandala2019cerebro,

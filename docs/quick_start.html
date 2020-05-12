@@ -95,7 +95,7 @@ leveraging Spark’s ability to scale across multiple workers:</p>
 <span class="c1"># Instantiate model selection object</span>
 <span class="n">model_selection</span> <span class="o">=</span> <span class="n">HyperOpt</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">estimator_gen_fn</span><span class="o">=</span><span class="n">estimator_gen_fn</span><span class="p">,</span> <span class="n">search_space</span><span class="o">=</span><span class="n">search_space</span><span class="p">,</span>
             <span class="n">num_models</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validation</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">evaluation_metric</span><span class="o">=</span><span class="s1">&#39;loss&#39;</span><span class="p">,</span>
-            <span class="n">feature_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">],</span> <span class="n">label_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">],</span> <span class="n">logdir</span><span class="o">=</span><span class="s1">&#39;/tmp/logs&#39;</span><span class="p">)</span>
+            <span class="n">feature_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">],</span> <span class="n">label_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">])</span>
 
 <span class="c1"># Perform model selection. Returns best model</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">model_selection</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
@@ -133,9 +133,9 @@ data, and training metrics (for Tensorboard). Cerebro currently supports stores 
 </div>
 <div class="section" id="visualizing-the-model-selection-process">
 <h2>Visualizing the Model Selection Process<a class="headerlink" href="#visualizing-the-model-selection-process" title="Permalink to this headline">¶</a></h2>
-<p>Cerebro logs model training metrics into the <code class="docutils literal notranslate"><span class="pre">&lt;prefix_path&gt;/logs</span></code> directory of your Storage object.
+<p>Cerebro logs model training metrics into the <code class="docutils literal notranslate"><span class="pre">&lt;prefix_path&gt;/runs/logs</span></code> directory of your Storage object.
 To visualize the model selection process, launch a Tensorboard instance as follows:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tensorboard --logdir &lt;prefix_path&gt;/logs
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tensorboard --logdir &lt;prefix_path&gt;/runs/logs
 </pre></div>
 </div>
 <p><img alt="tensorboard" src="_images/tensorboard.png" /></p>
@@ -151,7 +151,7 @@ on an existing Parquet dataset:</p>
 
 <span class="c1"># Instantiate model selection object</span>
 <span class="n">model_selection</span> <span class="o">=</span> <span class="n">HyperOpt</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">estimator_gen_fn</span><span class="o">=</span><span class="n">estimator_gen_fn</span><span class="p">,</span> <span class="n">search_space</span><span class="o">=</span><span class="n">search_space</span><span class="p">,</span>
-            <span class="n">num_models</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">evaluation_metric</span><span class="o">=</span><span class="s1">&#39;loss&#39;</span><span class="p">,</span> <span class="n">logdir</span><span class="o">=</span><span class="s1">&#39;/tmp/logs&#39;</span><span class="p">)</span>
+            <span class="n">num_models</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">evaluation_metric</span><span class="o">=</span><span class="s1">&#39;loss&#39;</span><span class="p">)</span>
 
 <span class="c1"># Perform model selection</span>
 <span class="n">model_selection_output</span> <span class="o">=</span> <span class="n">model_selection</span><span class="o">.</span><span class="n">fit_on_prepared_data</span><span class="p">()</span>
@@ -185,7 +185,7 @@ and leverages the code of the notebook referenced in the article. The example is
 <li><p>The third part performs prediction using the best model and creates a submission file.</p></li>
 </ol>
 <p>To run the example:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ wget https://raw.githubusercontent.com/horovod/horovod/master/examples/keras_spark_rossmann_estimator.py
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ wget https://raw.githubusercontent.com/ADALabUCSD/cerebro-system/master/examples/rossmann_model_selection.py
 $ wget http://files.fast.ai/part2/lesson14/rossmann.tgz
 $ tar zxvf rossmann.tgz
 $ python3 rossmann_model_selection.py

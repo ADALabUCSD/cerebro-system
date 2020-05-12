@@ -24,9 +24,9 @@ class GridSearch(ModelSelection):
     """Performs grid search using the given param grid"""
 
     def __init__(self, backend, store, estimator_gen_fn, search_space, num_epochs, validation=0.25,
-                 evaluation_metric='loss', label_columns=['label'], feature_columns=['features'], logdir='./logs', verbose=2):
+                 evaluation_metric='loss', label_columns=['label'], feature_columns=['features'], verbose=2):
         super(GridSearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
-                                         label_columns, feature_columns, logdir, verbose)
+                                         label_columns, feature_columns, verbose)
 
         self.search_space = search_space
         # validate the search space
@@ -66,9 +66,9 @@ class RandomSearch(ModelSelection):
     """ Performs Random Search over the param grid"""
 
     def __init__(self, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, validation=0.25,
-                 evaluation_metric='loss', label_columns=['label'], feature_columns=['features'], logdir='./logs', verbose=2):
+                 evaluation_metric='loss', label_columns=['label'], feature_columns=['features'], verbose=1):
         super(RandomSearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
-                                           label_columns, feature_columns, logdir, verbose)
+                                           label_columns, feature_columns, verbose)
 
         self.search_space = search_space
         # validate the search space
