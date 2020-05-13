@@ -272,7 +272,7 @@ class SparkBackend(Backend):
         :param dataset_idx: Dataset index if storing multiple datasets in the same directory.
         """
         return util.prepare_data(self._num_workers(), store, dataset, label_columns, feature_columns, validation,
-                                 num_partitions=dataset.rdd.getNumPartitions(), dataset_idx=dataset_idx, verbose=self.settings.verbose)
+                                 num_partitions=num_partitions, dataset_idx=dataset_idx, verbose=self.settings.verbose)
 
     def _num_workers(self):
         """

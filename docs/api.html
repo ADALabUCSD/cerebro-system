@@ -461,7 +461,7 @@ available networking interfaces (default None)</p></li>
 </dl>
 <dl class="py method">
 <dt id="cerebro.backend.SparkBackend.prepare_data">
-<code class="sig-name descname">prepare_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">validation</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">partitions_per_worker</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">parquet_row_group_size_mb</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">dataset_idx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">prepare_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">validation</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">num_partitions</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parquet_row_group_size_mb</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">dataset_idx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prepare data by writing out into persistent storage</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -471,7 +471,8 @@ available networking interfaces (default None)</p></li>
 <li><p><strong>validation</strong> – Fraction of validation data (e.g., 0.25) or name of the DataFrame column indicating validation.</p></li>
 <li><p><strong>label_columns</strong> – List of label/output columns (default=[‘label’]).</p></li>
 <li><p><strong>feature_columns</strong> – List of feature columns (default=[‘features’]).</p></li>
-<li><p><strong>partitions_per_worker</strong> – Number of data partitions per worker.</p></li>
+<li><p><strong>num_partitions</strong> – Number of data partitions of the output. If None, will default to the current number of
+input dataset partitions.</p></li>
 <li><p><strong>parquet_row_group_size_mb</strong> – Parquet row group size in MBs (default 8 MB) .</p></li>
 <li><p><strong>dataset_idx</strong> – Dataset index if storing multiple datasets in the same directory.</p></li>
 </ul>
