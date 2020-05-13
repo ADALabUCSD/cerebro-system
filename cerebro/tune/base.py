@@ -159,19 +159,24 @@ class ModelSelection(object):
         :param df: Input DataFrame
         :return: cerebro.tune.ModelSelectionResult
         """
+        if self.verbose >= 1: print('Preparing data')
         _, _, metadata, _ = self.backend.prepare_data(
             self.store, df, self.validation, label_columns=self.label_cols, feature_columns=self.feature_cols)
 
+        if self.verbose >= 1: print('Initializing workers')
         # initialize backend and data loaders
         self.backend.initialize_workers()
 
+        if self.verbose >= 1: print('Initializing data loaders')
         self.backend.initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
 
         try:
+            if self.verbose >= 1: print('Launching model selection workload')
             result = self._fit_on_prepared_data(None, metadata)
             return result
         finally:
             # teardown the backend workers
+            if self.verbose >= 1: print('Terminating workers')
             self.backend.teardown_workers()
 
     def fit_on_prepared_data(self, dataset_index=None):
@@ -183,15 +188,19 @@ class ModelSelection(object):
         _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
 
         # initialize backend and data loaders
+        if self.verbose >= 1: print('Initializing workers')
         self.backend.initialize_workers()
 
+        if self.verbose >= 1: print('Initializing data loaders')
         self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
 
         try:
+            if self.verbose >= 1: print('Launching model selection workload')
             result = self._fit_on_prepared_data(dataset_index, metadata)
             return result
         finally:
             # teardown the backend workers
+            if self.verbose >= 1: print('Terminating workers')
             self.backend.teardown_workers()
 
     def _fit_on_prepared_data(self):
