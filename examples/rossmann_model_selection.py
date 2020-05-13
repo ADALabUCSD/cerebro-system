@@ -18,24 +18,19 @@
 import argparse
 import datetime
 import os
-from distutils.version import LooseVersion
 
-import pyspark.sql.types as T
 import pyspark.sql.functions as F
+import pyspark.sql.types as T
+import tensorflow as tf
 from pyspark import SparkConf, Row
 from pyspark.sql import SparkSession
-
-import tensorflow as tf
-import tensorflow.keras.backend as K
 from tensorflow.keras.layers import Input, Embedding, Concatenate, Dense, Flatten, Reshape, BatchNormalization, Dropout
-
 
 from cerebro.backend import SparkBackend
 from cerebro.keras import SparkEstimator
-from cerebro.storage import LocalStore, HDFSStore
-from cerebro.tune import GridSearch, RandomSearch, HyperOpt 
-from cerebro.tune import hp_choice, hp_uniform, hp_quniform, hp_loguniform, hp_qloguniform
-
+from cerebro.storage import LocalStore
+from cerebro.tune import TPESearch
+from cerebro.tune import hp_choice, hp_quniform, hp_loguniform
 
 parser = argparse.ArgumentParser(description='Keras Spark Rossmann Estimator Example',
                                  formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -388,7 +383,7 @@ search_space = {
 }
 
 # Instantiate model selection object
-model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+model_selection = TPESearch(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
                            num_models=args.num_models, num_epochs=args.epochs, validation='Validation', evaluation_metric='loss',
                            feature_columns=all_cols, label_columns=['Sales'], parallelism=args.num_workers)
 

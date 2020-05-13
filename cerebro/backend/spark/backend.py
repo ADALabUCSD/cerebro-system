@@ -257,7 +257,7 @@ class SparkBackend(Backend):
         return util.get_simple_meta_from_parquet(store, label_columns + feature_columns)
 
     def prepare_data(self, store, dataset, validation, label_columns=['label'], feature_columns=['features'],
-                     parquet_row_group_size_mb=8, dataset_idx=None):
+                     partitions_per_worker=10, parquet_row_group_size_mb=8, dataset_idx=None):
         """
         Prepare data by writing out into persistent storage
 
@@ -266,11 +266,12 @@ class SparkBackend(Backend):
         :param validation: Fraction of validation data (e.g., 0.25) or name of the DataFrame column indicating validation.
         :param label_columns: List of label/output columns (default=['label']).
         :param feature_columns: List of feature columns (default=['features']).
+        :param partitions_per_worker: Number of data partitions per worker.
         :param parquet_row_group_size_mb: Parquet row group size in MBs (default 8 MB) .
         :param dataset_idx: Dataset index if storing multiple datasets in the same directory.
         """
         return util.prepare_data(self._num_workers(), store, dataset, label_columns, feature_columns, validation,
-                                 partitions_per_process=1, dataset_idx=dataset_idx, verbose=self.settings.verbose)
+                                 partitions_per_worker=partitions_per_worker, dataset_idx=dataset_idx, verbose=self.settings.verbose)
 
     def _num_workers(self):
         """

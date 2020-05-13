@@ -551,16 +551,16 @@ def check_validation(validation, df=None):
 
 def prepare_data(num_workers, store, df, label_columns, feature_columns,
                  validation=None, sample_weight_col=None, compress_sparse=False,
-                 partitions_per_process=10, parquet_row_group_size_mb=8, dataset_idx=None, verbose=0):
+                 partitions_per_worker=10, parquet_row_group_size_mb=8, dataset_idx=None, verbose=0):
     check_validation(validation, df=df)
-    if num_workers <= 0 or partitions_per_process <= 0:
+    if num_workers <= 0 or partitions_per_worker <= 0:
         raise ValueError('num_workers={} and partitions_per_process={} must both be > 0'
-                         .format(num_workers, partitions_per_process))
+                         .format(num_workers, partitions_per_worker))
 
     if not label_columns:
         raise ValueError('Parameter label_columns cannot be None or empty')
 
-    num_partitions = num_workers * partitions_per_process
+    num_partitions = num_workers * partitions_per_worker
     if verbose >= 1:
         print('num_partitions={}'.format(num_partitions))
 
