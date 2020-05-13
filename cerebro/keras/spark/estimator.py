@@ -291,9 +291,6 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         store = self.getStore()
         last_ckpt_path = store.get_checkpoint_path(run_id)
 
-        if self.getVerbose() >= 1:
-            print('Resuming training from last checkpoint: {}'.format(last_ckpt_path))
-
         model_bytes = store.read(last_ckpt_path)
         return codec.dumps_base64(model_bytes)
 
