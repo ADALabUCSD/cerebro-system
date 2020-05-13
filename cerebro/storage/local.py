@@ -27,7 +27,17 @@ from .base import FilesystemStore
 
 
 class LocalStore(FilesystemStore):
-    """Uses the local filesystem as a store of intermediate data and training artifacts."""
+    """Uses the local filesystem as a store of intermediate data and training artifacts (also works with NFS mounted
+    remote storage).
+
+    :param prefix_path: Prefix path of the local directory (e.g., /user/test/cerebro).
+    :param train_path: (Optional) Path of the directory to store training data. If not specified will default to
+        <prefix_path>/intermediate_train_data
+    :param val_path: (Optional) Path of the directory to store validation data. If not specified will default to
+        <prefix_path>/intermediate_val_data
+    :param runs_path: (Optional) Path of the directory to store model checkpoints and log. If not specified will default
+        to <prefix_path>/runs
+    """
     FS_PREFIX = 'file://'
 
     def __init__(self, prefix_path, train_path=None, val_path=None, runs_path=None):

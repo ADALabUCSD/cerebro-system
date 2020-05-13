@@ -24,7 +24,7 @@ This module contains Keras abstractions for Cerebro.
 from __future__ import absolute_import
 
 from .spark.estimator import SparkEstimator
-from .spark.estimator import SparkModel
+from .estimator import CerebroModel
 
 SparkEstimator.__module__ = "cerebro.keras"
-SparkModel.__module__ = "cerebro.keras"
+CerebroModel.__module__ = "cerebro.keras"

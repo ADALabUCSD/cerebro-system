@@ -38,9 +38,9 @@ class _HPChoice(_HP):
 
 
 def hp_choice(options):
-    """ categorical options
-    :param options:
-    :return:
+    """ Categorical options
+
+    :param options: List of options.
     """
 
     if not type(options) == list:
@@ -62,10 +62,10 @@ class _HPUniform(_HP):
 
 
 def hp_uniform(min, max):
-    """ uniform distribution bounded by min and max
-    :param min:
-    :param max:
-    :return:
+    """ Uniform distribution bounded by min and max
+
+    :param min: Minimum value
+    :param max: Maximum value
     """
     return _HPUniform(min, max)
 
@@ -83,11 +83,11 @@ class _HPQUniform(_HP):
 
 
 def hp_quniform(min, max, q):
-    """ quantized uniform distribution with a quantum of q, bounded by min and max
-    :param min:
-    :param max:
-    :param q:
-    :return:
+    """ Quantized uniform distribution with a quantum of q, bounded by min and max
+
+    :param min: Minimum value
+    :param max: Maximum value
+    :param q: Quantum
     """
     return _HPQUniform(min, max, q)
 
@@ -103,9 +103,9 @@ class _HPLogUniform(_HP):
 
 def hp_loguniform(min, max):
     """ Log uniform distribution bounded by min and max
-    :param min:
-    :param max:
-    :return:
+
+    :param min: Minimum value
+    :param max: Maximum value
     """
     return _HPLogUniform(min, max)
 
@@ -124,11 +124,11 @@ class _HPQLogUnifrom(_HP):
 
 
 def hp_qloguniform(min, max, q):
-    """ quantized log uniform distribution with a quantum of q, bounded by min and max
-    :param min:
-    :param max:
-    :param q:
-    :return:
+    """ Quantized log uniform distribution with a quantum of q, bounded by min and max
+
+    :param min: Minimum value
+    :param max: Maximum value
+    :param q:   Quantum
     """
     return _HPQLogUnifrom(min, max, q)
 
@@ -154,9 +154,10 @@ class ModelSelection(object):
 
     def fit(self, df):
         """
-        Trains ML models on the given DataFrame
-        :param df:
-        :return:
+        Execute the model selection/AutoML workload on the given DataFrame.
+
+        :param df: Input DataFrame
+        :return: cerebro.tune.ModelSelectionResult
         """
         _, _, metadata, _ = self.backend.prepare_data(
             self.store, df, self.validation, label_columns=self.label_cols, feature_columns=self.feature_cols)
@@ -175,8 +176,9 @@ class ModelSelection(object):
 
     def fit_on_prepared_data(self, dataset_index=None):
         """
-        Trains ML models on already preapred data
-        :return:
+         Execute the model selection/AutoML workload on already prepared data.
+
+        :return: cerebro.tune.ModelSelectionResult
         """
         _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
 
@@ -226,7 +228,8 @@ class ModelSelection(object):
 
 
 class ModelSelectionResult(object):
-    """ModelSearchModel: Output of a ModelSearch fit() method"""
+
+    """Output of a model selection object ``fit(df)``/``fit_on_prepared_data()`` method."""
 
     def __init__(self, best_model, metrics, all_models, output_columns):
         self.best_model = best_model
@@ -236,8 +239,9 @@ class ModelSelectionResult(object):
 
     def set_output_columns(self, output_columns):
         """
-        Sets the output column names
-        :param output_columns:
+        Sets the output column names.
+
+        :param output_columns: Output column names.
         """
         self.output_columns = output_columns
         self.best_model.setOutputCols(output_columns)
@@ -247,22 +251,25 @@ class ModelSelectionResult(object):
 
     def keras(self):
         """
-        Returns the best model in Keras format
-        :return:
+        Returns the best model in Keras format.
+
+        :return: TensorFlow Keras model
         """
         return self.best_model.keras()
 
     def transform(self, dataset):
         """
-        Performs inference on a given dataset. Will run on CPU
-        :param dataset:
-        :return:
+        Performs inference on a given dataset. Will run on CPU.
+
+        :param dataset: Input DataFrame.
+        :return: DataFrame
         """
         return self.best_model.transform(dataset)
 
     def get_best_model(self):
         """ Returns the best models
-        :return: CerebroKerasModel
+
+        :return: :class:`cerebro.keras.CerebroModel`
         """
         return self.best_model
 
@@ -271,19 +278,22 @@ class ModelSelectionResult(object):
 
     def get_best_model_history(self):
         """ Get best model training history
-        :return:
+
+        :return: Dictionary containing all metric history at epoch granularity.
         """
         return self.best_model.getHistory()
 
     def get_all_models(self):
-        """ Returns a list of all models
-        :return: list[CerebroKerasModel]
+        """ Returns a list of all models.
+
+        :return: List containing :class:`cerebro.keras.CerebroModel` objects
         """
         return self.all_models
 
     def get_all_model_history(self):
-        """ Returns a list of model training metrics
-        :return: list[Dict]
+        """ Returns a list of model training metrics.
+
+        :return: List of dictionaries, each containing all metric history at epoch granularity.
         """
         return self.metrics
 

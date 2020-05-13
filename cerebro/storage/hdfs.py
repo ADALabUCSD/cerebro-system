@@ -37,14 +37,20 @@ class HDFSStore(FilesystemStore):
     2. "hdfs:///user/test/Cerebro"
     3. "/user/test/Cerebro"
 
-    The full path (including prefix, host, and port) will be used for all reads and writes to HDFS through Spark. If
-    host and port are not provided, they will be omitted. If prefix is not provided (case 3), it will be prefixed to
-    the full path regardless.
-
-    The localized path (without prefix, host, and port) will be used for interaction with PyArrow. Parsed host and port
-    information will be used to initialize PyArrow `HadoopFilesystem` if they are not provided through the `host` and
-    `port` arguments to this initializer. These parameters will default to `default` and `0` if neither the path URL
-    nor the arguments provide this information.
+    :param prefix_path: Prefix path of the local directory (e.g., /user/test/cerebro).
+    :param train_path: (Optional) Path of the directory to store training data. If not specified will default to
+        <prefix_path>/intermediate_train_data
+    :param val_path: (Optional) Path of the directory to store validation data. If not specified will default to
+        <prefix_path>/intermediate_val_data
+    :param runs_path: (Optional) Path of the directory to store model checkpoints and log. If not specified will default
+        to <prefix_path>/runs
+    :param temp_dir: (Optional) Temp directory on the local machine.
+    :param host: (Optional) NameNode hostname.
+    :param port: (Optional) NameNode port.
+    :param user: (Optional) Username connecting to HDFS.
+    :param kerb_ticket: (Optional) Path to Kerberos ticket cache.
+    :param driver: (Optional) Driver to be used for HDFS communication (default 'libhdfs')
+    :param extra_conf: (Optional) Extra Key/Value pairs for config; Will override any hdfs-site.xml properties
     """
 
     FS_PREFIX = 'hdfs://'

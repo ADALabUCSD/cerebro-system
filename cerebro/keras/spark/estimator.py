@@ -169,23 +169,23 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
                      CerebroEstimator):
     """Cerebro Spark Estimator for fitting Keras models to a DataFrame.
 
-    Supports `tf.keras` >= 2.1.
+    Supports ``tf.keras >= 2.1``.
 
     Args:
         model: Keras model to train.
         custom_objects: Optional dictionary mapping names (strings) to custom classes or functions to be considered
                         during serialization/deserialization.
-        optimizer: Keras optimizer to be converted into a `hvd.DistributedOptimizer` for training.
+        optimizer: Keras optimizer.
         loss: Keras loss or list of losses.
-        loss_weights: Optional list of float weight values to assign each loss.
-        sample_weight_col: Optional column indicating the weight of each sample.
-        metrics: Optional metrics to record.
-        callbacks: Keras callbacks.
         batch_size: Number of rows from the DataFrame per batch.
-        shuffle_buffer_size: Optional size of in-memory shuffle buffer in rows. Allocating a larger buffer size
+        loss_weights: (Optional) List of float weight values to assign each loss.
+        sample_weight_col:(Optional) Column indicating the weight of each sample.
+        metrics: (Optional) Metrics to record.
+        callbacks: (Optional) Keras callbacks.
+        shuffle_buffer_size: (Optional) Size of in-memory shuffle buffer in rows. Allocating a larger buffer size
                              increases randomness of shuffling at the cost of more host memory. Defaults to estimating
                              with an assumption of 4GB of memory per host.
-        transformation_fn: Optional function that takes a row as its parameter
+        transformation_fn: (Optional) Function that takes a row as its parameter
                            and returns a modified row that is then fed into the
                            train or validation step. This transformation is
                            applied after batching. See Petastorm TransformSpec
@@ -203,11 +203,11 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
                  custom_objects=None,
                  optimizer=None,
                  loss=None,
+                 batch_size=None,
                  loss_weights=None,
                  sample_weight_col=None,
                  metrics=None,
                  callbacks=None,
-                 batch_size=None,
                  shuffle_buffer_size=None,
                  transformation_fn=None
                  ):
@@ -364,7 +364,7 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
 class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, SparkEstimatorParamsWritable, CerebroModel):
     """Spark Transformer wrapping a Keras model, used for making predictions on a DataFrame.
 
-    Retrieve the underlying Keras model by calling `keras_model.getModel()`.
+    Retrieve the underlying Keras model by calling ``keras_model.getModel()``.
 
     Args:
         history: List of metrics, one entry per epoch during training.

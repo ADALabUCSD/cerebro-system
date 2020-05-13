@@ -27,6 +27,9 @@ class CerebroEstimator(object):
 
 
 class CerebroModel(object):
+    """ Wrapper object containing a trained Keras model. Can be used for making predictions on a DataFrame.
+
+    """
 
     def setCustomObjects(self, value):
         raise NotImplementedError('Abstract class. Method not implemented!')
@@ -34,8 +37,25 @@ class CerebroModel(object):
     def getCustomObjects(self):
         raise NotImplementedError('Abstract class. Method not implemented!')
 
+    def set_output_columns(self, output_columns):
+        """
+        Sets the output column names
+
+        :param output_columns:
+        """
+        self.setOutputCols(output_columns)
+
     def transform(self, df):
+        """Transform the given datafram using the traing ML model
+
+        :param df: Input DataFrame
+        :return: Transformed DataFrame
+        """
         raise NotImplementedError('Abstract class. Method not implemented!')
 
     def keras(self):
+        """ Returns the trained model in Keras format.
+
+            :return: TensorFlow Keras Model
+        """
         raise NotImplementedError('Abstract class. Method not implemented!')

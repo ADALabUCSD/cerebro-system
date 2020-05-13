@@ -20,8 +20,8 @@ This module contains several AutoML/Model Selection procedures and utility funct
 """
 
 from .base import hp_choice, hp_uniform, hp_quniform, hp_loguniform, hp_qloguniform
-from .grid import GridSearch, RandomSearch
-from .hyperopt import HyperOpt
+from .grid import GridSearch, RandomSearch, ModelSelectionResult
+from .tpe import TPESearch
 
 
 hp_choice.__module__ = "cerebro.tune"
@@ -32,4 +32,6 @@ hp_qloguniform.__module__ = "cerebro.tune"
 
 GridSearch.__module__ = "cerebro.tune"
 RandomSearch.__module__ = "cerebro.tune"
-HyperOpt.__module__ = "cerebro.tune"
+TPESearch.__module__ = "cerebro.tune"
+
+ModelSelectionResult.__module__ = "cerebro.tune"

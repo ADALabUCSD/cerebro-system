@@ -21,10 +21,27 @@ from .base import ModelSelection, is_larger_better, ModelSelectionResult, _HP, _
 
 
 class GridSearch(ModelSelection):
-    """Performs grid search using the given param grid"""
+    """Performs grid search using the given param grid
 
-    def __init__(self, backend, store, estimator_gen_fn, search_space, num_epochs, validation=0.25,
-                 evaluation_metric='loss', label_columns=['label'], feature_columns=['features'], verbose=2):
+    :param backend: Cerebro backend object (e.g., SparkBackend).
+    :param store: Cerebro store object (e.g., LocalStore, HDFSStore).
+    :param estimator_gen_fn: A function which takes
+     in a dictionary of parameters and returns a CerebroEstimator (e.g., cerebro.SparkEstimator).
+    :param search_space: A dictionary object defining the parameter search space.
+    :param num_epochs: Number of maximum epochs each model should be trained for.
+    :param evaluation_metric: Evaluation metric used to pick the best model (default loss).
+    :param validation: (Optional) The ratio of the validation set (e.g., 0.25) or a string defining the column name
+     defining the validation set. In the latter case the column value can be bool or int (default 0.25).
+    :param label_columns: (Optional) A list containing the names of the label/output columns (default ['label']).
+    :param feature_columns: (Optional) A list containing the names of the feature columns (default ['features']).
+    :param verbose: Debug output verbosity (0-2). Defaults to 1.
+
+    :return: :class:`cerebro.tune.ModelSelectionResult`
+    """
+
+    def __init__(self, backend, store, estimator_gen_fn, search_space, num_epochs,
+                 evaluation_metric='loss', validation=0.25, label_columns=['label'], feature_columns=['features'],
+                 verbose=1):
         super(GridSearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
                                          label_columns, feature_columns, verbose)
 
@@ -63,10 +80,26 @@ class GridSearch(ModelSelection):
 
 
 class RandomSearch(ModelSelection):
-    """ Performs Random Search over the param grid"""
+    """ Performs Random Search over the param grid
 
-    def __init__(self, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, validation=0.25,
-                 evaluation_metric='loss', label_columns=['label'], feature_columns=['features'], verbose=1):
+    :param backend: Cerebro backend object (e.g., SparkBackend).
+    :param store: Cerebro store object (e.g., LocalStore, HDFSStore).
+    :param estimator_gen_fn: A function which takes
+     in a dictionary of parameters and returns a CerebroEstimator (e.g., cerebro.SparkEstimator).
+    :param search_space: A dictionary object defining the parameter search space.
+    :param num_epochs: Number of maximum epochs each model should be trained for.
+    :param evaluation_metric: Evaluation metric used to pick the best model (default loss).
+    :param validation: (Optional) The ratio of the validation set (e.g., 0.25) or a string defining the column name
+     defining the validation set. In the latter case the column value can be bool or int (default 0.25).
+    :param label_columns: (Optional) A list containing the names of the label/output columns (default ['label']).
+    :param feature_columns: (Optional) A list containing the names of the feature columns (default ['features']).
+    :param verbose: Debug output verbosity (0-2). Defaults to 1.
+
+    :return: :class:`cerebro.tune.ModelSelectionResult`
+    """
+
+    def __init__(self, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, evaluation_metric='loss',
+                 validation=0.25, label_columns=['label'], feature_columns=['features'], verbose=1):
         super(RandomSearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
                                            label_columns, feature_columns, verbose)
 

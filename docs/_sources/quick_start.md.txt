@@ -14,7 +14,7 @@ from cerebro.keras import SparkEstimator
 from cerebro.storage import LocalStore, HDFSStore
 
 # Model selection/AutoML methods
-from cerebro.tune import GridSearch, RandomSearch, HyperOpt
+from cerebro.tune import GridSearch, RandomSearch, TPESearch
 
 # Utility functions for specifying the search space
 from cerebro.tune import hp_choice, hp_uniform, hp_quniform, hp_loguniform, hp_qloguniform
@@ -61,7 +61,7 @@ search_space = {
 }
 
 # Instantiate model selection object
-model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+model_selection = TPESearch(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
             num_models=30, num_epochs=10, validation=0.25, evaluation_metric='loss',
             feature_columns=['features'], label_columns=['label'])
 
@@ -125,7 +125,7 @@ store = LocalStore(prefix_path='/user/username/experiments', train_path='/user/u
 ...
 
 # Instantiate model selection object
-model_selection = HyperOpt(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+model_selection = TPESearch(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
             num_models=30, num_epochs=10, evaluation_metric='loss')
 
 # Perform model selection

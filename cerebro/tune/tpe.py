@@ -51,14 +51,34 @@ def _validate_and_generate_hyperopt_search_space(search_space):
     return hyperopt_space
 
 
-class HyperOpt(ModelSelection):
-    """Performs HyperOpt[https://github.com/hyperopt/hyperopt] search using the given param grid"""
+class TPESearch(ModelSelection):
+    """Performs Tree of Parzen Estimators (TPE) search using the given param grid.
 
-    def __init__(self, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, validation=0.25,
-                 evaluation_metric='loss', label_columns=['label'], feature_columns=['features'],
+    :param backend: Cerebro backend object (e.g., SparkBackend).
+    :param store: Cerebro store object (e.g., LocalStore, HDFSStore).
+    :param estimator_gen_fn: A function which takes in a dictionary of parameters and returns a CerebroEstimator
+     (e.g., cerebro.SparkEstimator).
+    :param search_space: A dictionary object defining the parameter search space.
+    :param num_models: Maximum number of models to be searched.
+    :param num_epochs: Number of maximum epochs each model should be trained for.
+    :param evaluation_metric: Evaluation metric used to pick the best model (default loss).
+    :param validation: (Optional) The ratio of the validation set (e.g., 0.25) or a string defining the column name
+     defining the validation set. In the latter case the column value can be bool or int (default 0.25).
+    :param label_columns: (Optional) A list containing the names of the label/output columns (default ['label']).
+    :param feature_columns: (Optional) A list containing the names of the feature columns (default ['features']).
+    :param parallelism: (Optional) Number of models trained parallelly. If not specified will default to Cerebro
+     number of workers. If model training times vary significantly consider increasing the number (e.g., 2*num_workers)
+     for better cluster utilization.
+    :param verbose: Debug output verbosity (0-2). Defaults to 1.
+
+    :return: :class:`cerebro.tune.ModelSelectionResult`
+    """
+
+    def __init__(self, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, evaluation_metric='loss',
+                 validation=0.25, label_columns=['label'], feature_columns=['features'],
                  parallelism=None, verbose=2):
-        super(HyperOpt, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
-                                       label_columns, feature_columns, verbose)
+        super(TPESearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
+                                  label_columns, feature_columns, verbose)
 
         if is_larger_better(evaluation_metric):
             raise Exception('HyperOpt supports only minimizing evaluation metrics (e.g., loss)')

@@ -71,7 +71,7 @@ class SparkBackend(Backend):
         :param disk_cache_size: Size of the disk data cache in GBs (default 10GB).
         :param nics: List of NIC names, will only use these for communications. If None is specified, use any
             available networking interfaces (default None)
-        :param verbose: Debug output verbosity (0-2). Defaults to 1..
+        :param verbose: Debug output verbosity (0-2). Defaults to 1.
     """
 
     def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10,

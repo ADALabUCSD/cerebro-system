@@ -6,6 +6,7 @@ Cerebro API
 
 .. automodule:: cerebro.tune
    :members:
+   :inherited-members:
 
 .. automodule:: cerebro.backend
    :members:
