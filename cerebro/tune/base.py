@@ -22,8 +22,6 @@ import numpy as np
 
 from ..backend import constants
 
-np.random.seed(constants.RANDOM_SEED)
-
 
 class _HP(object):
     def sample_value(self):
@@ -34,9 +32,10 @@ class _HP(object):
 class _HPChoice(_HP):
     def __init__(self, options):
         self.options = options
+        self.rand = np.random.RandomState(constants.RANDOM_SEED)
 
     def sample_value(self):
-        return np.random.choice(self.options, 1)[0]
+        return self.rand.choice(self.options, 1)[0]
 
 
 def hp_choice(options):
@@ -59,8 +58,10 @@ class _HPUniform(_HP):
         self.min = min
         self.max = max
 
+        self.rand = np.random.RandomState(constants.RANDOM_SEED)
+
     def sample_value(self):
-        return np.random.uniform(self.min, self.max, 1)[0]
+        return self.rand.uniform(self.min, self.max, 1)[0]
 
 
 def hp_uniform(min, max):

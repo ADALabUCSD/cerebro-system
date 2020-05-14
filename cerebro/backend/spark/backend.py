@@ -19,7 +19,6 @@ from __future__ import absolute_import
 import io
 import math
 import os
-import random
 import threading
 import time
 import datetime
@@ -37,9 +36,6 @@ from ..backend import Backend
 PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 TOTAL_BUFFER_MEMORY_CAP_GIB = constants.TOTAL_BUFFER_MEMORY_CAP_GIB
 BYTES_PER_GIB = constants.BYTES_PER_GIB
-
-
-random.seed(constants.RANDOM_SEED)
 
 
 def default_num_workers():
@@ -121,6 +117,8 @@ class SparkBackend(Backend):
         self.spark_job_group = None
         self.data_loaders_initialized = False
 
+        self.rand = np.random.RandomState(constants.RANDOM_SEED)
+
     def initialize_workers(self):
         """Initializes Cerebro workers"""
         result_queue = queue.Queue(1)
@@ -181,7 +179,7 @@ class SparkBackend(Backend):
 
         model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self._num_workers())]
         # take a random ordering
-        random.shuffle(model_worker_pairs)
+        self.rand.shuffle(model_worker_pairs)
 
         model_states = {i: False for i in range(len(models))}
         worker_states = {i: False for i in range(self._num_workers())}

@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+from cerebro.backend import constants
 from .base import ModelSelection, _HP, _HPChoice, _HPUniform, _HPLogUniform, _HPQLogUnifrom, _HPQUniform,\
     update_model_results, is_larger_better, ModelSelectionResult
 from hyperopt import tpe, hp, Trials, STATUS_OK, STATUS_RUNNING
@@ -96,6 +96,7 @@ class TPESearch(ModelSelection):
     def _fit_on_prepared_data(self, dataset_idx, metadata):
         trials = Trials()
         domain = Domain(None, self.hyperopt_search_space)
+        rand = np.random.RandomState(constants.RANDOM_SEED)
 
         all_estimators = []
         all_estimator_results = {}
@@ -105,7 +106,7 @@ class TPESearch(ModelSelection):
             # Using HyperOpt TPE to generate parameters
             hyperopt_params = []
             for j in range(i, i + n):
-                new_param = tpe.suggest([j], domain, trials, np.random.randint(0, 2 ** 31 - 1))
+                new_param = tpe.suggest([j], domain, trials, rand.randint(0, 2 ** 31 - 1))
                 new_param[0]['status'] = STATUS_RUNNING
 
                 trials.insert_trial_docs(new_param)
