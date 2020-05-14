@@ -15,6 +15,8 @@
 # ==============================================================================
 
 from __future__ import absolute_import
+
+import datetime
 import numpy as np
 import pyarrow as pa
 from pyspark.sql import SparkSession
@@ -444,9 +446,11 @@ def _create_dataset(store, df, feature_columns, label_columns,
     train_data_path = store.get_train_data_path(dataset_idx)
     val_data_path = store.get_val_data_path(dataset_idx)
     if verbose >= 1:
-        print('writing dataframes')
-        print('train_data_path={}'.format(train_data_path))
-        print('val_data_path={}'.format(val_data_path))
+        print('CEREBRO => Time: {}, Writing DataFrames'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        print('CEREBRO => Time: {}, Train Data Path: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                               train_data_path))
+        print('CEREBRO => Time: {}, Val Data Path: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                             val_data_path))
 
     schema_cols = feature_columns + label_columns
     if sample_weight_col:
@@ -477,16 +481,17 @@ def _create_dataset(store, df, feature_columns, label_columns,
     train_partitions = max(int(num_partitions * (1.0 - validation_ratio)),
                            num_workers)
     if verbose >= 1:
-        print('train_partitions={}'.format(train_partitions))
+        print('CEREBRO => Time: {}, Train Partitions: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                                train_partitions))
 
     spark = SparkSession.builder.getOrCreate()
     # FIXME pass hdfs_driver from user interface instead of hardcoded PETASTORM_HDFS_DRIVER
     train_resolver = FilesystemResolver(train_data_path,
-        spark.sparkContext._jsc.hadoopConfiguration(),
-        user=spark.sparkContext.sparkUser(),
-                       hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
+                                        spark.sparkContext._jsc.hadoopConfiguration(),
+                                        user=spark.sparkContext.sparkUser(),
+                                        hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
     with materialize_dataset(spark, train_data_path, petastorm_schema, parquet_row_group_size_mb,
-        filesystem_factory=train_resolver.filesystem_factory()):
+                             filesystem_factory=train_resolver.filesystem_factory()):
         train_rdd = train_df.rdd.map(lambda x: x.asDict()).map(
             lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
             .map(lambda x: dict_to_spark_row(petastorm_schema, x))
@@ -501,13 +506,14 @@ def _create_dataset(store, df, feature_columns, label_columns,
         val_partitions = max(int(num_partitions * validation_ratio),
                              num_workers)
         if verbose >= 1:
-            print('val_partitions={}'.format(val_partitions))
+            print('CEREBRO => Time: {}, Val Partitions: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                                  val_partitions))
         val_resolver = FilesystemResolver(val_data_path,
-            spark.sparkContext._jsc.hadoopConfiguration(),
-            user=spark.sparkContext.sparkUser(),
-                        hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
+                                          spark.sparkContext._jsc.hadoopConfiguration(),
+                                          user=spark.sparkContext.sparkUser(),
+                                          hdfs_driver=constants.PETASTORM_HDFS_DRIVER)
         with materialize_dataset(spark, val_data_path, petastorm_schema, parquet_row_group_size_mb,
-            filesystem_factory=val_resolver.filesystem_factory()):
+                                 filesystem_factory=val_resolver.filesystem_factory()):
             val_rdd = val_df.rdd.map(lambda x: x.asDict()).map(
                 lambda x: {k: np.array(x[k], dtype=spark_to_petastorm_type(metadata[k]['spark_data_type'])) for k in x}) \
                 .map(lambda x: dict_to_spark_row(petastorm_schema, x))
@@ -522,14 +528,16 @@ def _create_dataset(store, df, feature_columns, label_columns,
         store, label_columns + feature_columns, sample_weight_col, dataset_idx)
 
     if verbose:
-        print('train_rows={}'.format(train_rows))
+        print(
+        'CEREBRO => Time: {}, Train Rows: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), train_rows))
     if val_df:
         if val_rows == 0:
             raise ValueError(
                 'Validation DataFrame does not any samples with validation param {}'
                     .format(validation))
         if verbose:
-            print('val_rows={}'.format(val_rows))
+            print(
+            'CEREBRO => Time: {}, Val Rows: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), val_rows))
 
     return train_rows, val_rows, pq_metadata, avg_row_size
 
@@ -555,14 +563,15 @@ def prepare_data(num_workers, store, df, label_columns, feature_columns,
     check_validation(validation, df=df)
     num_partitions = num_partitions or df.rdd.getNumPartitions()
     if num_workers <= 0 or num_partitions <= 0:
-        raise ValueError('num_workers={} and partitions_per_process={} must both be > 0'
+        raise ValueError('num_workers={} and partitions_per_process: {} must both be > 0'
                          .format(num_workers, num_partitions))
 
     if not label_columns:
         raise ValueError('Parameter label_columns cannot be None or empty')
 
     if verbose >= 1:
-        print('num_partitions={}'.format(num_partitions))
+        print('CEREBRO => Time: {}, Num Partitions: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                                              num_partitions))
 
     for col in label_columns:
         if col not in df.columns:

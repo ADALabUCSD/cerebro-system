@@ -17,10 +17,12 @@ import os
 from distutils.version import LooseVersion
 import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
-
+import datetime
 import numpy as np
 
-np.random.seed(2020)
+from ..backend import constants
+
+np.random.seed(constants.RANDOM_SEED)
 
 
 class _HP(object):
@@ -159,24 +161,31 @@ class ModelSelection(object):
         :param df: Input DataFrame
         :return: cerebro.tune.ModelSelectionResult
         """
-        if self.verbose >= 1: print('Preparing data')
+        if self.verbose >= 1: print(
+            'CEREBRO => Time: {}, Preparing Data'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         _, _, metadata, _ = self.backend.prepare_data(
             self.store, df, self.validation, label_columns=self.label_cols, feature_columns=self.feature_cols)
 
-        if self.verbose >= 1: print('Initializing workers')
+        if self.verbose >= 1: print(
+            'CEREBRO => Time: {}, Initializing Workers'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         # initialize backend and data loaders
         self.backend.initialize_workers()
 
-        if self.verbose >= 1: print('Initializing data loaders')
+        if self.verbose >= 1: print(
+            'CEREBRO => Time: {}, Initializing Data Loaders'.format(
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         self.backend.initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
 
         try:
-            if self.verbose >= 1: print('Launching model selection workload')
+            if self.verbose >= 1: print('CEREBRO => Time: {}, Launching Model Selection Workload'.format(
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             result = self._fit_on_prepared_data(None, metadata)
             return result
         finally:
             # teardown the backend workers
-            if self.verbose >= 1: print('Terminating workers')
+            if self.verbose >= 1: print(
+                'CEREBRO => Time: {}, Terminating Workers'.format(
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             self.backend.teardown_workers()
 
     def fit_on_prepared_data(self, dataset_index=None):
@@ -188,19 +197,25 @@ class ModelSelection(object):
         _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
 
         # initialize backend and data loaders
-        if self.verbose >= 1: print('Initializing workers')
+        if self.verbose >= 1: print(
+            'CEREBRO => Time: {}, Initializing Workers'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         self.backend.initialize_workers()
 
-        if self.verbose >= 1: print('Initializing data loaders')
+        if self.verbose >= 1: print(
+            'CEREBRO => Time: {}, Initializing Data Loaders'.format(
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
 
         try:
-            if self.verbose >= 1: print('Launching model selection workload')
+            if self.verbose >= 1: print('CEREBRO => Time: {}, Launching Model Selection Workload'.format(
+                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             result = self._fit_on_prepared_data(dataset_index, metadata)
             return result
         finally:
             # teardown the backend workers
-            if self.verbose >= 1: print('Terminating workers')
+            if self.verbose >= 1: print(
+                'CEREBRO => Time: {}, Terminating Workers'.format(
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             self.backend.teardown_workers()
 
     def _fit_on_prepared_data(self):
@@ -218,26 +233,27 @@ class ModelSelection(object):
         est.setFeatureCols(self.feature_cols)
         est.setLabelCols(self.label_cols)
         est.setStore(self.store)
+        est.setVerbose(self.verbose)
         return est
 
     def _log_epoch_metrics_to_tensorboard(self, estimators, estimator_results):
         # logging to TensorBoard
         with self.remote_store.get_local_logs_dir() as logs_dir:
             for est in estimators:
-                log_model_epoch_metrics(os.path.join(logs_dir, est.getRunId()), estimator_results[est.getRunId()],
-                                        est.getEpochs())
+                log_model_epoch_metrics(est.getRunId(), os.path.join(logs_dir, est.getRunId()),
+                                        estimator_results[est.getRunId()],
+                                        est.getEpochs(), self.verbose)
             self.remote_store.sync(logs_dir)
 
     def _log_hp_to_tensorboard(self, estimators, hparams):
         # logging to TensorBoard
         with self.remote_store.get_local_logs_dir() as logs_dir:
             for i, est in enumerate(estimators):
-                log_model_hps(os.path.join(logs_dir, est.getRunId()), est.getRunId(), hparams[i])
+                log_model_hps(os.path.join(logs_dir, est.getRunId()), est.getRunId(), hparams[i], self.verbose)
             self.remote_store.sync(logs_dir)
 
 
 class ModelSelectionResult(object):
-
     """Output of a model selection object ``fit(df)``/``fit_on_prepared_data()`` method."""
 
     def __init__(self, best_model, metrics, all_models, output_columns):
@@ -307,26 +323,48 @@ class ModelSelectionResult(object):
         return self.metrics
 
 
-def log_model_hps(logdir, model_id, hparams):
+def log_model_hps(logdir, model_id, hparams, verbose=1):
     """
     Logs model hyperparameters
     :param logdir:
     :param hparams:
+    :param verbose:
     """
     with tf.summary.create_file_writer(logdir).as_default():
         hp.hparams(hparams, trial_id=model_id)
 
+    if verbose >= 2:
+        print(
+            ('CEREBRO => Time: {}, Model: {}, ' + ", ".join([k + ": {}" for k in hparams])).format(
+                *([
+                      datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), model_id] + [
+                      hparams[k] for k in hparams]
+                  )
+            )
+        )
 
-def log_model_epoch_metrics(logdir, metrics, step_number):
+
+def log_model_epoch_metrics(model_id, logdir, metrics, step_number, verbose=1):
     """
     Logs model epoch metrics
     :param logdir:
     :param metrics:
     :param step_number:
+    :param verbose:
     """
     with tf.summary.create_file_writer(logdir).as_default():
         for key in metrics:
             tf.summary.scalar(key, metrics[key][step_number - 1], step=step_number)
+
+    if verbose >= 2:
+        print(
+            ('CEREBRO => Time: {}, Model: {}, Epoch: {}, ' + ", ".join([k + ": {}" for k in metrics])).format(
+                *([
+                      datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), model_id, step_number] + [
+                      metrics[k][step_number - 1] for k in metrics]
+                  )
+            )
+        )
 
 
 def is_larger_better(metric_name):

@@ -22,7 +22,7 @@ import os
 import random
 import threading
 import time
-
+import datetime
 import h5py
 import numpy as np
 import pyspark
@@ -37,6 +37,9 @@ from ..backend import Backend
 PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 TOTAL_BUFFER_MEMORY_CAP_GIB = constants.TOTAL_BUFFER_MEMORY_CAP_GIB
 BYTES_PER_GIB = constants.BYTES_PER_GIB
+
+
+random.seed(constants.RANDOM_SEED)
 
 
 def default_num_workers():
@@ -497,12 +500,12 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
             remote_store.sync(run_output_dir)
             finalization_time = time.time() - begin_time
 
-            if verbose >= 1:
-                print('Model {} initialization time: {}, training time: {}, finalization time: {}'.format(
-                    'train' if is_train else 'valid',
-                    initialization_time, training_time, finalization_time))
+            if verbose >= 2:
+                print('CEREBRO => Time: {}, Model: {}, Mode: {}, Initialization Time: {}, Training Time: {}, '
+                      'Finalization Time: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        run_id, 'TRAIN' if is_train else 'VALID', initialization_time, training_time, finalization_time))
 
-            return (result, step_counter_callback.get_step_count())
+            return result, step_counter_callback.get_step_count()
 
     return train
 

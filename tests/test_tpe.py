@@ -67,7 +67,7 @@ class TestTPE(unittest.TestCase):
 
         hyperopt = TPESearch(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
                             num_models=3, num_epochs=1, validation=0.25, evaluation_metric='loss',
-                            feature_columns=['features'], label_columns=['label'])
+                            feature_columns=['features'], label_columns=['label'], verbose=2)
 
         model = hyperopt.fit(df)
         output_df = model.transform(df)
