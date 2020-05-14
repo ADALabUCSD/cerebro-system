@@ -71,12 +71,15 @@ class SparkBackend(Backend):
         :param start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
                    If it is not set as well, defaults to 600 seconds.
         :param disk_cache_size: Size of the disk data cache in GBs (default 10GB).
+        :param data_readers_pool_type: Data readers pool type ('process' or 'thread')
+        :param num_data_reader: Number of data readers
         :param nics: List of NIC names, will only use these for communications. If None is specified, use any
             available networking interfaces (default None)
         :param verbose: Debug output verbosity (0-2). Defaults to 1.
     """
 
     def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10,
+                 data_readers_pool_type='process', num_data_readers=4,
                  nics=None, verbose=1):
 
         tmout = timeout.Timeout(start_timeout,
@@ -89,6 +92,8 @@ class SparkBackend(Backend):
                                            key=secret.make_secret_key(),
                                            timeout=tmout,
                                            disk_cache_size_bytes=disk_cache_size * constants.BYTES_PER_GIB,
+                                           data_readers_pool_type=data_readers_pool_type,
+                                           num_data_readers=num_data_readers,
                                            nics=nics)
 
         if spark_context is None:
@@ -158,7 +163,8 @@ class SparkBackend(Backend):
             shard_count = self._num_workers()
             _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, dataset_idx)
             data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size,
-                                               self.settings.disk_cache_size_bytes)
+                                               self.settings.disk_cache_size_bytes,
+                                               self.settings.data_readers_pool_type, self.settings.num_data_readers)
 
             for task_client in self.task_clients:
                 task_client.initialize_data_loaders(data_readers_fn)
@@ -316,7 +322,7 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
     return trainer
 
 
-def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cache_size_limit):
+def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cache_size_limit, pool_type, num_readers):
     def _data_readers(index):
         from petastorm import make_reader
 
@@ -327,6 +333,7 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                    shard_count=shard_count,
                                    hdfs_driver=PETASTORM_HDFS_DRIVER,
                                    schema_fields=schema_fields,
+                                   reader_pool_type=pool_type, workers_count=num_readers,
                                    cache_type='local-disk',
                                    cache_size_limit=cache_size_limit,
                                    cache_row_size_estimate=avg_row_size,
@@ -338,6 +345,7 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                      shard_count=shard_count,
                                      hdfs_driver=PETASTORM_HDFS_DRIVER,
                                      schema_fields=schema_fields,
+                                     reader_pool_type=pool_type, workers_count=num_readers,
                                      cache_type='local-disk',
                                      cache_size_limit=cache_size_limit,
                                      cache_row_size_estimate=avg_row_size,

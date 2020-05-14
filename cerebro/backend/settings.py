@@ -18,21 +18,16 @@
 class Settings(object):
 
     def __init__(self, verbose=0, key=None, timeout=None, num_workers=None, nics=None,
-                 disk_cache_size_bytes=10*1024*1024*1024, polling_period=2):
+                 disk_cache_size_bytes=10*1024*1024*1024, data_readers_pool_type='process', num_data_readers=4, polling_period=2):
         """
         :param verbose: level of verbosity
-        :type verbose: int
         :param key: used for encryption of parameters passed across the hosts
-        :type key: str
-        :param timeout: has to finish all the checks before this timeout runs
-        out.
-        :type timeout: Cerebro.run.common.util.timeout.Timeout
-        :param num_workers: number of Cerebro processes (-np)
-        :type num_workers: int
+        :param timeout: has to finish all the checks before this timeout runs out.
+        :param num_workers: number of Cerebro processes
         :param disk_cache_size_bytes: Size of the disk data cache in GBs (default 10GB).
-        :type disk_cache_size_bytes: int
+        :param data_readers_pool_type: Data readers pool type ('process' or 'thread')
+        :param num_data_readers: Number of data readers
         :param nics: specify the NICs to be used for tcp network communication.
-        :type nics: string
         """
         self.verbose = verbose
         self.key = key
@@ -41,3 +36,5 @@ class Settings(object):
         self.nics = nics
         self.polling_period = polling_period
         self.disk_cache_size_bytes = disk_cache_size_bytes
+        self.data_readers_pool_type = data_readers_pool_type
+        self.num_data_readers = num_data_readers
