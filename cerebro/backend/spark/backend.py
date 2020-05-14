@@ -455,9 +455,6 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
             callbacks = [step_counter_callback]
             callbacks = callbacks + user_callbacks
             ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
-            # restore model from checkpoint if it exists
-            if os.path.exists(ckpt_file):
-                model.load_weights(ckpt_file)
 
             steps_per_epoch = int(math.ceil(train_rows / batch_size / num_workers))
 
