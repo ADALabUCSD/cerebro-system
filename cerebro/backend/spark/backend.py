@@ -27,13 +27,12 @@ import h5py
 import numpy as np
 import pyspark
 import tensorflow as tf
-from ..backend import Backend
 from six.moves import queue
 
-from .. import timeout, codec, settings as spark_settings, secret, host_hash, job_id
-
-from .. import constants
 from . import service_driver, service_task, util
+from .. import constants
+from .. import timeout, settings as spark_settings, secret, host_hash, job_id
+from ..backend import Backend
 
 PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 TOTAL_BUFFER_MEMORY_CAP_GIB = constants.TOTAL_BUFFER_MEMORY_CAP_GIB
@@ -234,7 +233,7 @@ class SparkBackend(Backend):
             res = model_results[run_id]
             steps = model_sub_epoch_steps[run_id]
             for k in res:
-                res[k] = (np.sum([rk * steps[i] for i,rk in enumerate(res[k])]) / np.sum(steps))
+                res[k] = (np.sum([rk * steps[i] for i, rk in enumerate(res[k])]) / np.sum(steps))
 
         return model_results
 
@@ -299,12 +298,17 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
     estimator._check_params(metadata)
     keras_utils = estimator._get_keras_utils()
     run_id = estimator.getRunId()
-    if estimator._has_checkpoint(run_id):
-        serialized_model = estimator._load_model_from_checkpoint(run_id)
-    else:
-        serialized_model = estimator._compile_model(keras_utils)
 
-    trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx,
+    # checkpointing the model if it does not exist
+    if not estimator._has_checkpoint(run_id):
+        model = estimator._compile_model(keras_utils)
+        remote_store = store.to_remote(run_id, dataset_idx)
+        with remote_store.get_local_output_dir() as run_output_dir:
+            ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
+            model.save(ckpt_file)
+            remote_store.sync(run_output_dir)
+
+    trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx,
                                 train_rows, val_rows, backend._num_workers())
     return trainer
 
@@ -390,7 +394,7 @@ def _make_mapper(driver_addresses, settings):
     return _mapper
 
 
-def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model, dataset_idx, train_rows, val_rows,
+def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, train_rows, val_rows,
                       num_workers):
     # Estimator parameters
     label_columns = estimator.getLabelCols()
@@ -443,10 +447,6 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
         else:
             shuffle_buffer_size = user_shuffle_buffer_size
 
-        with tf.keras.utils.custom_object_scope(custom_objects):
-            model = deserialize_keras_model(
-                serialized_model, lambda x: tf.keras.models.load_model(x))
-
         # # Verbose mode 1 will print a progress bar
         verbose = user_verbose
 
@@ -455,6 +455,11 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
             callbacks = [step_counter_callback]
             callbacks = callbacks + user_callbacks
             ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
+
+            # restoring the model from the previous chckpoint
+            with tf.keras.utils.custom_object_scope(custom_objects):
+                model = deserialize_keras_model(
+                    remote_store.get_last_checkpoint(), lambda x: tf.keras.models.load_model(x))
 
             steps_per_epoch = int(math.ceil(train_rows / batch_size / num_workers))
 
@@ -505,7 +510,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, serialized_model
 def _deserialize_keras_model_fn():
     def deserialize_keras_model(model_bytes, load_model_fn):
         """Deserialize model from byte array encoded in base 64."""
-        model_bytes = codec.loads_base64(model_bytes)
+        # model_bytes = codec.loads_base64(model_bytes)
         bio = io.BytesIO(model_bytes)
         with h5py.File(bio, 'r') as f:
             return load_model_fn(f)

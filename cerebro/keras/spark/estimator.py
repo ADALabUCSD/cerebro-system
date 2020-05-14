@@ -323,7 +323,8 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         if optimizer_weight_values:
             model.optimizer.set_weights(optimizer_weight_values)
 
-        return keras_utils.serialize_model(model)
+        return model
+        # return keras_utils.serialize_model(model)
 
     def create_model(self, history, run_id, metadata):
         keras_utils = self._get_keras_utils()

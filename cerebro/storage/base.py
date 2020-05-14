@@ -130,7 +130,8 @@ class Store(object):
             'logs_subdir': self.get_logs_subdir(),
             'get_local_output_dir': self.get_local_output_dir_fn(run_id),
             'get_local_logs_dir': self.get_local_output_dir_fn("logs"),
-            'sync': self.sync_fn(run_id)
+            'sync': self.sync_fn(run_id),
+            'get_last_checkpoint': lambda: self.read(self.get_checkpoint_path(run_id))
         }
 
 
