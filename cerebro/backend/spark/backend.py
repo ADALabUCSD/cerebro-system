@@ -102,10 +102,12 @@ class SparkBackend(Backend):
         if num_workers is None:
             num_workers = spark_context.defaultParallelism
             if settings.verbose >= 1:
-                print('Running %d workers (inferred from spark.default.parallelism)...' % num_workers)
+                print('CEREBRO => Time: {}, Running %d Workers (inferred from spark.default.parallelism)'.format(
+                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), num_workers))
         else:
             if settings.verbose >= 1:
-                print('Running %d workers...' % num_workers)
+                print('CEREBRO => Time: {}, Running %d Workers'.format(datetime.datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"), num_workers))
 
         settings.num_workers = num_workers
         self.settings = settings
