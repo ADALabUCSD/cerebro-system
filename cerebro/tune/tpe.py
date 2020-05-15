@@ -76,7 +76,7 @@ class TPESearch(ModelSelection):
 
     def __init__(self, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, evaluation_metric='loss',
                  validation=0.25, label_columns=['label'], feature_columns=['features'],
-                 parallelism=None, verbose=2):
+                 parallelism=None, verbose=1):
         super(TPESearch, self).__init__(backend, store, validation, estimator_gen_fn, evaluation_metric,
                                   label_columns, feature_columns, verbose)
 
