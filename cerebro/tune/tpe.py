@@ -40,11 +40,9 @@ def _validate_and_generate_hyperopt_search_space(search_space):
         elif isinstance(search_space[k], _HPQUniform):
             hyperopt_space[k] = hp.quniform(k, search_space[k].min, search_space[k].max, search_space[k].q)
         elif isinstance(search_space[k], _HPLogUniform):
-            hyperopt_space[k] = hp.loguniform(k, np.log(np.power(10.0, search_space[k].min)), np.log(np.power(
-                10.0, search_space[k].max)))
+            hyperopt_space[k] = hp.loguniform(k, search_space[k].min,  search_space[k].max)
         elif isinstance(search_space[k], _HPQLogUnifrom):
-            hyperopt_space[k] = hp.qloguniform(k, np.log(np.power(10.0, search_space[k].min)), np.log(np.power(
-                10.0, search_space[k].max)), search_space[k].q)
+            hyperopt_space[k] = hp.qloguniform(k, search_space[k].min, search_space[k].max, search_space[k].q)
         else:
             raise Exception('Unsupported hyperparameter option type: {}'.format(type(search_space[k])))
 
