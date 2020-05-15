@@ -67,15 +67,15 @@ class SparkBackend(Backend):
         :param start_timeout: Timeout for Spark tasks to spawn, register and start running the code, in seconds.
                    If it is not set as well, defaults to 600 seconds.
         :param disk_cache_size: Size of the disk data cache in GBs (default 10GB).
-        :param data_readers_pool_type: Data readers pool type ('process' or 'thread')
-        :param num_data_reader: Number of data readers
+        :param data_readers_pool_type: Data readers pool type ('process' or 'thread') (default 'thread')
+        :param num_data_readers: Number of data readers (default 10)
         :param nics: List of NIC names, will only use these for communications. If None is specified, use any
             available networking interfaces (default None)
         :param verbose: Debug output verbosity (0-2). Defaults to 1.
     """
 
     def __init__(self, spark_context=None, num_workers=None, start_timeout=600, disk_cache_size=10,
-                 data_readers_pool_type='process', num_data_readers=4,
+                 data_readers_pool_type='thread', num_data_readers=10,
                  nics=None, verbose=1):
 
         tmout = timeout.Timeout(start_timeout,
