@@ -84,6 +84,10 @@ class _HPQUniform(_HP):
         self.max = max
         self.q = q
 
+    # TODO
+    def sample_value(self):
+        raise NotImplementedError('Method not implemented')
+
 
 def hp_quniform(min, max, q):
     """ Quantized uniform distribution with a quantum of q, bounded by min and max
@@ -102,6 +106,10 @@ class _HPLogUniform(_HP):
 
         self.min = min
         self.max = max
+
+    # TODO
+    def sample_value(self):
+        raise NotImplementedError('Method not implemented')
 
 
 def hp_loguniform(min, max):
@@ -124,6 +132,10 @@ class _HPQLogUnifrom(_HP):
         self.min = min
         self.max = max
         self.q = q
+
+    # TODO
+    def sample_value(self):
+        raise NotImplementedError('Method not implemented')
 
 
 def hp_qloguniform(min, max, q):
