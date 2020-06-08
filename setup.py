@@ -41,7 +41,7 @@ setup(
     license='Apache License 2.0',
     author='Supun Nakandala',
     author_email='snakanda@eng.ucsd.edu',
-    url='',
+    url='https://github.com/ADALabUCSD/cerebro-system',
     packages=packages,
     include_package_data=True,
     install_requires=requirements,
