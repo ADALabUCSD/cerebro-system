@@ -26,7 +26,7 @@ packages = find_packages()
 assert packages
 
 # read version from the package file.
-version_str = '0.0.1'
+version_str = '1.0.0'
 with (open(os.path.join(this, 'cerebro/__init__.py'), "r")) as f:
     line = [_ for _ in [_.strip("\r\n ")
                                 for _ in f.readlines()] if _.startswith("__version__")]
@@ -34,7 +34,7 @@ with (open(os.path.join(this, 'cerebro/__init__.py'), "r")) as f:
         version_str = line[0].split('=')[1].strip('" ')
 
 setup(
-    name='cerebro',
+    name='cerebro-dl',
     version=version_str,
     description="Resource-efficient Deep Learning Model Selection on Data Systems",
     long_description_content_type='text/markdown',
