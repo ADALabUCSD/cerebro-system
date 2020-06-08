@@ -19,7 +19,7 @@ The best way to install the ``Cerebro`` is via pip.
 .. highlight:: bash
 .. code-block:: bash
 
-    pip install -U cerebro
+    pip install -U cerebro-dl
 
 Alternatively, you can git clone and run the provided Makefile script to install the master branch
 
