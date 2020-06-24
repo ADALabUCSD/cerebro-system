@@ -29,6 +29,8 @@ Detailed documentation about the system can be found [here](https://adalabucsd.g
 
 Acknowledgement
 ---------------
+This project was/is supported in part by a Hellman Fellowship, the NIDDK of the NIH under award number R01DK114945, and an NSF CAREER Award.
+
 We used the following projects when building Cerebro.
 - [Horovod](https://github.com/horovod/horovod): Cerebro's Apache Spark implementation uses code from the Horovod's
  implementation for Apache Spark.
