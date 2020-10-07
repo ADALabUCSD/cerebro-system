@@ -176,6 +176,13 @@ class SparkBackend(Backend):
                             'first!')
 
     def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
+
+        mode = "Training"
+        if not is_train:
+            mode = "Validation"
+        if self.settings.verbose >= 2:
+            print('CEREBRO => Time: {}, Starting EPOCH {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), mode))
+
         sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col,
                                                   self.settings.verbose) \
                               for model in models]
@@ -205,6 +212,10 @@ class SparkBackend(Backend):
                         model_states[m] = True
                         worker_states[w] = True
                         model_on_worker[w] = m
+
+                        if self.settings.verbose >= 2:
+                            print('CEREBRO => Time: {}, Scheduled Model: {}, on Worker: {}'.format(
+                                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), models[m].getRunId(), w))
                 else:
                     m = model_on_worker[w]
                     if m != -1:
@@ -231,6 +242,10 @@ class SparkBackend(Backend):
                                         model_results[run_id][k].append(res[k][0])
                                     model_sub_epoch_steps[run_id].append(steps)
 
+                        if self.settings.verbose >= 2:
+                            print('CEREBRO => Time: {}, Completed Model: {}, on Worker: {}'.format(
+                                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), models[m].getRunId(), w))
+
             time.sleep(self.settings.polling_period)
 
         # incrementing the model epoch number
@@ -244,6 +259,9 @@ class SparkBackend(Backend):
             steps = model_sub_epoch_steps[run_id]
             for k in res:
                 res[k] = (np.sum([rk * steps[i] for i, rk in enumerate(res[k])]) / np.sum(steps))
+
+        if self.settings.verbose >= 2:
+            print('CEREBRO => Time: {}, Completed EPOCH {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), mode))        
 
         return model_results
 
