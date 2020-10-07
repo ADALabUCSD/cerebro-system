@@ -242,9 +242,9 @@ class SparkBackend(Backend):
                                         model_results[run_id][k].append(res[k][0])
                                     model_sub_epoch_steps[run_id].append(steps)
 
-                        if self.settings.verbose >= 2:
-                            print('CEREBRO => Time: {}, Completed Model: {}, on Worker: {}'.format(
-                                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), models[m].getRunId(), w))
+                            if self.settings.verbose >= 2:
+                                print('CEREBRO => Time: {}, Completed Model: {}, on Worker: {}'.format(
+                                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), models[m].getRunId(), w))
 
             time.sleep(self.settings.polling_period)
 
