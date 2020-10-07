@@ -352,7 +352,7 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
     trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx,
                                 train_rows, val_rows, backend._num_workers())
 
-     print('CEREBRO => Time: {}, -1'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    print('CEREBRO => Time: {}, -1'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     return trainer
 
 
