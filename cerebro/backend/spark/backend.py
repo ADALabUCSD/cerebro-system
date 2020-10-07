@@ -351,6 +351,8 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
         print('CEREBRO => Time: {}, Initializing sub-epoch trainer for Model: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), run_id))
     trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx,
                                 train_rows, val_rows, backend._num_workers())
+
+     print('CEREBRO => Time: {}, -1'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     return trainer
 
 
@@ -440,6 +442,7 @@ def _make_mapper(driver_addresses, settings):
 def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, train_rows, val_rows,
                       num_workers):
     # Estimator parameters
+    print('CEREBRO => Time: {}, 1'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     label_columns = estimator.getLabelCols()
     feature_columns = estimator.getFeatureCols()
     user_callbacks = estimator.getCallbacks()
@@ -451,9 +454,11 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
     user_verbose = estimator.getVerbose()
 
     # Model parameters
+    print('CEREBRO => Time: {}, 2'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     input_shapes, output_shapes = estimator.get_model_shapes()
     output_names = estimator.getModel().output_names
 
+    print('CEREBRO => Time: {}, 3'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     floatx = tf.keras.backend.floatx()
     make_dataset = keras_utils.make_dataset_fn(
         feature_columns, label_columns, sample_weight_col, metadata,
@@ -463,11 +468,13 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
     transformation_fn = estimator.getTransformationFn()
     transformation = transformation_fn if transformation_fn else None
 
+    print('CEREBRO => Time: {}, 4'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     # Utility functions
     deserialize_keras_model = _deserialize_keras_model_fn()
     calculate_shuffle_buffer_size = _calculate_shuffle_buffer_size_fn()
     pin_gpu = _pin_gpu_fn()
 
+    print('CEREBRO => Time: {}, 5'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     # Storage
     store = estimator.getStore()
     remote_store = store.to_remote(run_id, dataset_idx)
@@ -551,6 +558,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
 
             return result, step_counter_callback.get_step_count()
 
+    print('CEREBRO => Time: {}, 6'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
     return train
 
 
