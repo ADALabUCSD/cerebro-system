@@ -78,8 +78,6 @@ class Wire(object):
         self._key = key
 
     def write(self, obj, wfile):
-        import datetime
-        print('CEREBRO => Time: {}, Starting write'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         message = cloudpickle.dumps(obj)
         digest = secret.compute_digest(self._key, message)
         wfile.write(digest)
@@ -87,7 +85,6 @@ class Wire(object):
         wfile.write(struct.pack('l', len(message)))
         wfile.write(message)
         wfile.flush()
-        print('CEREBRO => Time: {}, Ending write'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
     def read(self, rfile):
         digest = rfile.read(secret.DIGEST_LENGTH)
