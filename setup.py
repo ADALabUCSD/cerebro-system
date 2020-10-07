@@ -46,8 +46,8 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     extras_require={
-        'cpu': ['tensorflow>=2.0'],
-        'gpu': ['tensorflow-gpu>=2.0'],
+        'cpu': ['tensorflow>=2.2'],
+        'gpu': ['tensorflow-gpu>=2.2'],
     },
     classifiers=[
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
