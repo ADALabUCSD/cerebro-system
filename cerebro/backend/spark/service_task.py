@@ -341,22 +341,15 @@ class SparkTaskClient:
                 sock.close()
 
     def _send_one(self, addr, req):
-        import datetime
         for iter in range(self._retries):
-            print('CEREBRO => Time: 1'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             try:
-                print('CEREBRO => Time: 2'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                 sock.connect(addr)
-                print('CEREBRO => Time: 3'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                 rfile = sock.makefile('rb')
                 wfile = sock.makefile('wb')
-                print('CEREBRO => Time: 4'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                 try:
                     self._wire.write(req, wfile)
-                    print('CEREBRO => Time: 5'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                     resp = self._wire.read(rfile)
-                    print('CEREBRO => Time: 6'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
                     return resp
                 finally:
                     rfile.close()
