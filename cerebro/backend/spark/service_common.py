@@ -87,14 +87,10 @@ class Wire(object):
         wfile.flush()
 
     def read(self, rfile):
-        print(1)
         digest = rfile.read(secret.DIGEST_LENGTH)
         # Unpack message length into 8-byte integer.
-        print(2)
         message_len = struct.unpack('l', rfile.read(8))[0]
-        print(3)
         message = rfile.read(message_len)
-        print(4)
         if not secret.check_digest(self._key, message, digest):
             raise Exception('Security error: digest did not match the message.')
         return cloudpickle.loads(message)

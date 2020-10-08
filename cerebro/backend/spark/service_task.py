@@ -71,7 +71,6 @@ class NotifyWorkloadCompleteRequest(object):
 
 class SparkTaskService:
     NAME_FORMAT = 'task service #%d'
-    SERVICE_ENV_KEYS = ['HADOOP_TOKEN_FILE_LOCATION']
 
     def __init__(self, index, key, nics):
         # disabling eager
@@ -83,7 +82,7 @@ class SparkTaskService:
         self._wire = Wire(key)
         self._nics = nics
         self._server, _ = find_port(
-            lambda addr: socketserver.ThreadingTCPServer(
+            lambda addr: socketserver.ForkingTCPServer(
                 addr, self._make_handler()))
         self._port = self._server.socket.getsockname()[1]
         self._addresses = self._get_local_addresses()
@@ -91,12 +90,10 @@ class SparkTaskService:
         self._thread.daemon = True
         self._thread.start()
 
-        service_env_keys = SparkTaskService.SERVICE_ENV_KEYS
         self.local_task_index = 0
         self._initial_registration_complete = False
         self._workload_complete = False
         self._wait_cond = threading.Condition()
-        self._service_env_keys = service_env_keys
 
         self._sub_epoch_thread = None
         self._sub_epoch_status = None
