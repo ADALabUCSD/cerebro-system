@@ -348,8 +348,11 @@ class SparkTaskClient:
                 rfile = sock.makefile('rb')
                 wfile = sock.makefile('wb')
                 try:
+                    print('1')
                     self._wire.write(req, wfile)
+                    print('2')
                     resp = self._wire.read(rfile)
+                    print('3')
                     return resp
                 finally:
                     rfile.close()
