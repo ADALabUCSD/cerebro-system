@@ -82,7 +82,7 @@ class SparkTaskService:
         self._wire = Wire(key)
         self._nics = nics
         self._server, _ = find_port(
-            lambda addr: socketserver.ForkingTCPServer(
+            lambda addr: socketserver.ThreadingTCPServer(
                 addr, self._make_handler()))
         self._port = self._server.socket.getsockname()[1]
         self._addresses = self._get_local_addresses()
