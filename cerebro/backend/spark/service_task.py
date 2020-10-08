@@ -185,23 +185,23 @@ class SparkTaskService:
             #     if self._sub_epoch_thread is None or not self._sub_epoch_thread.is_alive():
             self._sub_epoch_status = None
 
-            def bg_execute(fn, is_train, initial_epoch):
-                try:
-                    self._sub_epoch_status = {"status": "RUNNING", "result": None}
-                    if is_train:
-                        reader = self._train_reader
-                    else:
-                        reader = self._val_reader
-                    func_result = fn(reader, is_train, initial_epoch,
-                                        local_task_index=self.local_task_index)
-                    self._sub_epoch_status = {"status": "COMPLETED", "result": func_result}
-                except Exception as e:
-                    self._sub_epoch_status = {"status": "FAILED", "result": None,
-                                                "error": str(e) + "\n" + traceback.format_exc()}
+            # def bg_execute(fn, is_train, initial_epoch):
+            #     try:
+            #         self._sub_epoch_status = {"status": "RUNNING", "result": None}
+            #         if is_train:
+            #             reader = self._train_reader
+            #         else:
+            #             reader = self._val_reader
+            #         func_result = fn(reader, is_train, initial_epoch,
+            #                             local_task_index=self.local_task_index)
+            #         self._sub_epoch_status = {"status": "COMPLETED", "result": func_result}
+            #     except Exception as e:
+            #         self._sub_epoch_status = {"status": "FAILED", "result": None,
+            #                                     "error": str(e) + "\n" + traceback.format_exc()}
 
-            self._sub_epoch_thread = threading.Thread(target=bg_execute, args=(req.sub_epoch_fn, req.is_train,
-                                                                                req.initial_epoch))
-            self._sub_epoch_thread.start()
+            # self._sub_epoch_thread = threading.Thread(target=bg_execute, args=(req.sub_epoch_fn, req.is_train,
+            #                                                                     req.initial_epoch))
+            # self._sub_epoch_thread.start()
             # finally:
             #     self._wait_cond.notify_all()
             #     self._wait_cond.release()
