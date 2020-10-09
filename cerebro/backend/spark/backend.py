@@ -133,7 +133,7 @@ class SparkBackend(Backend):
 
         driver.wait_for_initial_registration(self.settings.timeout)
         if self.settings.verbose >= 2:
-            print('Initial Spark task registration is complete.')
+            print('CEREBRO => Time: {}, Initial Spark task registration is complete'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         task_clients = [service_task.SparkTaskClient(index,
                                                      driver.task_addresses_for_driver(index),
                                                      self.settings.key, self.settings.verbose) for index in
@@ -176,6 +176,13 @@ class SparkBackend(Backend):
                             'first!')
 
     def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
+
+        mode = "Training"
+        if not is_train:
+            mode = "Validation"
+        if self.settings.verbose >= 1:
+            print('CEREBRO => Time: {}, Starting EPOCH {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), mode))
+
         sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col,
                                                   self.settings.verbose) \
                               for model in models]
@@ -199,12 +206,19 @@ class SparkBackend(Backend):
                     m = _get_runnable_model(w, model_worker_pairs, model_states, is_train)
                     if m != -1:
                         # runnable model found
+                        if self.settings.verbose >= 1:
+                            print('CEREBRO => Time: {}, Scheduling Model: {}, on Worker: {}'.format(
+                                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), models[m].getRunId(), w))
                         self.task_clients[w].execute_sub_epoch(
                             fn=sub_epoch_trainers[m], train=is_train, initial_epoch=models[m].getEpochs())
 
                         model_states[m] = True
                         worker_states[w] = True
                         model_on_worker[w] = m
+
+                        if self.settings.verbose >= 1:
+                            print('CEREBRO => Time: {}, Scheduled Model: {}, on Worker: {}'.format(
+                                datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), models[m].getRunId(), w))
                 else:
                     m = model_on_worker[w]
                     if m != -1:
@@ -231,6 +245,10 @@ class SparkBackend(Backend):
                                         model_results[run_id][k].append(res[k][0])
                                     model_sub_epoch_steps[run_id].append(steps)
 
+                            if self.settings.verbose >= 1:
+                                print('CEREBRO => Time: {}, Completed Model: {}, on Worker: {}'.format(
+                                    datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), models[m].getRunId(), w))
+
             time.sleep(self.settings.polling_period)
 
         # incrementing the model epoch number
@@ -244,6 +262,9 @@ class SparkBackend(Backend):
             steps = model_sub_epoch_steps[run_id]
             for k in res:
                 res[k] = (np.sum([rk * steps[i] for i, rk in enumerate(res[k])]) / np.sum(steps))
+
+        if self.settings.verbose >= 2:
+            print('CEREBRO => Time: {}, Completed EPOCH {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), mode))        
 
         return model_results
 
@@ -305,6 +326,10 @@ def _get_runnable_model(worker, model_worker_pairs, model_states, is_train):
 
 
 def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns, verbose=0):
+    run_id = estimator.getRunId()
+    if verbose >= 2:
+        print('CEREBRO => Time: {}, Collecting data metadata for Model: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), run_id))
+    
     train_rows, val_rows, metadata, avg_row_size = \
         util.get_simple_meta_from_parquet(store,
                                           schema_cols=label_columns + feature_columns,
@@ -312,10 +337,12 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
                                           dataset_idx=dataset_idx)
     estimator._check_params(metadata)
     keras_utils = estimator._get_keras_utils()
-    run_id = estimator.getRunId()
 
     # checkpointing the model if it does not exist
     if not estimator._has_checkpoint(run_id):
+        if verbose >= 2:
+            print('CEREBRO => Time: {}, Checkpointing artifacts for Model: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), run_id))
+
         model = estimator._compile_model(keras_utils)
         remote_store = store.to_remote(run_id, dataset_idx)
         with remote_store.get_local_output_dir() as run_output_dir:
@@ -323,6 +350,8 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
             model.save(ckpt_file)
             remote_store.sync(run_output_dir)
 
+    if verbose >= 2:
+        print('CEREBRO => Time: {}, Initializing sub-epoch trainer for Model: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), run_id))
     trainer = sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx,
                                 train_rows, val_rows, backend._num_workers())
     return trainer

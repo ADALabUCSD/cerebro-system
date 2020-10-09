@@ -353,7 +353,7 @@ def log_model_hps(logdir, model_id, hparams, verbose=1):
     with tf.summary.create_file_writer(logdir).as_default():
         hp.hparams(hparams, trial_id=model_id)
 
-    if verbose >= 2:
+    if verbose >= 1:
         print(
             ('CEREBRO => Time: {}, Model: {}, ' + ", ".join([k + ": {}" for k in hparams])).format(
                 *([
@@ -376,7 +376,7 @@ def log_model_epoch_metrics(model_id, logdir, metrics, step_number, verbose=1):
         for key in metrics:
             tf.summary.scalar(key, metrics[key][step_number - 1], step=step_number)
 
-    if verbose >= 2:
+    if verbose >= 1:
         print(
             ('CEREBRO => Time: {}, Model: {}, Epoch: {}, ' + ", ".join([k + ": {}" for k in metrics])).format(
                 *([

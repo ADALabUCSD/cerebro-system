@@ -4,3 +4,4 @@ petastorm>=0.9.0
 pyarrow==0.16.0
 cloudpickle
 hyperopt>=0.2.3
+transformers>=3.3.1

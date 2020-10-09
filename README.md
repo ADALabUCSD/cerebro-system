@@ -18,7 +18,7 @@ Alternatively, you can git clone and run the provided Makefile script
 
     git clone https://github.com/ADALabUCSD/cerebro-system.git && cd cerebro-system && make
 
-You MUST be running on **Python >= 3.6** with **Tensorflow >= 2.1** and **Apache Spark >= 2.4**
+You MUST be running on **Python >= 3.6** with **Tensorflow >= 2.2** and **Apache Spark >= 2.4**
 
 
 Documentation
