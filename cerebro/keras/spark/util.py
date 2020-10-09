@@ -166,22 +166,22 @@ def _prep_data_fn(has_sparse_col, sample_weight_col, feature_columns, label_colu
         if sample_weight_col:
             sample_weight = get_col_from_row_fn(row, sample_weight_col)
             return (
-                tuple(
+                {feature_columns[i]:
                     tf.reshape(get_col_from_row_fn(row, feature_columns[i]), input_shapes[i])
                     for i
-                    in range(num_inputs)),
+                    in range(num_inputs)},
                 # No reshaping for the outputs.
-                tuple(get_col_from_row_fn(row, label_columns[j]) for j in range(num_labels)),
+                {label_columns[j]: get_col_from_row_fn(row, label_columns[j]) for j in range(num_labels)},
                 {name: tf.reshape(sample_weight, [-1]) for name in output_names}
             )
         else:
             return (
-                tuple(
+                {feature_columns[i]:
                     tf.reshape(get_col_from_row_fn(row, feature_columns[i]), input_shapes[i])
                     for i
-                    in range(num_inputs)),
+                    in range(num_inputs)},
                 # No reshaping for the outputs.
-                tuple(get_col_from_row_fn(row, label_columns[j]) for j in range(num_labels))
+                {label_columns[j]: get_col_from_row_fn(row, label_columns[j]) for j in range(num_labels)}
             )
 
     return prep
