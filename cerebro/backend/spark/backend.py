@@ -22,6 +22,7 @@ import os
 import threading
 import time
 import gc
+import inspect
 import datetime
 import h5py
 import numpy as np
@@ -33,6 +34,7 @@ from . import service_driver, service_task, util
 from .. import constants
 from .. import timeout, settings as spark_settings, secret, host_hash, job_id
 from ..backend import Backend
+from ...commons.util import patch_hugginface_layer_methods
 
 PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 TOTAL_BUFFER_MEMORY_CAP_GIB = constants.TOTAL_BUFFER_MEMORY_CAP_GIB
@@ -479,6 +481,14 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
 
         begin_time = time.time()
 
+        # Workaround for the issue with huggingface layers needing a python
+        # object as config (not a dict) and explicit definition of get_config method.
+        # We monkey patch the __init__ method get_config methods of such layers.
+        for k in custom_objects:
+            if issubclass(custom_objects[k], tf.keras.layers.Layer) and inspect.getmodule(custom_objects[k]).__name__.startswith('transformers.'):
+                patch_hugginface_layer_methods(custom_objects[k])
+
+
         tf.keras.backend.set_floatx(floatx)
         pin_gpu(local_task_index)
 
@@ -494,7 +504,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
         else:
             shuffle_buffer_size = user_shuffle_buffer_size
 
-        # # Verbose mode 1 will print a progress bar
+        # Verbose mode 1 will print a progress bar.
         verbose = user_verbose
 
         with remote_store.get_local_output_dir() as run_output_dir:
@@ -560,7 +570,6 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
 def _deserialize_keras_model_fn():
     def deserialize_keras_model(model_bytes, load_model_fn):
         """Deserialize model from byte array encoded in base 64."""
-        # model_bytes = codec.loads_base64(model_bytes)
         bio = io.BytesIO(model_bytes)
         with h5py.File(bio, 'r') as f:
             return load_model_fn(f)

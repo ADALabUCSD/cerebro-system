@@ -20,6 +20,7 @@ import numbers
 import time
 import os
 import json
+import inspect
 import numpy as np
 import tensorflow as tf
 
@@ -31,11 +32,9 @@ from pyspark.ml.util import DefaultParamsWriter, DefaultParamsReader
 
 from ...backend import codec
 from ...backend import spark
-
+from ...commons.util import patch_hugginface_layer_methods
 from .util import TF_KERAS, TFKerasUtil
-
 from .params import SparkEstimatorParams, SparkModelParams
-
 from ..estimator import CerebroEstimator, CerebroModel
 
 import threading
