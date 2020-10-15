@@ -20,6 +20,7 @@ import numbers
 import time
 import os
 import json
+import inspect
 import numpy as np
 import tensorflow as tf
 
@@ -31,11 +32,9 @@ from pyspark.ml.util import DefaultParamsWriter, DefaultParamsReader
 
 from ...backend import codec
 from ...backend import spark
-
+from ...commons.util import patch_hugginface_layer_methods
 from .util import TF_KERAS, TFKerasUtil
-
 from .params import SparkEstimatorParams, SparkModelParams
-
 from ..estimator import CerebroEstimator, CerebroModel
 
 import threading
@@ -182,6 +181,8 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         sample_weight_col:(Optional) Column indicating the weight of each sample.
         metrics: (Optional) List of Keras metrics to record.
         callbacks: (Optional) List of Keras callbacks.
+        model_update_fn: (Optional) Function that can be used to update a Keras model (e.g., freeze/unfreeze layers) after 
+                          every epoch. Takes in a Keras model and epoch number as input and returns a potentially updated Keras model.
     """
 
     # TODO
@@ -211,7 +212,8 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
                  metrics=None,
                  callbacks=None,
                  shuffle_buffer_size=None,
-                 transformation_fn=None
+                 transformation_fn=None,
+                 model_update_fn=None
                  ):
 
         super(SparkEstimator, self).__init__()

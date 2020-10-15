@@ -21,6 +21,12 @@ class CerebroEstimatorParams(object):
     def getModel(self):
         raise NotImplementedError('Abstract class. Method not implement!')
 
+    def setHyperParams(self, value):
+        raise NotImplementedError('Abstract class. Method not implement!')
+
+    def getHyperParams(self):
+        raise NotImplementedError('Abstract class. Method not implement!')
+
     def setStore(self, value):
         raise NotImplementedError('Abstract class. Method not implement!')
 
@@ -115,6 +121,12 @@ class CerebroEstimatorParams(object):
         raise NotImplementedError('Abstract class. Method not implement!')
 
     def getTransformationFn(self):
+        raise NotImplementedError('Abstract class. Method not implement!')
+
+    def setModelUpdateFn(self, value):
+        raise NotImplementedError('Abstract class. Method not implement!')
+
+    def getModelUpdateFn(self):
         raise NotImplementedError('Abstract class. Method not implement!')
 
 

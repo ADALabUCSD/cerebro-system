@@ -36,6 +36,7 @@ def _check_validation(validation):
 class SparkEstimatorParams(Params, CerebroEstimatorParams):
     optimizer = Param(Params._dummy(), 'optimizer', 'optimizer')
     model = Param(Params._dummy(), 'model', 'model')
+    hyper_params = Param(Params._dummy(), 'hyper_params', 'Hyperparameters for this estimator model.')
     store = Param(Params._dummy(), 'store', 'store')
     metrics = Param(Params._dummy(), 'metrics', 'metrics')
     loss = Param(Params._dummy(), 'loss', 'loss')
@@ -88,6 +89,11 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
                               'function that applies custom transformations to '
                               'every batch before train and validation steps')
 
+    model_update_fn = Param(Params._dummy(), 'model_update_fn', 'Function that can be used to update a Keras model'
+                                                                ' (e.g., freeze/unfreeze layers) after every epoch.'
+                                                                ' Takes in a Keras model and epoch number as input and'
+                                                                ' returns a potentially updated Keras model.')
+
     def __init__(self):
         super(SparkEstimatorParams, self).__init__()
 
@@ -108,6 +114,7 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
             callbacks=[],
             shuffle_buffer_size=None,
             run_id=None,
+            model_update_fn=None,
             transformation_fn=None
         )
 
@@ -139,6 +146,12 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
 
     def getModel(self):
         return self.getOrDefault(self.model)
+
+    def setHyperParams(self, value):
+        return self._set(hyper_params=value)
+
+    def getHyperParams(self):
+        return self.getOrDefault(self.hyper_params)
 
     def setStore(self, value):
         return self._set(store=value)
@@ -236,6 +249,11 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
     def getTransformationFn(self):
         return self.getOrDefault(self.transformation_fn)
 
+    def setModelUpdateFn(self, value):
+        return self._set(model_update_fn=value)
+
+    def getModelUpdateFn(self):
+        return self.getOrDefault(self.model_update_fn)
 
 class SparkModelParams(HasOutputCols, CerebroModelParams):
     history = Param(Params._dummy(), 'history', 'history')

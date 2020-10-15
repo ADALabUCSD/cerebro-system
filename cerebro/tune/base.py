@@ -19,7 +19,7 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 import datetime
 import numpy as np
-
+from ..commons.util import fix_huggingface_layer_methods_and_add_to_custom_objects
 from ..backend import constants
 
 
@@ -249,11 +249,19 @@ class ModelSelection(object):
         else:
             tf.keras.set_session(tf.Session(config=tf.ConfigProto(device_count={'GPU': 0})))
 
+        tf.keras.backend.clear_session()
         est = self.estimator_gen_fn(params)
+        est.setHyperParams(params)
         est.setFeatureCols(self.feature_cols)
         est.setLabelCols(self.label_cols)
         est.setStore(self.store)
         est.setVerbose(self.verbose)
+
+        # Workaround for the issue with huggingface layers needing a python
+        # object as config (not a dict) and explicit definition of get_config method.
+        # We monkey patch the __init__ method get_config methods of such layers.
+        fix_huggingface_layer_methods_and_add_to_custom_objects(est)
+
         return est
 
     def _log_epoch_metrics_to_tensorboard(self, estimators, estimator_results):
