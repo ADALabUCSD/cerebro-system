@@ -251,6 +251,7 @@ class ModelSelection(object):
 
         tf.keras.backend.clear_session()
         est = self.estimator_gen_fn(params)
+        est.setHyperParams(params)
         est.setFeatureCols(self.feature_cols)
         est.setLabelCols(self.label_cols)
         est.setStore(self.store)

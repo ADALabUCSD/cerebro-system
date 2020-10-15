@@ -186,7 +186,7 @@ class SparkBackend(Backend):
             print('CEREBRO => Time: {}, Starting EPOCH {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), mode))
 
         sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col,
-                                                  self.settings.verbose) \
+                                                  is_train, self.settings.verbose) \
                               for model in models]
 
         model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self._num_workers())]
@@ -327,7 +327,7 @@ def _get_runnable_model(worker, model_worker_pairs, model_states, is_train):
     return -1
 
 
-def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns, verbose=0):
+def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns, label_columns, is_train=False, verbose=0):
     run_id = estimator.getRunId()
     if verbose >= 2:
         print('CEREBRO => Time: {}, Collecting data metadata for Model: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), run_id))
@@ -340,8 +340,16 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
     estimator._check_params(metadata)
     keras_utils = estimator._get_keras_utils()
 
-    # checkpointing the model if it does not exist
-    if not estimator._has_checkpoint(run_id):
+    # Checkpointing the model if it does not exist.
+    if not estimator._has_checkpoint(run_id) or (is_train and estimator.getModelUpdateFn() is not None):
+        # Update the model by passing it to the user provided model update function.
+        if estimator.getModelUpdateFn() is not None:
+            model = estimator.getModel()
+            hyper_params = estimator.getHyperParams()
+            epoch = estimator.getEpochs() + 1
+            model = estimator.getModelUpdateFn()(model, epoch, hyper_params)
+            estimator.setModel(model)
+
         if verbose >= 2:
             print('CEREBRO => Time: {}, Checkpointing artifacts for Model: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), run_id))
 
