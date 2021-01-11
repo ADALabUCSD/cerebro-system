@@ -421,11 +421,11 @@ def _make_spark_thread(spark_context, spark_job_group, driver, result_queue,
             spark_context.setJobGroup(spark_job_group,
                                       "Cerebro Spark Run",
                                       interruptOnCancel=True)
-            procs = spark_context.range(0, numSlices=settings.num_workers)
+            procs = spark_context.range(0, end=settings.num_workers, numSlices=settings.num_workers)
             # We assume that folks caring about security will enable Spark RPC
             # encryption, thus ensuring that key that is passed here remains
             # secret.
-            result = procs.mapPartitionsWithIndex(_make_mapper(driver.addresses(), settings)).collect()
+            result = procs.barrier().mapPartitions(_make_mapper(driver.addresses(), settings)).collect()
             result_queue.put(result)
         except:
             driver.notify_spark_job_failed()
@@ -437,13 +437,13 @@ def _make_spark_thread(spark_context, spark_job_group, driver, result_queue,
 
 
 def _make_mapper(driver_addresses, settings):
-    def _mapper(index, _):
+    def _mapper(p):
         try:
             # https://www.google.com/search?q=keras+model+save+resource+temporarily+unavailable&oq=keras\
             # +mode&aqs=chrome.0.69i59l2j69i57j69i59j69i60l3j69i65.3390j0j4&sourceid=chrome&ie=UTF-8
             import os
             os.environ['HDF5_USE_FILE_LOCKING'] = 'FALSE'
-
+            index = int(sum(p))
             task = service_task.SparkTaskService(index, settings.key, settings.nics)
             driver_client = service_driver.SparkDriverClient(driver_addresses, settings.key, settings.verbose)
 
