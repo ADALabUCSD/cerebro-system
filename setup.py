@@ -49,6 +49,11 @@ setup(
         'cpu': ['tensorflow>=2.2'],
         'gpu': ['tensorflow-gpu>=2.2'],
     },
+    entry_points={
+        'console_scripts': [
+            'cerebro = cerebro.cerebro_server:main',
+        ],
+    },
     classifiers=[
         'Topic :: Scientific/Engineering :: Artificial Intelligence',
         'Topic :: Software Development :: Libraries',
