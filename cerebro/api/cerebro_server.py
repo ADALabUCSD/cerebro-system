@@ -18,20 +18,19 @@ werkzeug.cached_property = werkzeug.utils.cached_property
 import argparse
 
 from flask import Flask, Blueprint
-from .api.restplus import api
+from .restplus import api
 from .database import db
-from .database.models import *
 
 import logging.config
 
 app = Flask(__name__)
-logging_conf_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../logging.conf'))
+logging_conf_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../logging.conf'))
 logging.config.fileConfig(logging_conf_path)
 log = logging.getLogger(__name__)
 
-from .api.endpoints.experiments import ns as experiments_namespace
-from .api.endpoints.models import ns as models_namespace
-from .api.endpoints.scripts import ns as scripts_namespace
+from .endpoints.experiments import ns as experiments_namespace
+from .endpoints.models import ns as models_namespace
+from .endpoints.scripts import ns as scripts_namespace
 
 def configure_app(flask_app, args):
     flask_app.config['SERVER_NAME'] = args.server_url

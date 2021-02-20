@@ -19,7 +19,8 @@ from flask_restplus import Resource
 from ..restplus import api
 from ..serializers import model
 from ..parsers import experiment_id_argument
-
+from ..database.dbo import Model, Experiment, ParamVal
+from ..database import db
 
 log = logging.getLogger(__name__)
 
@@ -34,34 +35,52 @@ class ModelsCollection(Resource):
         """
         Returns list of models.
         """
-        raise NotImplementedError()
+        args = experiment_id_argument.parse_args()
+        exp_id = args['exp_id']
+        return Model.query.filter(Model.exp_id == exp_id).all()
 
     @api.expect(model)
-    @api.marshal_with(str, code=201)
     def post(self):
         """
         Creates a new model.
         """
-        raise NotImplementedError()
-        #return None, 201
+        data = request.json
+        exp_id = data.get('exp_id')
+        num_trained_epochs =  data.get('num_trained_epochs')
+        max_train_epochs = data.get('max_train_epochs')
+        exp = Experiment.query.filter(Experiment.id == exp_id).one()
+        if exp.status in ['failed', 'stopping', 'stopped', 'completed']:
+            raise BadRequest('Experiment is in {} staus. Cannot create new models.'.format(exp.status))
+
+        model_dao = Model(exp_id, num_trained_epochs, max_train_epochs)
+
+        for pval in data.get('param_vals'):
+            name = pval.get('name')
+            value = pval.get('value')
+            pval_dao = ParamVal(model_dao.id, name, value)
+            db.session.add(pval_dao)
+
+        db.session.add(model_dao)
+        db.session.commit()
+        return model_dao.id, 201
 
 
 @ns.route('/<string:id>')
 @api.response(404, 'Model not found.')
-class ExperimentItem(Resource):
+class ModelItem(Resource):
     
     @api.marshal_with(model)
     def get(self, id):
         """
         Returns a model.
         """
-        raise NotImplementedError()
+        return Model.query.filter(Model.id == id).one()
 
 
-    @api.response(204, 'Model successfully deleted.')
+    @api.response(204, 'Model successfully stopped.')
     def delete(self, id):
         """
-        Deletes model.
+        Stops a model.
         """
         raise NotImplementedError()
         # return None, 204
