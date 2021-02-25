@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
-import logging
 from werkzeug.exceptions import BadRequest
 from flask import request
 from flask_restplus import Resource
@@ -22,8 +20,6 @@ from ..serializers import experiment
 from ..database.dbo import Experiment, ParamDef
 
 from ..database import db
-
-log = logging.getLogger(__name__)
 
 ns = api.namespace('experiments', description='Operations related to experiments')
 

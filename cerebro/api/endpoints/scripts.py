@@ -13,7 +13,6 @@
 # limitations under the License.
 # ==============================================================================
 import os
-import logging
 import werkzeug
 import shutil
 from flask import request
@@ -23,7 +22,6 @@ from ..parsers import upload_parser
 from ..database import db
 from ..cerebro_server import app
 
-log = logging.getLogger(__name__)
 
 ns = api.namespace('scripts', description='Operations related to uploading model creation scripts')
 

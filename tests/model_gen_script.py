@@ -3,11 +3,12 @@ from cerebro.keras import SparkEstimator
 
 def estimator_gen_fn(params):
     model = tf.keras.models.Sequential()
+
     model.add(tf.keras.layers.Dense(100, input_dim=692))
     model.add(tf.keras.layers.Dense(1, input_dim=100))
     model.add(tf.keras.layers.Activation('sigmoid'))
 
-    optimizer = tf.keras.optimizers.Adam(lr=params['lr'])
+    optimizer = tf.keras.optimizers.Adam(lr=params['learing_rate'])
     loss = 'binary_crossentropy'
 
     keras_estimator = SparkEstimator(

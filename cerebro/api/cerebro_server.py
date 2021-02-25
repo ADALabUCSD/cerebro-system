@@ -21,12 +21,7 @@ from flask import Flask, Blueprint
 from .restplus import api
 from .database import db
 
-import logging.config
-
 app = Flask(__name__)
-logging_conf_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../../logging.conf'))
-logging.config.fileConfig(logging_conf_path)
-log = logging.getLogger(__name__)
 
 from .endpoints.experiments import ns as experiments_namespace
 from .endpoints.models import ns as models_namespace
@@ -83,7 +78,7 @@ def main():
     args = parser.parse_args()
     
     initialize_app(app, args)
-    log.info('>>>>> Starting development server at http://{}/api/ <<<<<'.format(app.config['SERVER_NAME']))
+    print('>>>>> Starting development server at http://{}/api/ <<<<<'.format(app.config['SERVER_NAME']))
     
     with app.app_context():
         db.create_all()
