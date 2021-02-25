@@ -20,8 +20,8 @@ from flask import request
 from flask_restplus import Resource
 from ..restplus import api
 from ..parsers import upload_parser
-from ..database import db
-from ..cerebro_server import app
+from ...database import db
+from ...cerebro_server import app
 
 log = logging.getLogger(__name__)
 
