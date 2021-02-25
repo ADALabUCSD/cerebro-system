@@ -32,9 +32,9 @@ class LocalStore(FilesystemStore):
 
     :param prefix_path: Prefix path of the local directory (e.g., /user/test/cerebro).
     :param train_path: (Optional) Path of the directory to store training data. If not specified will default to
-        <prefix_path>/intermediate_train_data
+        <prefix_path>/train_data
     :param val_path: (Optional) Path of the directory to store validation data. If not specified will default to
-        <prefix_path>/intermediate_val_data
+        <prefix_path>/val_data
     :param runs_path: (Optional) Path of the directory to store model checkpoints and log. If not specified will default
         to <prefix_path>/runs
     """

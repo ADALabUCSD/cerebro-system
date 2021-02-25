@@ -140,9 +140,9 @@ class FilesystemStore(Store):
 
     def __init__(self, prefix_path, train_path=None, val_path=None, test_path=None, runs_path=None):
         self.prefix_path = self.get_full_path(prefix_path)
-        self._train_path = self._get_full_path_or_default(train_path, 'intermediate_train_data')
-        self._val_path = self._get_full_path_or_default(val_path, 'intermediate_val_data')
-        self._test_path = self._get_full_path_or_default(test_path, 'intermediate_test_data')
+        self._train_path = self._get_full_path_or_default(train_path, 'train_data')
+        self._val_path = self._get_full_path_or_default(val_path, 'val_data')
+        self._test_path = self._get_full_path_or_default(test_path, 'test_data')
         self._runs_path = self._get_full_path_or_default(runs_path, 'runs')
         super(FilesystemStore, self).__init__()
 
