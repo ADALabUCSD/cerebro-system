@@ -53,15 +53,12 @@ class Backend(object):
         """Teardown workers"""
         raise NotImplementedError()
 
-    def prepare_data(self, store, dataset, validation, label_columns=['label'], feature_columns=['features'],
-                     compress_sparse=False, verbose=2):
+    def prepare_data(self, store, dataset, validation, compress_sparse=False, verbose=2):
         """
         Prepare data by writing out into persistent storage
         :param store:
         :param dataset:
         :param validation:
-        :param label_columns:
-        :param feature_columns:
         :param compress_sparse:
         :param verbose:
         """

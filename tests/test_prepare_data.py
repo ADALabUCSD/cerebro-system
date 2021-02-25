@@ -57,7 +57,7 @@ class TestPrepareData(unittest.TestCase):
 
         backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
         store = LocalStore('/tmp', train_path='/tmp/train_data', val_path='/tmp/val_data')
-        backend.prepare_data(store, df, validation=0.25, feature_columns=['features'], label_columns=['label'])
+        backend.prepare_data(store, df, validation=0.25)
 
         ######## Random Search ###########
         search_space = {'lr': hp_choice([0.01, 0.001, 0.0001])}

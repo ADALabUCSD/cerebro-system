@@ -145,7 +145,7 @@ as shown below.
 ```python
 backend = SparkBackend(spark_context=spark.sparkContext)
 store =  LocalStore(prefix_path='/user/username/experiments', train_path='/user/username/training_dataset', val_path='/user/username/val_dataset')
-backend.prepare_data(store, train_df, validation=0.25, feature_column='features', label_column='label')
+backend.prepare_data(store, train_df, validation=0.25)
 
 ```
 

@@ -288,22 +288,19 @@ class SparkBackend(Backend):
         """
         return util.get_simple_meta_from_parquet(store, label_columns + feature_columns)
 
-    def prepare_data(self, store, dataset, validation, label_columns=['label'], feature_columns=['features'],
-                     num_partitions=None, parquet_row_group_size_mb=8, dataset_idx=None):
+    def prepare_data(self, store, dataset, validation, num_partitions=None, parquet_row_group_size_mb=8, dataset_idx=None):
         """
         Prepare data by writing out into persistent storage
 
         :param store: Cerebro storage object (e.g., LocalStorage, HDFSStorage).
         :param dataset: Spark DataFrame.
         :param validation: Fraction of validation data (e.g., 0.25) or name of the DataFrame column indicating validation.
-        :param label_columns: List of label/output columns (default=['label']).
-        :param feature_columns: List of feature columns (default=['features']).
         :param num_partitions: Number of data partitions of the output. If None, will default to the current number of
          input dataset partitions.
         :param parquet_row_group_size_mb: Parquet row group size in MBs (default 8 MB) .
         :param dataset_idx: Dataset index if storing multiple datasets in the same directory.
         """
-        return util.prepare_data(self._num_workers(), store, dataset, label_columns, feature_columns, validation,
+        return util.prepare_data(self._num_workers(), store, dataset, validation,
                                  num_partitions=num_partitions, dataset_idx=dataset_idx,
                                  parquet_row_group_size_mb=parquet_row_group_size_mb, verbose=self.settings.verbose)
 
