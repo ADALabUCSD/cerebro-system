@@ -524,7 +524,7 @@ def _create_dataset(store, df, validation, sample_weight_col, compress_sparse,
                 .parquet(val_data_path)
 
     train_rows, val_rows, pq_metadata, avg_row_size = get_simple_meta_from_parquet(
-        store, label_columns + feature_columns, sample_weight_col, dataset_idx)
+        store, df.columns, sample_weight_col, dataset_idx)
 
     if verbose:
         print(

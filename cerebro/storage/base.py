@@ -125,11 +125,11 @@ class Store(object):
             'runs_path': self.get_runs_path(),
             'run_path': self.get_run_path(run_id),
             'checkpoint_path': self.get_checkpoint_path(run_id),
-            'logs_path': self.get_logs_path(run_id),
+            # 'logs_path': self.get_logs_path(run_id),
             'checkpoint_filename': self.get_checkpoint_filename(),
-            'logs_subdir': self.get_logs_subdir(),
+            # 'logs_subdir': self.get_logs_subdir(),
             'get_local_output_dir': self.get_local_output_dir_fn(run_id),
-            'get_local_logs_dir': self.get_local_output_dir_fn("logs"),
+            'get_local_logs_dir': self.get_local_output_dir_fn(run_id),
             'sync': self.sync_fn(run_id),
             'get_last_checkpoint': lambda: self.read(self.get_checkpoint_path(run_id))
         }
@@ -181,14 +181,14 @@ class FilesystemStore(Store):
     def get_checkpoint_path(self, run_id):
         return os.path.join(self.get_run_path(run_id), self.get_checkpoint_filename())
 
-    def get_logs_path(self, run_id):
-        return os.path.join(self.get_run_path(run_id), self.get_logs_subdir())
+    # def get_logs_path(self, run_id):
+    #     return os.path.join(self.get_run_path(run_id), self.get_logs_subdir())
 
     def get_checkpoint_filename(self):
         return 'checkpoint.h5'
 
-    def get_logs_subdir(self):
-        return 'logs'
+    # def get_logs_subdir(self):
+    #     return 'logs'
 
     def get_full_path(self, path):
         if not self.matches(path):
