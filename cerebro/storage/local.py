@@ -66,23 +66,6 @@ class LocalStore(FilesystemStore):
 
         return local_run_path
 
-    # def get_local_logs_dir_fn(self):
-    #     log_path = self.get_localized_path(self.get_run_path("logs"))
-
-    #     @contextlib.contextmanager
-    #     def local_logs_path():
-    #         if not os.path.exists(log_path):
-    #             try:
-    #                 os.makedirs(log_path, mode=0o755)
-    #             except OSError as e:
-    #                 # Race condition from workers on the same host: ignore
-    #                 if e.errno != errno.EEXIST:
-    #                     raise
-    #         yield log_path
-
-    #     return local_logs_path
-
-
     def sync_fn(self, run_id):
         run_path = self.get_localized_path(self.get_run_path(run_id))
 

@@ -30,14 +30,7 @@ class Store(object):
     basic semantics for reading and writing objects, and how to access objects with certain definitions.
 
     The store exposes a generic interface that is not coupled to a specific DataFrame, model, or runtime. Every run
-    of an Estimator should result in a separate run directory containing checkpoints and logs, and every variation
-    in dataset should produce a separate intermediate data path.
-
-    In order to allow for caching but to prevent overuse of disk space on intermediate data, intermediate datasets
-    are named in a deterministic sequence. When a dataset is done being used for training, the intermediate files
-    can be reclaimed to free up disk space, but will not be automatically removed so that they can be reused as
-    needed. This is to support both parallel training processes using the same store on multiple DataFrames, as well
-    as iterative training using the same DataFrame on different model variations.
+    of an Estimator should result in a separate run directory containing checkpoints and logs.
     """
     def __init__(self):
         self._train_data_to_key = {}
@@ -125,9 +118,7 @@ class Store(object):
             'runs_path': self.get_runs_path(),
             'run_path': self.get_run_path(run_id),
             'checkpoint_path': self.get_checkpoint_path(run_id),
-            # 'logs_path': self.get_logs_path(run_id),
             'checkpoint_filename': self.get_checkpoint_filename(),
-            # 'logs_subdir': self.get_logs_subdir(),
             'get_local_output_dir': self.get_local_output_dir_fn(run_id),
             'get_local_logs_dir': self.get_local_output_dir_fn(run_id),
             'sync': self.sync_fn(run_id),
@@ -181,14 +172,8 @@ class FilesystemStore(Store):
     def get_checkpoint_path(self, run_id):
         return os.path.join(self.get_run_path(run_id), self.get_checkpoint_filename())
 
-    # def get_logs_path(self, run_id):
-    #     return os.path.join(self.get_run_path(run_id), self.get_logs_subdir())
-
     def get_checkpoint_filename(self):
         return 'checkpoint.h5'
-
-    # def get_logs_subdir(self):
-    #     return 'logs'
 
     def get_full_path(self, path):
         if not self.matches(path):
