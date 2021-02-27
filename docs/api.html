@@ -82,7 +82,7 @@
 
 <dl class="py class">
 <dt id="cerebro.keras.SparkEstimator">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.keras.</code><code class="sig-name descname">SparkEstimator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">custom_objects</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">optimizer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">loss</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">loss_weights</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sample_weight_col</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metrics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">callbacks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">transformation_fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkEstimator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="sig-prename descclassname">cerebro.keras.</code><code class="sig-name descname">SparkEstimator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">custom_objects</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">optimizer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">loss</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">loss_weights</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sample_weight_col</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metrics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">callbacks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">transformation_fn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">model_update_fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkEstimator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cerebro Spark Estimator for fitting Keras model to a DataFrame.</p>
 <p>Supports <code class="docutils literal notranslate"><span class="pre">tf.keras</span> <span class="pre">&gt;=</span> <span class="pre">2.2</span></code>.</p>
 <dl class="field-list simple">
@@ -98,6 +98,8 @@ during serialization/deserialization.</p></li>
 <li><p><strong>sample_weight_col</strong> – (Optional) Column indicating the weight of each sample.</p></li>
 <li><p><strong>metrics</strong> – (Optional) List of Keras metrics to record.</p></li>
 <li><p><strong>callbacks</strong> – (Optional) List of Keras callbacks.</p></li>
+<li><p><strong>model_update_fn</strong> – (Optional) Function that can be used to update a Keras model (e.g., freeze/unfreeze layers) after
+every epoch. Takes in a Keras model and epoch number as input and returns a potentially updated Keras model.</p></li>
 </ul>
 </dd>
 </dl>
@@ -148,7 +150,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.GridSearch.fit_on_prepared_data">
-<code class="sig-name descname">fit_on_prepared_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_index</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.GridSearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">fit_on_prepared_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.GridSearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Execute the model selection/AutoML workload on already prepared data.</p>
 </div></blockquote>
@@ -288,7 +290,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.RandomSearch.fit_on_prepared_data">
-<code class="sig-name descname">fit_on_prepared_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_index</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.RandomSearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">fit_on_prepared_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.RandomSearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Execute the model selection/AutoML workload on already prepared data.</p>
 </div></blockquote>
@@ -346,7 +348,7 @@ for better cluster utilization.</p></li>
 
 <dl class="py method">
 <dt id="cerebro.tune.TPESearch.fit_on_prepared_data">
-<code class="sig-name descname">fit_on_prepared_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset_index</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.TPESearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">fit_on_prepared_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.TPESearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Execute the model selection/AutoML workload on already prepared data.</p>
 </div></blockquote>
@@ -460,7 +462,7 @@ available networking interfaces (default None)</p></li>
 </dl>
 <dl class="py method">
 <dt id="cerebro.backend.SparkBackend.prepare_data">
-<code class="sig-name descname">prepare_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">validation</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">num_partitions</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parquet_row_group_size_mb</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">dataset_idx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname">prepare_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">validation</span></em>, <em class="sig-param"><span class="n">num_partitions</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parquet_row_group_size_mb</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">dataset_idx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prepare data by writing out into persistent storage</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -468,8 +470,6 @@ available networking interfaces (default None)</p></li>
 <li><p><strong>store</strong> – Cerebro storage object (e.g., LocalStorage, HDFSStorage).</p></li>
 <li><p><strong>dataset</strong> – Spark DataFrame.</p></li>
 <li><p><strong>validation</strong> – Fraction of validation data (e.g., 0.25) or name of the DataFrame column indicating validation.</p></li>
-<li><p><strong>label_columns</strong> – List of label/output columns (default=[‘label’]).</p></li>
-<li><p><strong>feature_columns</strong> – List of feature columns (default=[‘features’]).</p></li>
 <li><p><strong>num_partitions</strong> – Number of data partitions of the output. If None, will default to the current number of
 input dataset partitions.</p></li>
 <li><p><strong>parquet_row_group_size_mb</strong> – Parquet row group size in MBs (default 8 MB) .</p></li>
@@ -500,9 +500,9 @@ input dataset partitions.</p></li>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prefix_path</strong> – Prefix path of the local directory (e.g., /user/test/cerebro).</p></li>
 <li><p><strong>train_path</strong> – (Optional) Path of the directory to store training data. If not specified will default to
-&lt;prefix_path&gt;/intermediate_train_data</p></li>
+&lt;prefix_path&gt;/train_data</p></li>
 <li><p><strong>val_path</strong> – (Optional) Path of the directory to store validation data. If not specified will default to
-&lt;prefix_path&gt;/intermediate_val_data</p></li>
+&lt;prefix_path&gt;/val_data</p></li>
 <li><p><strong>runs_path</strong> – (Optional) Path of the directory to store model checkpoints and log. If not specified will default
 to &lt;prefix_path&gt;/runs</p></li>
 <li><p><strong>temp_dir</strong> – (Optional) Temp directory on the local machine.</p></li>
@@ -527,9 +527,9 @@ remote storage).</p>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>prefix_path</strong> – Prefix path of the local directory (e.g., /user/test/cerebro).</p></li>
 <li><p><strong>train_path</strong> – (Optional) Path of the directory to store training data. If not specified will default to
-&lt;prefix_path&gt;/intermediate_train_data</p></li>
+&lt;prefix_path&gt;/train_data</p></li>
 <li><p><strong>val_path</strong> – (Optional) Path of the directory to store validation data. If not specified will default to
-&lt;prefix_path&gt;/intermediate_val_data</p></li>
+&lt;prefix_path&gt;/val_data</p></li>
 <li><p><strong>runs_path</strong> – (Optional) Path of the directory to store model checkpoints and log. If not specified will default
 to &lt;prefix_path&gt;/runs</p></li>
 </ul>
