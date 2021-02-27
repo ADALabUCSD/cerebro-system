@@ -242,17 +242,18 @@ def _hil_fit_on_prepared_data(self, metadata):
                 param[d.name] = d.value
             est = self._estimator_gen_fn_wrapper(param)
             est.setRunId(m.id)
+            est.setEpochs(m.num_trained_epochs)
             estimators.append(est)
 
             if m.status == CREATED_STATUS:
                 m.status = RUNNING_STATUS
+                db.session.commit()
                 # log hyperparameters to TensorBoard
                 self._log_hp_to_tensorboard([est], [param])
             
             estimator_results[m.id] = {}
             for metric in m.metrics:
                 estimator_results[m.id][metric.name] = [float(x) for x in metric.values.split(',')]
-        db.session.commit()
 
         # Trains all the models for one epoch. Also performs validation
         epoch_results = self.backend.train_for_one_epoch(estimators, self.store, self.feature_cols, self.label_cols)
@@ -265,6 +266,8 @@ def _hil_fit_on_prepared_data(self, metadata):
 
         for m in all_models:
             est_results = estimator_results[m.id]
+            # Refresh to sync any model stop requests from the db
+            db.session.refresh(m)
             metrics = m.metrics.all()
             if len(metrics) == 0:
                 for k in est_results:
@@ -273,12 +276,15 @@ def _hil_fit_on_prepared_data(self, metadata):
                 for k in est_results:
                     metric = [metric for metric in metrics if metric.name == k][0]
                     metric.values = ",".join(["{:.4f}".format(x) for x in est_results[k]])
+            db.session.commit()
 
         for m in all_models:
+            # Refresh to sync any model stop requests from the db
+            db.session.refresh(m)
             m.num_trained_epochs += 1
             if m.num_trained_epochs == m.max_train_epochs:
                 m.status = COMPLETED_STATUS
-        db.session.commit()
+                db.session.commit()
 
         # create estimators for the next epoch
         all_models = Model.query.filter(and_(Model.status.in_([CREATED_STATUS, RUNNING_STATUS])), Model.max_train_epochs > Model.num_trained_epochs).all()

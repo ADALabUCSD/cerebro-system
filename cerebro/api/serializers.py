@@ -17,7 +17,7 @@ from flask_restplus import fields
 from .restplus import api
 from ..commons.constants import *
 
-state_enums = [CREATED_STATUS, RUNNING_STATUS, FAILED_STATUS, STOPPED_STATUS, STOPPED_STATUS, CREATED_STATUS]
+state_enums = [CREATED_STATUS, RUNNING_STATUS, FAILED_STATUS, STOPPED_STATUS, CREATED_STATUS]
 param_type_enums = [HP_CHOICE, HP_LOGUNIFORM, HP_QLOGUNIFORM, HP_QUNIFORM, HP_UNIFORM]
 model_selection_algo_enums = [MS_GRID_SEARCH, MS_RANDOM_SEARCH, MS_HYPEROPT_SEARCH]
 

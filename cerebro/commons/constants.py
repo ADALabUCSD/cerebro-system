@@ -17,7 +17,6 @@
 CREATED_STATUS = 'created'
 RUNNING_STATUS = 'running'
 FAILED_STATUS = 'failed'
-STOPPING_STATUS = 'stopping'
 STOPPED_STATUS = 'stopped'
 COMPLETED_STATUS = 'completed'
 

@@ -14,6 +14,7 @@
 # ==============================================================================
 from flask import request
 from flask_restplus import Resource
+from flask_restplus import abort
 from ..restplus import api
 from ..serializers import model
 from ..parsers import experiment_id_argument
@@ -47,7 +48,7 @@ class ModelsCollection(Resource):
         num_trained_epochs =  data.get('num_trained_epochs')
         max_train_epochs = data.get('max_train_epochs')
         exp = Experiment.query.filter(Experiment.id == exp_id).one()
-        if exp.status in [FAILED_STATUS, STOPPING_STATUS, STOPPED_STATUS, COMPLETED_STATUS]:
+        if exp.status in [FAILED_STATUS, STOPPED_STATUS, COMPLETED_STATUS]:
             raise BadRequest('Experiment is in {} staus. Cannot create new models.'.format(exp.status))
 
         
@@ -66,7 +67,7 @@ class ModelsCollection(Resource):
 
 @ns.route('/<string:id>')
 @api.response(404, 'Model not found.')
-class ModelItem(Resource):
+class GetModel(Resource):
     
     @api.marshal_with(model)
     def get(self, id):
@@ -74,3 +75,42 @@ class ModelItem(Resource):
         Returns a model.
         """
         return Model.query.filter(Model.id == id).one()
+
+
+@ns.route('/stop/<string:id>')
+@api.response(404, 'Model not found.')
+@api.response(400, 'Invalid request.')
+class StopModel(Resource):
+    
+    @api.response(204, 'Model successfully stopped.')
+    def post(self, id):
+        """
+        Stops a model.
+        """
+        model = Model.query.filter(Model.id == id).one()
+        if model.status == RUNNING_STATUS:
+            model.status = STOPPED_STATUS
+            db.session.commit()
+            return None, 204
+        else:
+            abort(400, 'Model cannot be stopped from {} status'.format(model.status))
+
+
+@ns.route('/resume/<string:id>')
+@api.response(404, 'Model not found.')
+@api.response(400, 'Invalid request.')
+class ResumeModel(Resource):
+    
+    @api.response(204, 'Model successfully resumed.')
+    def post(self, id):
+        """
+        Resumes a model.
+        """
+        model = Model.query.filter(Model.id == id).one()
+        exp = Experiment.query.filter(Experiment.id == model.exp_id).one()
+        if model.status == STOPPED_STATUS and exp.status == RUNNING_STATUS:
+            model.status = RUNNING_STATUS
+            db.session.commit()
+            return None, 204
+        else:
+            abort(400, 'Model cannot be resumed from {} status'.format(model.status))
