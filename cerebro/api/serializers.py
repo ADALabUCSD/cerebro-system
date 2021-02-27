@@ -15,18 +15,21 @@
 
 from flask_restplus import fields
 from .restplus import api
+from ..commons.constants import *
 
-state_enums = ['created', 'running', 'failed', 'stopping', 'stopped', 'completed']
+state_enums = [CREATED_STATUS, RUNNING_STATUS, FAILED_STATUS, STOPPED_STATUS, STOPPED_STATUS, CREATED_STATUS]
+param_type_enums = [HP_CHOICE, HP_LOGUNIFORM, HP_QLOGUNIFORM, HP_QUNIFORM, HP_UNIFORM]
+model_selection_algo_enums = [MS_GRID_SEARCH, MS_RANDOM_SEARCH, MS_HYPEROPT_SEARCH]
+
 
 ############### Hyperparameters #################
 param_def = api.model('ParamDef', {
     'name': fields.String(required=True, description='Hyperparameter name'),
-    'param_type': fields.String(required=True, description='Hyperparameter type', enum=['categorical', 'int', 'float', 'log']),
-    'values': fields.String(required=False, description='Comma separated list of categorical values in the case of a categorical hparam type'),
-    'min_val': fields.Float(required=False, description='Minimum value used for int, float, and log hparam types'),
-    'max_val': fields.Float(required=False, description='Maximum value used for int, float, and log hparam types'),
-    'count': fields.Integer(required=False, description='Number of values to be taken from the range [min, max]. For int and float values are evenly chosen. For log values are chosen logarithmically evenly'),
-    'base': fields.Integer(required=False, description='Base value for log hparam type'),
+    'param_type': fields.String(required=True, description='Hyperparameter type', enum=param_type_enums),
+    'choices': fields.String(required=False, description='Comma separated list of values in the case of a {} hparam type'.format(HP_CHOICE)),
+    'min': fields.Float(required=False, description='Minimum value'),
+    'max': fields.Float(required=False, description='Maximum value'),
+    'q': fields.Integer(required=False, description='Quantum'),
 })
 
 param_val = api.model('ParamVal', {
@@ -64,11 +67,13 @@ experiment = api.model('Experiment', {
     'creation_time': fields.DateTime(readonly=True, description='Experiment creation time'),
     'last_update_time': fields.DateTime(readonly=True, description='Experiment last update time'),
     'status': fields.String(readonly=True, description='Experiment status', enum=state_enums),
+    'model_selection_algorithm': fields.String(required=True, description='Model selection algorithm', enum=model_selection_algo_enums),
+    'max_num_models': fields.Integer(required=False, description='Maximum number of models to be explored by the model selection algorithm. Needed for RandomSearch, HyperOpt'),
     'param_defs': fields.List(fields.Nested(param_def), required=True, description='Hyperparameter definitions'),
     'feature_columns': fields.String(required=True, description='Comma separated list of training data feature columns names'),
     'label_columns': fields.String(required=True, description='Comma separated list of training data label column names'),
     'max_train_epochs': fields.Integer(required=True, description='Maximum number of training epochs for any model'),
-    'training_data_prefix_path': fields.String(required=True, description='Training data prefix path'),
+    'data_store_prefix_path': fields.String(required=True, description='Data store prefix path'),
     'executable_entrypoint': fields.String(required=True, description='Estimator generator function in the form of <module_name>:<function_name>'),
     'models': fields.List(fields.Nested(model), readonly=True, description='Models in this experiment')
 })

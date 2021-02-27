@@ -13,21 +13,22 @@
 # limitations under the License.
 # ==============================================================================
 
-import logging
-import traceback
+## Experiment and Model statusses
+CREATED_STATUS = 'created'
+RUNNING_STATUS = 'running'
+FAILED_STATUS = 'failed'
+STOPPING_STATUS = 'stopping'
+STOPPED_STATUS = 'stopped'
+COMPLETED_STATUS = 'completed'
 
-from flask_restplus import Api
-from sqlalchemy.orm.exc import NoResultFound
+## Hyperparameter types
+HP_CHOICE = 'hp_choice'
+HP_LOGUNIFORM = 'hp_loguniform'
+HP_QLOGUNIFORM = 'hp_qloguniform'
+HP_QUNIFORM = 'hp_quniform'
+HP_UNIFORM = 'hp_uniform'
 
-api = Api(version='1.0', title='Cerebro REST API')
-
-@api.errorhandler
-def default_error_handler(e):
-    message = 'An unhandled exception occurred.'
-    print(message)
-    return {'message': message}, 500
-
-@api.errorhandler(NoResultFound)
-def database_not_found_error_handler(e):
-    print(traceback.format_exc())
-    return {'message': 'A database result was required but none was found.'}, 404
+## Hyperparameter search procedures
+MS_GRID_SEARCH = 'GridSearch'
+MS_RANDOM_SEARCH = 'RandomSearch'
+MS_HYPEROPT_SEARCH = 'HyperOpt'

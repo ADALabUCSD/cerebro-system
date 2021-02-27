@@ -19,7 +19,8 @@ import argparse
 
 from flask import Flask, Blueprint
 from .restplus import api
-from .database import db
+from ..db import db
+from ..db.dao import *
 
 app = Flask(__name__)
 
@@ -30,6 +31,7 @@ from .endpoints.scripts import ns as scripts_namespace
 def configure_app(flask_app, args):
     flask_app.config['SERVER_NAME'] = args.server_url
     flask_app.config['SPARK_MASTER_URL'] = args.spark_master_url
+    flask_app.config['NUM_WORKERS'] = args.num_workers
     flask_app.config['TEMP_DATA_DIR'] = args.temp_data_dir
     flask_app.config['SCRIPTS_DIR'] = os.path.join(args.temp_data_dir, 'scripts')
 
@@ -67,7 +69,8 @@ def main():
     parser = argparse.ArgumentParser(description='Argument parser for Cerebro API server.')
 
     parser.add_argument('--server-url', help='API server URL.', default='localhost:8888')
-    parser.add_argument('--spark-master-url', help='Spark master URL.', default='spark://localhost:7077')
+    parser.add_argument('--spark-master-url', help='Spark master URL.', default='local[3]')
+    parser.add_argument('--num-workers', help='Cerebro number of workers.', default=3)
     parser.add_argument('--database-uri', help='Database URI.', default='sqlite://')
     parser.add_argument('--temp-data-dir', help='Temp data directory.', default='/tmp')
     parser.add_argument('--swagger-ui-doc-expansion', help='Swagger UI doc expansion model.', default='list')

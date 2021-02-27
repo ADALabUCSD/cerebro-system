@@ -440,8 +440,7 @@ def _train_val_split(df, validation):
     return train_df, val_df, validation_ratio
 
 
-def _create_dataset(store, df, feature_columns, label_columns,
-                    validation, sample_weight_col, compress_sparse,
+def _create_dataset(store, df, validation, sample_weight_col, compress_sparse,
                     num_partitions, num_workers, dataset_idx, parquet_row_group_size_mb, verbose):
     train_data_path = store.get_train_data_path(dataset_idx)
     val_data_path = store.get_val_data_path(dataset_idx)
@@ -452,7 +451,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
         print('CEREBRO => Time: {}, Val Data Path: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                                              val_data_path))
 
-    schema_cols = feature_columns + label_columns
+    schema_cols = df.columns
     if sample_weight_col:
         schema_cols.append(sample_weight_col)
     if isinstance(validation, str):
@@ -525,7 +524,7 @@ def _create_dataset(store, df, feature_columns, label_columns,
                 .parquet(val_data_path)
 
     train_rows, val_rows, pq_metadata, avg_row_size = get_simple_meta_from_parquet(
-        store, label_columns + feature_columns, sample_weight_col, dataset_idx)
+        store, df.columns, sample_weight_col, dataset_idx)
 
     if verbose:
         print(
@@ -557,7 +556,7 @@ def check_validation(validation, df=None):
                              .format(type(validation)))
 
 
-def prepare_data(num_workers, store, df, label_columns, feature_columns,
+def prepare_data(num_workers, store, df,
                  validation=None, sample_weight_col=None, compress_sparse=False,
                  num_partitions=None, parquet_row_group_size_mb=8, dataset_idx=None, verbose=0):
     check_validation(validation, df=df)
@@ -566,26 +565,11 @@ def prepare_data(num_workers, store, df, label_columns, feature_columns,
         raise ValueError('num_workers={} and partitions_per_process: {} must both be > 0'
                          .format(num_workers, num_partitions))
 
-    if not label_columns:
-        raise ValueError('Parameter label_columns cannot be None or empty')
-
     if verbose >= 1:
         print('CEREBRO => Time: {}, Num Partitions: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                                               num_partitions))
 
-    for col in label_columns:
-        if col not in df.columns:
-            raise ValueError('Label column {} does not exist in the DataFrame'.format(col))
-
-    if feature_columns is None:
-        feature_columns = [col for col in df.columns if col not in set(label_columns)]
-    else:
-        for col in feature_columns:
-            if col not in df.columns:
-                raise ValueError('Feature column {} does not exist in the DataFrame'.format(col))
-
-    return _create_dataset(store, df, feature_columns, label_columns,
-                           validation, sample_weight_col, compress_sparse,
+    return _create_dataset(store, df, validation, sample_weight_col, compress_sparse,
                            num_partitions, num_workers, dataset_idx, parquet_row_group_size_mb, verbose)
 
 

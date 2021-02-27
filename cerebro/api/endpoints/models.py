@@ -12,17 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-import logging
-
 from flask import request
 from flask_restplus import Resource
 from ..restplus import api
 from ..serializers import model
 from ..parsers import experiment_id_argument
-from ..database.dbo import Model, Experiment, ParamVal
-from ..database import db
-
-log = logging.getLogger(__name__)
+from ...db.dao import Model, Experiment, ParamVal
+from ...db import db
 
 ns = api.namespace('models', description='Operations related to models')
 
@@ -75,12 +71,3 @@ class ModelItem(Resource):
         Returns a model.
         """
         return Model.query.filter(Model.id == id).one()
-
-
-    @api.response(204, 'Model successfully stopped.')
-    def delete(self, id):
-        """
-        Stops a model.
-        """
-        raise NotImplementedError()
-        # return None, 204

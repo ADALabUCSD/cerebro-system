@@ -8,7 +8,7 @@ def estimator_gen_fn(params):
     model.add(tf.keras.layers.Dense(1, input_dim=100))
     model.add(tf.keras.layers.Activation('sigmoid'))
 
-    optimizer = tf.keras.optimizers.Adam(lr=params['learing_rate'])
+    optimizer = tf.keras.optimizers.Adam(lr=float(params['learning_rate']))
     loss = 'binary_crossentropy'
 
     keras_estimator = SparkEstimator(

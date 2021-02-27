@@ -167,7 +167,7 @@ class ModelSelection(object):
 
         self.backend = backend
         self.store = store
-        self.remote_store = store.to_remote("logs", None)
+        self.store = store
         self.validation = validation
         self.estimator_gen_fn = estimator_gen_fn
         self.label_cols = label_columns
@@ -183,8 +183,7 @@ class ModelSelection(object):
         """
         if self.verbose >= 1: print(
             'CEREBRO => Time: {}, Preparing Data'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        _, _, metadata, _ = self.backend.prepare_data(
-            self.store, df, self.validation, label_columns=self.label_cols, feature_columns=self.feature_cols)
+        _, _, metadata, _ = self.backend.prepare_data(self.store, df, self.validation)
 
         if self.verbose >= 1: print(
             'CEREBRO => Time: {}, Initializing Workers'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
@@ -208,13 +207,14 @@ class ModelSelection(object):
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             self.backend.teardown_workers()
 
-    def fit_on_prepared_data(self, dataset_index=None):
+    def fit_on_prepared_data(self):
         """
          Execute the model selection/AutoML workload on already prepared data.
 
         :return: cerebro.tune.ModelSelectionResult
         """
         _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
+        dataset_index=None
 
         # initialize backend and data loaders
         if self.verbose >= 1: print(
@@ -266,19 +266,21 @@ class ModelSelection(object):
 
     def _log_epoch_metrics_to_tensorboard(self, estimators, estimator_results):
         # logging to TensorBoard
-        with self.remote_store.get_local_logs_dir() as logs_dir:
-            for est in estimators:
-                log_model_epoch_metrics(est.getRunId(), os.path.join(logs_dir, est.getRunId()),
+        for est in estimators:
+            remote_store = self.store.to_remote(est.getRunId(), None)
+            with remote_store.get_local_output_dir() as logs_dir:
+                log_model_epoch_metrics(est.getRunId(), logs_dir,
                                         estimator_results[est.getRunId()],
                                         est.getEpochs(), self.verbose)
-            self.remote_store.sync(logs_dir)
+            remote_store.sync(logs_dir)
 
     def _log_hp_to_tensorboard(self, estimators, hparams):
         # logging to TensorBoard
-        with self.remote_store.get_local_logs_dir() as logs_dir:
-            for i, est in enumerate(estimators):
-                log_model_hps(os.path.join(logs_dir, est.getRunId()), est.getRunId(), hparams[i], self.verbose)
-            self.remote_store.sync(logs_dir)
+        for i, est in enumerate(estimators):
+            remote_store = self.store.to_remote(est.getRunId(), None)
+            with remote_store.get_local_output_dir() as logs_dir:
+                log_model_hps(logs_dir, est.getRunId(), hparams[i], self.verbose)
+            remote_store.sync(logs_dir)
 
 
 class ModelSelectionResult(object):

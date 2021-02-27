@@ -32,9 +32,9 @@ class LocalStore(FilesystemStore):
 
     :param prefix_path: Prefix path of the local directory (e.g., /user/test/cerebro).
     :param train_path: (Optional) Path of the directory to store training data. If not specified will default to
-        <prefix_path>/intermediate_train_data
+        <prefix_path>/train_data
     :param val_path: (Optional) Path of the directory to store validation data. If not specified will default to
-        <prefix_path>/intermediate_val_data
+        <prefix_path>/val_data
     :param runs_path: (Optional) Path of the directory to store model checkpoints and log. If not specified will default
         to <prefix_path>/runs
     """
@@ -65,23 +65,6 @@ class LocalStore(FilesystemStore):
             yield run_path
 
         return local_run_path
-
-    def get_local_logs_dir_fn(self):
-        log_path = self.get_localized_path(self.get_run_path("logs"))
-
-        @contextlib.contextmanager
-        def local_logs_path():
-            if not os.path.exists(log_path):
-                try:
-                    os.makedirs(log_path, mode=0o755)
-                except OSError as e:
-                    # Race condition from workers on the same host: ignore
-                    if e.errno != errno.EEXIST:
-                        raise
-            yield log_path
-
-        return local_logs_path
-
 
     def sync_fn(self, run_id):
         run_path = self.get_localized_path(self.get_run_path(run_id))
