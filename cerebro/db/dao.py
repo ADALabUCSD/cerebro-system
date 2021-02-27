@@ -16,7 +16,21 @@ import uuid
 from datetime import datetime
 from . import db
 
-################### Experiment ##################
+
+class Metric(db.Model):
+    name = db.Column(db.String(32), primary_key=True)
+    model_id = db.Column(db.String(32), db.ForeignKey('model.id'), primary_key=True)
+    values = db.Column(db.String(8192))
+    
+    def __init__(self, model_id, name, values):
+        self.model_id = model_id
+        self.name = name
+        self.values = ",".join(["{:.4f}".format(x) for x in values])
+
+    def __repr__(self):
+        return '<ParamVal %r, %r>' % self.name, self.model_id
+
+
 class Experiment(db.Model):
     id = db.Column(db.String(32), primary_key=True)
     name = db.Column(db.String(32))
@@ -67,9 +81,10 @@ class Model(db.Model):
     max_train_epochs = db.Column(db.Integer())
 
     param_vals = db.relationship('ParamVal', backref='model', lazy='dynamic')
+    metrics = db.relationship('Metric', backref='model', lazy='dynamic')
 
-    def __init__(self, exp_id, num_trained_epochs, max_train_epochs):
-        self.id = str(uuid.uuid4())
+    def __init__(self, model_id, exp_id, num_trained_epochs, max_train_epochs):
+        self.id = model_id
         self.exp_id = exp_id        
         self.creation_time = datetime.utcnow()
         self.last_update_time = self.creation_time
@@ -100,12 +115,12 @@ class ParamDef(db.Model):
         self.q = q
 
     def __repr__(self):
-        return '<ParamDef %r>' % self.id
+        return '<ParamDef %r, %r>' % self.exp_id, self.name
 
 
 class ParamVal(db.Model):
     name = db.Column(db.String(32), db.ForeignKey('param_def.name'), primary_key=True)
-    model_id = db.Column(db.String(32), db.ForeignKey('model.id'))
+    model_id = db.Column(db.String(32), db.ForeignKey('model.id'), primary_key=True)
     value = db.Column(db.String(32))
     
     def __init__(self, model_id, name, value):
@@ -114,4 +129,4 @@ class ParamVal(db.Model):
         self.value = value
 
     def __repr__(self):
-        return '<ParamVal %r>' % self.id
+        return '<ParamVal %r, %r>' % self.name, self.model_id

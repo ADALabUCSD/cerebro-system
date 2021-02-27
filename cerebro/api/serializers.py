@@ -40,7 +40,6 @@ param_val = api.model('ParamVal', {
 #################### Metrics ####################
 metric = api.model('Metric', {
     'name': fields.String(readonly=True, description='Metric name'),
-    'metric_type': fields.String(readonly=True, description='Metric type', enum=['train', 'validation']),
     'values': fields.String(readonly=True, description='Comma separated list of metric values list for every epoch')
 })
 

@@ -32,17 +32,16 @@ class Backend(object):
         """Initialize workers"""
         raise NotImplementedError()
 
-    def initialize_data_loaders(self, store, dataset_idx, schema_fields):
+    def initialize_data_loaders(self, store, schema_fields):
         """Initialize data loaders"""
         raise NotImplementedError()
 
-    def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
+    def train_for_one_epoch(self, models, store, feature_col, label_col, is_train=True):
         """
         Takes a set of Keras models and trains for one epoch. If is_train is False, validation is performed
          instead of training.
         :param models:
         :param store:
-        :param dataset_idx:
         :param feature_col:
         :param label_col:
         :param is_train:

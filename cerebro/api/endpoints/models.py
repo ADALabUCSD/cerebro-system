@@ -19,6 +19,8 @@ from ..serializers import model
 from ..parsers import experiment_id_argument
 from ...db.dao import Model, Experiment, ParamVal
 from ...db import db
+from ...commons.constants import *
+from .experiments import next_model_id
 
 ns = api.namespace('models', description='Operations related to models')
 
@@ -45,10 +47,11 @@ class ModelsCollection(Resource):
         num_trained_epochs =  data.get('num_trained_epochs')
         max_train_epochs = data.get('max_train_epochs')
         exp = Experiment.query.filter(Experiment.id == exp_id).one()
-        if exp.status in ['failed', 'stopping', 'stopped', 'completed']:
+        if exp.status in [FAILED_STATUS, STOPPING_STATUS, STOPPED_STATUS, COMPLETED_STATUS]:
             raise BadRequest('Experiment is in {} staus. Cannot create new models.'.format(exp.status))
 
-        model_dao = Model(exp_id, num_trained_epochs, max_train_epochs)
+        
+        model_dao = Model(next_model_id(), exp_id, num_trained_epochs, max_train_epochs)
 
         for pval in data.get('param_vals'):
             name = pval.get('name')

@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 import sys
+import time
 import logging
 import traceback
 from werkzeug.exceptions import BadRequest
@@ -20,20 +21,37 @@ from flask import request
 from flask_restplus import Resource
 from pyspark.sql import SparkSession
 from importlib import import_module
-from threading import Thread
+from threading import Thread, Lock
 
 from ..restplus import api
 from ..serializers import experiment
-from ...db.dao import Experiment, ParamDef
+from ...db.dao import Experiment, ParamDef, Model, ParamVal
 from ...db import db
 from ..cerebro_server import app
 from ...commons.constants import *
 
 from ...backend import SparkBackend
 from ...storage import LocalStore, HDFSStore
-from ...tune import GridSearch, RandomSearch, TPESearch, hp_choice, hp_uniform, hp_quniform, hp_loguniform, hp_qloguniform
+from ...tune import TPESearch, hp_choice, hp_uniform, hp_quniform, hp_loguniform, hp_qloguniform
+from ...tune.grid import HILGridSearch, HILRandomSearch
+
 
 ns = api.namespace('experiments', description='Operations related to experiments')
+
+LOCK = Lock()
+MODEL_ID = -1
+
+def next_model_id():
+    global LOCK, MODEL_ID
+    with LOCK:
+        MODEL_ID += 1
+        return 'model_' + str(MODEL_ID) + '_' + str(int(time.time()))
+
+def reset_model_id():
+    global LOCK, MODEL_ID
+    with LOCK:
+        MODEL_ID = -1
+
 
 def experiment_daemon(exp_id, app):
     with app.app_context():
@@ -69,32 +87,45 @@ def experiment_daemon(exp_id, app):
                 estimator_gen_fn = getattr(mod, f)
             
                 if exp_obj.model_selection_algorithm == MS_GRID_SEARCH:
-                    model_selection = GridSearch(
-                        backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
-                        num_epochs=int(exp_obj.max_train_epochs), feature_columns=[x.strip() for x in exp_obj.feature_columns.split(',')],
+                    model_selection = HILGridSearch(
+                        exp_id=exp_obj.id, backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+                        num_epochs=int(exp_obj.max_train_epochs), db=db, feature_columns=[x.strip() for x in exp_obj.feature_columns.split(',')],
                         label_columns=[x.strip() for x in exp_obj.label_columns.split(',')], verbose=2 if app.config['DEBUG'] else 0
                     )
                 elif exp_obj.model_selection_algorithm == MS_RANDOM_SEARCH:
-                    model_selection = RandomSearch(
-                        backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
-                        num_models=int(exp_obj.max_num_models), num_epochs=int(exp_obj.max_train_epochs),
+                    model_selection = HILRandomSearch(
+                        exp_id=exp_obj.id, backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+                        num_models=int(exp_obj.max_num_models), num_epochs=int(exp_obj.max_train_epochs), db=db,
                         feature_columns=[x.strip() for x in exp_obj.feature_columns.split(',')],
                         label_columns=[x.strip() for x in exp_obj.label_columns.split(',')], verbose=2 if app.config['DEBUG'] else 0
                     )
                 elif exp_obj.model_selection_algorithm == MS_HYPEROPT_SEARCH:
-                    # FIXME: Parallelism is hard-coded here
-                    model_selection = TPESearch(
-                        backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
-                        num_models=int(exp_obj.max_num_models), num_epochs=int(exp_obj.max_train_epochs),
-                        feature_columns=[x.strip() for x in exp_obj.feature_columns.split(',')],
-                        label_columns=[x.strip() for x in exp_obj.label_columns.split(',')], parallelism= 2*app.config['NUM_WORKERS'], verbose=2 if app.config['DEBUG'] else 0
-                    )
+                    # # FIXME: Parallelism is hard-coded here
+                    # model_selection = TPESearch(
+                    #     backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+                    #     num_models=int(exp_obj.max_num_models), num_epochs=int(exp_obj.max_train_epochs),
+                    #     feature_columns=[x.strip() for x in exp_obj.feature_columns.split(',')],
+                    #     label_columns=[x.strip() for x in exp_obj.label_columns.split(',')], parallelism= 2*app.config['NUM_WORKERS'], verbose=2 if app.config['DEBUG'] else 0
+                    # )
+                    raise NotImplementedError()
 
                 exp_obj.status = RUNNING_STATUS
                 db.session.commit()
                 
-                model_selection.fit_on_prepared_data()
+                
+                param_maps = model_selection.estimator_param_maps
+                for param_map in param_maps:
+                    model_id = next_model_id()
+                    model_dao = Model(model_id, exp_obj.id, 0, int(exp_obj.max_train_epochs))
+                    db.session.add(model_dao)
 
+                    for k in param_map:
+                        pval_dao = ParamVal(model_id, k, param_map[k])
+                        db.session.add(pval_dao)
+                        db.session.add(model_dao)
+                db.session.commit()
+
+                model_selection.fit_on_prepared_data()
                 exp_obj.status = COMPLETED_STATUS
                 db.session.commit()
         except Exception as e:
@@ -124,6 +155,8 @@ class ExperimentCollection(Resource):
         # TODO: We do not support multi-tenancy. Thus we don't allow users to create more than one active experiment at a time.
         if Experiment.query.filter(Experiment.status.in_([CREATED_STATUS, RUNNING_STATUS])).count() > 0:
             raise BadRequest('An experiment is still being run. Please wait until it completes to create a new experiment.')
+
+        reset_model_id()
 
         data = request.json
         name = data.get('name')

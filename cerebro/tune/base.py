@@ -22,7 +22,6 @@ import numpy as np
 from ..commons.util import fix_huggingface_layer_methods_and_add_to_custom_objects
 from ..backend import constants
 
-
 class _HP(object):
     def sample_value(self):
         """ randomly samples a value"""
@@ -193,12 +192,12 @@ class ModelSelection(object):
         if self.verbose >= 1: print(
             'CEREBRO => Time: {}, Initializing Data Loaders'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        self.backend.initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
+        self.backend.initialize_data_loaders(self.store, self.feature_cols + self.label_cols)
 
         try:
             if self.verbose >= 1: print('CEREBRO => Time: {}, Launching Model Selection Workload'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            result = self._fit_on_prepared_data(None, metadata)
+            result = self._fit_on_prepared_data(metadata)
             return result
         finally:
             # teardown the backend workers
@@ -214,7 +213,6 @@ class ModelSelection(object):
         :return: cerebro.tune.ModelSelectionResult
         """
         _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
-        dataset_index=None
 
         # initialize backend and data loaders
         if self.verbose >= 1: print(
@@ -224,12 +222,12 @@ class ModelSelection(object):
         if self.verbose >= 1: print(
             'CEREBRO => Time: {}, Initializing Data Loaders'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
+        self.backend.initialize_data_loaders(self.store, self.feature_cols + self.label_cols)
 
         try:
             if self.verbose >= 1: print('CEREBRO => Time: {}, Launching Model Selection Workload'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            result = self._fit_on_prepared_data(dataset_index, metadata)
+            result = self._fit_on_prepared_data(metadata)
             return result
         finally:
             # teardown the backend workers

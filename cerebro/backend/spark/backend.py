@@ -155,16 +155,16 @@ class SparkBackend(Backend):
         self.spark_job_group = spark_job_group
         self.workers_initialized = True
 
-    def initialize_data_loaders(self, store, dataset_idx, schema_fields):
+    def initialize_data_loaders(self, store, schema_fields):
         """
         :param store:
         :param dataset_idx:
         :param schema_fields:
         """
         if self.workers_initialized:
-            remote_store = store.to_remote(self.spark_job_group, dataset_idx)
+            remote_store = store.to_remote(self.spark_job_group, None)
             shard_count = self._num_workers()
-            _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, dataset_idx)
+            _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, None)
             data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size,
                                                self.settings.disk_cache_size_bytes,
                                                self.settings.data_readers_pool_type, self.settings.num_data_readers)
@@ -177,7 +177,7 @@ class SparkBackend(Backend):
             raise Exception('Spark tasks not initialized for Cerebro. Please run SparkBackend.initialize_workers() '
                             'first!')
 
-    def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
+    def train_for_one_epoch(self, models, store, feature_col, label_col, is_train=True):
 
         mode = "Training"
         if not is_train:
@@ -185,7 +185,7 @@ class SparkBackend(Backend):
         if self.settings.verbose >= 1:
             print('CEREBRO => Time: {}, Starting EPOCH {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), mode))
 
-        sub_epoch_trainers = [_get_remote_trainer(model, self, store, dataset_idx, feature_col, label_col,
+        sub_epoch_trainers = [_get_remote_trainer(model, self, store, None, feature_col, label_col,
                                                   is_train, self.settings.verbose) \
                               for model in models]
 
