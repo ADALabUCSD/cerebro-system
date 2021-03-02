@@ -59,7 +59,7 @@ model = api.model('Model', {
     'warm_start_model_id': fields.String(required=False, description='UID of the warm starting model in the case of a model clone'),
     'param_vals': fields.List(fields.Nested(param_val), required=True, description='Hyperparameter values'),
     'metrics': fields.List(fields.Nested(metric), readonly=True, description='Model training metrics'),
-    'exception_message': fields.String(read_only=True, description='Exception message in the case of an model initialization failure')
+    'exception_message': fields.String(readonly=True, description='Exception message in the case of an model initialization failure')
 })
 
 
@@ -80,5 +80,5 @@ experiment = api.model('Experiment', {
     'data_store_prefix_path': fields.String(required=True, description='Data store prefix path'),
     'executable_entrypoint': fields.String(required=True, description='Estimator generator function in the form of <module_name>:<function_name>'),
     'models': fields.List(fields.Nested(model), readonly=True, description='Models in this experiment'),
-    'exception_message': fields.String(read_only=True, description='Exception message in the case of an experiment failure')
+    'exception_message': fields.String(readonly=True, description='Exception message in the case of an experiment failure')
 })
