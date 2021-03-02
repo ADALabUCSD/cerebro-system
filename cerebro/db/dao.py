@@ -15,6 +15,7 @@
 import uuid
 from datetime import datetime
 from . import db
+from ..commons.constants import *
 
 
 class Metric(db.Model):
@@ -45,6 +46,7 @@ class Experiment(db.Model):
     max_train_epochs = db.Column(db.Integer())
     data_store_prefix_path = db.Column(db.String(512))
     executable_entrypoint = db.Column(db.String(512))
+    exception_message = db.Column(db.String(4096))
 
     param_defs = db.relationship('ParamDef', backref='experiment', lazy='dynamic')
     models = db.relationship('Model', backref='model', lazy='dynamic')
@@ -104,8 +106,9 @@ class ParamDef(db.Model):
     min = db.Column(db.Float())
     max = db.Column(db.Float())
     q = db.Column(db.Integer())
+    dtype = db.Column(db.String(32))
 
-    def __init__(self, exp_id, name, param_type, choices=None, min=0, max=0, q=0):
+    def __init__(self, exp_id, name, param_type, choices=None, min=0, max=0, q=0, dtype=DTYPE_STR):
         self.exp_id = exp_id
         self.name = name
         self.param_type = param_type
@@ -113,6 +116,8 @@ class ParamDef(db.Model):
         self.min = min
         self.max = max
         self.q = q
+        self.dtype = dtype
+
 
     def __repr__(self):
         return '<ParamDef %r, %r>' % self.exp_id, self.name
@@ -122,11 +127,13 @@ class ParamVal(db.Model):
     name = db.Column(db.String(32), db.ForeignKey('param_def.name'), primary_key=True)
     model_id = db.Column(db.String(32), db.ForeignKey('model.id'), primary_key=True)
     value = db.Column(db.String(32))
+    dtype = db.Column(db.String(32))
     
-    def __init__(self, model_id, name, value):
+    def __init__(self, model_id, name, value, dtype):
         self.model_id = model_id
         self.name = name
-        self.value = value
+        self.value = str(value)
+        self.dtype = dtype
 
     def __repr__(self):
         return '<ParamVal %r, %r>' % self.name, self.model_id

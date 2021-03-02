@@ -27,6 +27,11 @@ HP_QLOGUNIFORM = 'hp_qloguniform'
 HP_QUNIFORM = 'hp_quniform'
 HP_UNIFORM = 'hp_uniform'
 
+## Hyperparameter dtypes
+DTYPE_STR = 'dtype_str'
+DTYPE_INT = 'dtype_int'
+DTYPE_FLOAT = 'dtype_float'
+
 ## Hyperparameter search procedures
 MS_GRID_SEARCH = 'GridSearch'
 MS_RANDOM_SEARCH = 'RandomSearch'

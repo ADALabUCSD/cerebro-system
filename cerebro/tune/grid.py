@@ -16,6 +16,7 @@
 import itertools
 from sqlalchemy import and_
 import numpy as np
+from ..commons.constants import *
 
 from .base import ModelSelection, is_larger_better, ModelSelectionResult, _HP, _HPChoice, update_model_results
 from ..db.dao import Model, Metric
@@ -238,8 +239,13 @@ def _hil_fit_on_prepared_data(self, metadata):
         for m in all_models:
             param = {}
             for d in m.param_vals:
-                #TODO handle dtype
-                param[d.name] = d.value
+                if d.dtype == DTYPE_FLOAT:
+                    param[d.name] = float(d.value)
+                elif d.dtype == DTYPE_INT:
+                    param[d.name] = int(d.value)
+                else:
+                    param[d.name] = d.value
+
             est = self._estimator_gen_fn_wrapper(param)
             est.setRunId(m.id)
             est.setEpochs(m.num_trained_epochs)

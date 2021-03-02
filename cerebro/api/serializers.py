@@ -19,6 +19,7 @@ from ..commons.constants import *
 
 state_enums = [CREATED_STATUS, RUNNING_STATUS, FAILED_STATUS, STOPPED_STATUS, CREATED_STATUS]
 param_type_enums = [HP_CHOICE, HP_LOGUNIFORM, HP_QLOGUNIFORM, HP_QUNIFORM, HP_UNIFORM]
+param_dtype_enums = [DTYPE_STR, DTYPE_INT, DTYPE_FLOAT]
 model_selection_algo_enums = [MS_GRID_SEARCH, MS_RANDOM_SEARCH, MS_HYPEROPT_SEARCH]
 
 
@@ -29,12 +30,14 @@ param_def = api.model('ParamDef', {
     'choices': fields.String(required=False, description='Comma separated list of values in the case of a {} hparam type'.format(HP_CHOICE)),
     'min': fields.Float(required=False, description='Minimum value'),
     'max': fields.Float(required=False, description='Maximum value'),
-    'q': fields.Integer(required=False, description='Quantum'),
+    'q': fields.Float(required=False, description='Quantum'),
+    'dtype': fields.String(required=True, description='Parameter dtype', enum=param_dtype_enums, default=DTYPE_STR)
 })
 
 param_val = api.model('ParamVal', {
     'name': fields.String(required=True, description='Hyperparameter name'),
-    'value': fields.String(required=True, description='Hyperparameter value')
+    'value': fields.String(required=True, description='Hyperparameter value'),
+    'dtype': fields.String(readonly=True, description='Hyperparameter value dtype')
 })
 
 #################### Metrics ####################
@@ -74,5 +77,6 @@ experiment = api.model('Experiment', {
     'max_train_epochs': fields.Integer(required=True, description='Maximum number of training epochs for any model'),
     'data_store_prefix_path': fields.String(required=True, description='Data store prefix path'),
     'executable_entrypoint': fields.String(required=True, description='Estimator generator function in the form of <module_name>:<function_name>'),
-    'models': fields.List(fields.Nested(model), readonly=True, description='Models in this experiment')
+    'models': fields.List(fields.Nested(model), readonly=True, description='Models in this experiment'),
+    'exception_message': fields.String(read_only=True, description='Exception message in the case of an experiment failure')
 })

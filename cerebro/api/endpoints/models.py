@@ -15,10 +15,12 @@
 from flask import request
 from flask_restplus import Resource
 from flask_restplus import abort
+from werkzeug.exceptions import BadRequest
+from sqlalchemy import and_
 from ..restplus import api
 from ..serializers import model
 from ..parsers import experiment_id_argument
-from ...db.dao import Model, Experiment, ParamVal
+from ...db.dao import Model, Experiment, ParamVal, ParamDef
 from ...db import db
 from ...commons.constants import *
 from .experiments import next_model_id
@@ -57,7 +59,10 @@ class ModelsCollection(Resource):
         for pval in data.get('param_vals'):
             name = pval.get('name')
             value = pval.get('value')
-            pval_dao = ParamVal(model_dao.id, name, value)
+
+            dtype = ParamDef.query.filter(and_(ParamDef.exp_id == exp_id, ParamDef.name == name)).one().dtype
+
+            pval_dao = ParamVal(model_dao.id, name, value, dtype)
             db.session.add(pval_dao)
 
         db.session.add(model_dao)

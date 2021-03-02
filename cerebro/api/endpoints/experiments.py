@@ -22,6 +22,7 @@ from flask_restplus import Resource
 from pyspark.sql import SparkSession
 from importlib import import_module
 from threading import Thread, Lock
+from sqlalchemy import and_
 
 from ..restplus import api
 from ..serializers import experiment
@@ -68,8 +69,40 @@ def experiment_daemon(exp_id, app):
 
                     if param_def.param_type == HP_CHOICE:
                         param_vals = [x.strip()  for x in param_def.choices.split(',')]
+                        if param_def.dtype == DTYPE_FLOAT:
+                            param_vals = [float(x) for x in param_vals]
+                        elif param_def.dtype == DTYPE_INT:
+                            param_vals = [int(x) for x in param_vals]
 
-                    search_space[param_name] = hp_choice(param_vals)
+                        search_space[param_name] = hp_choice(param_vals)
+                    else:
+                        min_val = param_def.min
+                        max_val = param_def.max
+                        if param_def.dtype == DTYPE_FLOAT:
+                            min_val = float(min_val)
+                            max_val = float(max_val)
+                        elif param_def.dtype == DTYPE_INT:
+                            min_val = int(min_val)
+                            max_val = int(max_val)
+
+                        q = None
+                        if param_def.param_type in [HP_QUNIFORM, HP_QLOGUNIFORM]:
+                            q = param_def.q
+                            if param_def.dtype == DTYPE_FLOAT:
+                                q = float(q)
+                            elif param_def.dtype == DTYPE_INT:
+                                q = int(q)
+
+                        if param_def.param_type == HP_UNIFORM:
+                            search_space[param_name] = hp_uniform(min_val, max_val)
+                        elif param_def.param_type == HP_LOGUNIFORM:
+                            search_space[param_name] = hp_loguniform(min_val, max_val)
+                        elif param_def.param_type == HP_QUNIFORM:
+                            search_space[param_name] = hp_quniform(min_val, max_val, q)
+                        elif param_def.param_type == HP_QLOGUNIFORM:
+                            search_space[param_name] = hp_qloguniform(min_val, max_val, q)
+                        else:
+                            raise NotImplementedError('Unsupported hyperparameter type: {}'.format(param_def.param_type))
 
                 data_store_prefix_path = exp_obj.data_store_prefix_path
 
@@ -100,27 +133,24 @@ def experiment_daemon(exp_id, app):
                         label_columns=[x.strip() for x in exp_obj.label_columns.split(',')], verbose=2 if app.config['DEBUG'] else 0
                     )
                 elif exp_obj.model_selection_algorithm == MS_HYPEROPT_SEARCH:
-                    # # FIXME: Parallelism is hard-coded here
-                    # model_selection = TPESearch(
-                    #     backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
-                    #     num_models=int(exp_obj.max_num_models), num_epochs=int(exp_obj.max_train_epochs),
-                    #     feature_columns=[x.strip() for x in exp_obj.feature_columns.split(',')],
-                    #     label_columns=[x.strip() for x in exp_obj.label_columns.split(',')], parallelism= 2*app.config['NUM_WORKERS'], verbose=2 if app.config['DEBUG'] else 0
-                    # )
+                    # FIXME: Parallelism is hard-coded here
                     raise NotImplementedError()
+
 
                 exp_obj.status = RUNNING_STATUS
                 db.session.commit()
                 
-                
+                # Creating the intial model specs.
                 param_maps = model_selection.estimator_param_maps
+                print(param_maps)
                 for param_map in param_maps:
                     model_id = next_model_id()
                     model_dao = Model(model_id, exp_obj.id, 0, int(exp_obj.max_train_epochs))
                     db.session.add(model_dao)
 
                     for k in param_map:
-                        pval_dao = ParamVal(model_id, k, param_map[k])
+                        dtype = ParamDef.query.filter(and_(ParamDef.exp_id == exp_id, ParamDef.name == k)).one().dtype
+                        pval_dao = ParamVal(model_id, k, param_map[k], dtype)
                         db.session.add(pval_dao)
                         db.session.add(model_dao)
                 db.session.commit()
@@ -132,6 +162,7 @@ def experiment_daemon(exp_id, app):
             logging.error(traceback.format_exc())
 
             exp_obj.status = FAILED_STATUS
+            exp_obj.exception_message = str(traceback.format_exc())
             db.session.commit()
 
 
@@ -171,7 +202,7 @@ class ExperimentCollection(Resource):
 
         # Experiment validation
         if model_selection_algorithm in [MS_RANDOM_SEARCH, MS_HYPEROPT_SEARCH]:
-            assert max_num_models is not None, '{} should have non max_num_models value'.format(model_selection_algorithm)
+            assert max_num_models is not None and max_num_models > 0, '{} should have valid max_num_models value'.format(model_selection_algorithm)
 
         exp_dao = Experiment(name, description, model_selection_algorithm, max_num_models, feature_columns, label_columns, max_train_epochs,
             data_store_prefix_path, executable_entrypoint)
@@ -184,6 +215,7 @@ class ExperimentCollection(Resource):
             min = pdef.get('min')
             max = pdef.get('max')
             q = pdef.get('q')
+            dtype = pdef.get('dtype')
 
             # Parameter validation
             if param_type == HP_CHOICE:
@@ -193,7 +225,7 @@ class ExperimentCollection(Resource):
             if param_type in [HP_QLOGUNIFORM, HP_QUNIFORM]:
                 assert q is not None, '{} should have non null q value'.format(param_type)
 
-            pdef_dao = ParamDef(exp_dao.id, name, param_type, choices, min, max, q)
+            pdef_dao = ParamDef(exp_dao.id, name, param_type, choices, min, max, q, dtype)
             db.session.add(pdef_dao)
 
         db.session.commit()        
