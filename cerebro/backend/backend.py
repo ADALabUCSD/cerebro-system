@@ -19,9 +19,6 @@ from __future__ import absolute_import
 
 class Backend(object):
     """Interface for remote execution of the distributed training function.
-
-    A custom backend can be used in cases where the training environment running Cerebro is different
-    from the Spark application running the CerebroEstimator.
     """
 
     def _num_workers(self):
