@@ -36,18 +36,7 @@ from ...commons.util import patch_hugginface_layer_methods
 from .util import TF_KERAS, TFKerasUtil
 from .params import SparkEstimatorParams, SparkModelParams
 from ..estimator import CerebroEstimator, CerebroModel
-
-import threading
-
-LOCK = threading.Lock()
-MODEL_ID = -1
-
-
-def next_model_id():
-    global LOCK, MODEL_ID
-    with LOCK:
-        MODEL_ID += 1
-        return MODEL_ID
+from ...commons.constants import next_model_id
 
 
 class KerasEstimatorParamsWriter(DefaultParamsWriter):

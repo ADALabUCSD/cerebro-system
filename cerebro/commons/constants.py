@@ -12,6 +12,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import time
+from threading import Lock
+
+LOCK = Lock()
+MODEL_ID = -1
+
+def next_model_id():
+    global LOCK, MODEL_ID
+    with LOCK:
+        MODEL_ID += 1
+        return 'model_' + str(MODEL_ID) + '_' + str(int(time.time()))
+
+def reset_model_id():
+    global LOCK, MODEL_ID
+    with LOCK:
+        MODEL_ID = -1
+
 
 ## Experiment and Model statusses
 CREATED_STATUS = 'created'

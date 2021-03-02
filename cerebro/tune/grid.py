@@ -19,7 +19,7 @@ import numpy as np
 from ..commons.constants import *
 
 from .base import ModelSelection, is_larger_better, ModelSelectionResult, _HP, _HPChoice, update_model_results
-from ..db.dao import Model, Metric
+from ..db.dao import Model, Metric, ParamVal, ParamDef, Experiment
 from ..commons.constants import CREATED_STATUS, RUNNING_STATUS, COMPLETED_STATUS
 
 
@@ -228,8 +228,25 @@ def _fit_on_prepared_data(self, metadata):
 # Human-in-the-loop implementation
 def _hil_fit_on_prepared_data(self, metadata):
     exp_id = self.exp_id
+    exp_obj = Experiment.query.filter(Experiment.id == exp_id).one()
     db = self.db
     max_epochs = self.num_epochs
+
+    # Creating the intial model specs.
+    param_maps = self.estimator_param_maps
+    for param_map in param_maps:
+        model_id = next_model_id()
+        model_dao = Model(model_id, exp_obj.id, 0, int(exp_obj.max_train_epochs))
+        db.session.add(model_dao)
+
+        for k in param_map:
+            dtype = ParamDef.query.filter(and_(ParamDef.exp_id == exp_id, ParamDef.name == k)).one().dtype
+            pval_dao = ParamVal(model_id, k, param_map[k], dtype)
+            db.session.add(pval_dao)
+            db.session.add(model_dao)
+    db.session.commit()
+    exp_obj.status = RUNNING_STATUS
+    db.session.commit()
 
     # create estimators
     all_models = Model.query.filter(and_(Model.status.in_([CREATED_STATUS, RUNNING_STATUS])), Model.max_train_epochs > Model.num_trained_epochs).all()

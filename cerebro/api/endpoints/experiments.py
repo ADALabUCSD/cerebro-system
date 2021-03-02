@@ -36,23 +36,7 @@ from ...storage import LocalStore, HDFSStore
 from ...tune import TPESearch, hp_choice, hp_uniform, hp_quniform, hp_loguniform, hp_qloguniform
 from ...tune.grid import HILGridSearch, HILRandomSearch
 
-
 ns = api.namespace('experiments', description='Operations related to experiments')
-
-LOCK = Lock()
-MODEL_ID = -1
-
-def next_model_id():
-    global LOCK, MODEL_ID
-    with LOCK:
-        MODEL_ID += 1
-        return 'model_' + str(MODEL_ID) + '_' + str(int(time.time()))
-
-def reset_model_id():
-    global LOCK, MODEL_ID
-    with LOCK:
-        MODEL_ID = -1
-
 
 def experiment_daemon(exp_id, app):
     with app.app_context():
@@ -136,31 +120,14 @@ def experiment_daemon(exp_id, app):
                     # FIXME: Parallelism is hard-coded here
                     raise NotImplementedError()
 
-
-                exp_obj.status = RUNNING_STATUS
-                db.session.commit()
-                
-                # Creating the intial model specs.
-                param_maps = model_selection.estimator_param_maps
-                print(param_maps)
-                for param_map in param_maps:
-                    model_id = next_model_id()
-                    model_dao = Model(model_id, exp_obj.id, 0, int(exp_obj.max_train_epochs))
-                    db.session.add(model_dao)
-
-                    for k in param_map:
-                        dtype = ParamDef.query.filter(and_(ParamDef.exp_id == exp_id, ParamDef.name == k)).one().dtype
-                        pval_dao = ParamVal(model_id, k, param_map[k], dtype)
-                        db.session.add(pval_dao)
-                        db.session.add(model_dao)
-                db.session.commit()
-
                 model_selection.fit_on_prepared_data()
+                
+                db.session.refresh(exp_obj)
                 exp_obj.status = COMPLETED_STATUS
                 db.session.commit()
         except Exception as e:
             logging.error(traceback.format_exc())
-
+            db.session.refresh(exp_obj)
             exp_obj.status = FAILED_STATUS
             exp_obj.exception_message = str(traceback.format_exc())
             db.session.commit()
