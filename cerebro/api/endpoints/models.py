@@ -47,14 +47,21 @@ class ModelsCollection(Resource):
         """
         data = request.json
         exp_id = data.get('exp_id')
-        num_trained_epochs =  data.get('num_trained_epochs')
+        num_trained_epochs =  0
         max_train_epochs = data.get('max_train_epochs')
+        warm_start_model_id = data.get('warm_start_model_id')
+
+        if warm_start_model_id is not None:
+            warm_start_model = Model.query.filter(Model.id == warm_start_model_id).one()
+            print(warm_start_model.status, warm_start_model.num_trained_epochs)
+            assert warm_start_model.status in [RUNNING_STATUS, COMPLETED_STATUS] and warm_start_model.num_trained_epochs > 0, \
+            'Warm start model should be a completed or current running model with atleast 1 epoch trained.'
+
         exp = Experiment.query.filter(Experiment.id == exp_id).one()
         if exp.status in [FAILED_STATUS, STOPPED_STATUS, COMPLETED_STATUS]:
             raise BadRequest('Experiment is in {} staus. Cannot create new models.'.format(exp.status))
 
-        
-        model_dao = Model(next_model_id(), exp_id, num_trained_epochs, max_train_epochs)
+        model_dao = Model(next_model_id(), exp_id, num_trained_epochs, max_train_epochs, warm_start_model_id)
 
         for pval in data.get('param_vals'):
             name = pval.get('name')

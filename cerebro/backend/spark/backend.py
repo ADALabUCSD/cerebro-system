@@ -338,29 +338,14 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
     keras_utils = estimator._get_keras_utils()
 
     # Checkpointing the model if it does not exist.
-    if not estimator._has_checkpoint(run_id) or (is_train and estimator.getModelUpdateFn() is not None):
+    if not estimator._has_checkpoint(run_id):
         remote_store = store.to_remote(run_id, dataset_idx)
-        
-        # Update the model by passing it to the user provided model update function.
-        if estimator.getModelUpdateFn() is not None:
-            # Load existing checkpoint if it already exists.
-            if estimator._has_checkpoint(run_id):
-                with tf.keras.utils.custom_object_scope(estimator.getCustomObjects()):
-                    model = _deserialize_keras_model_fn()(
-                        remote_store.get_last_checkpoint(), lambda x: tf.keras.models.load_model(x))
-            else:
-                model = estimator.getModel()
-
-            hyper_params = estimator.getHyperParams()
-            epoch = estimator.getEpochs() + 1
-            model = estimator.getModelUpdateFn()(model, epoch, hyper_params)
-            estimator.setModel(model)
 
         if verbose >= 2:
             print('CEREBRO => Time: {}, Checkpointing artifacts for Model: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), run_id))
 
-        model = estimator._compile_model(keras_utils)
         with remote_store.get_local_output_dir() as run_output_dir:
+            model = estimator._compile_model(keras_utils)
             ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
             model.save(ckpt_file)
             remote_store.sync(run_output_dir)

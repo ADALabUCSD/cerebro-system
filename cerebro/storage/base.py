@@ -99,7 +99,7 @@ class Store(object):
         """Returns a function that synchronises given path recursively into run path for `run_id`."""
         raise NotImplementedError()
 
-    def to_remote(self, run_id, dataset_idx):
+    def to_remote(self, run_id, dataset_idx=None):
         """Returns a view of the store that can execute in a remote environment without Horoovd deps."""
         attrs = self._remote_attrs(run_id, dataset_idx)
 

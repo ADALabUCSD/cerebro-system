@@ -249,11 +249,6 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
     def getTransformationFn(self):
         return self.getOrDefault(self.transformation_fn)
 
-    def setModelUpdateFn(self, value):
-        return self._set(model_update_fn=value)
-
-    def getModelUpdateFn(self):
-        return self.getOrDefault(self.model_update_fn)
 
 class SparkModelParams(HasOutputCols, CerebroModelParams):
     history = Param(Params._dummy(), 'history', 'history')

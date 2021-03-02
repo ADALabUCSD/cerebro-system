@@ -81,11 +81,13 @@ class Model(db.Model):
     status = db.Column(db.String(32))
     num_trained_epochs = db.Column(db.Integer())
     max_train_epochs = db.Column(db.Integer())
+    warm_start_model_id = db.Column(db.String(32))
+    exception_message = db.Column(db.String(4096))
 
     param_vals = db.relationship('ParamVal', backref='model', lazy='dynamic')
     metrics = db.relationship('Metric', backref='model', lazy='dynamic')
 
-    def __init__(self, model_id, exp_id, num_trained_epochs, max_train_epochs):
+    def __init__(self, model_id, exp_id, num_trained_epochs, max_train_epochs, warm_start_model_id=None):
         self.id = model_id
         self.exp_id = exp_id        
         self.creation_time = datetime.utcnow()
@@ -93,6 +95,7 @@ class Model(db.Model):
         self.status = 'created'
         self.num_trained_epochs = num_trained_epochs
         self.max_train_epochs = max_train_epochs
+        self.warm_start_model_id = warm_start_model_id
 
     def __repr__(self):
         return '<Model %r>' % self.id

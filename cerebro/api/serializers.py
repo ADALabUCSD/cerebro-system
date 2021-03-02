@@ -54,10 +54,12 @@ model = api.model('Model', {
     'creation_time': fields.DateTime(readonly=True, description='Experiment creation time'),
     'last_update_time': fields.DateTime(readonly=True, description='Experiment last update time'),
     'status': fields.String(readonly=True, description='Model status', enum=state_enums),
-    'num_trained_epochs': fields.Integer(required=True, description='Current number of trained epochs for the model'),
+    'num_trained_epochs': fields.Integer(readonly=True, description='Current number of trained epochs for the model'),
     'max_train_epochs': fields.Integer(required=True, description='Maximum number of training epochs for the model'),
+    'warm_start_model_id': fields.String(required=False, description='UID of the warm starting model in the case of a model clone'),
     'param_vals': fields.List(fields.Nested(param_val), required=True, description='Hyperparameter values'),
-    'metrics': fields.List(fields.Nested(metric), readonly=True, description='Model training metrics')
+    'metrics': fields.List(fields.Nested(metric), readonly=True, description='Model training metrics'),
+    'exception_message': fields.String(read_only=True, description='Exception message in the case of an model initialization failure')
 })
 
 

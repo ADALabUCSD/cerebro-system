@@ -12,10 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import os
 import itertools
+import tensorflow as tf
 from sqlalchemy import and_
 import numpy as np
+import logging
+import traceback
 from ..commons.constants import *
 
 from .base import ModelSelection, is_larger_better, ModelSelectionResult, _HP, _HPChoice, update_model_results
@@ -254,29 +257,68 @@ def _hil_fit_on_prepared_data(self, metadata):
         estimators = []
         estimator_results = {}
         for m in all_models:
-            param = {}
-            for d in m.param_vals:
-                if d.dtype == DTYPE_FLOAT:
-                    param[d.name] = float(d.value)
-                elif d.dtype == DTYPE_INT:
-                    param[d.name] = int(d.value)
-                else:
-                    param[d.name] = d.value
+            try:
+                param = {}
+                for d in m.param_vals:
+                    if d.dtype == DTYPE_FLOAT:
+                        param[d.name] = float(d.value)
+                    elif d.dtype == DTYPE_INT:
+                        param[d.name] = int(d.value)
+                    else:
+                        param[d.name] = d.value
 
-            est = self._estimator_gen_fn_wrapper(param)
-            est.setRunId(m.id)
-            est.setEpochs(m.num_trained_epochs)
-            estimators.append(est)
+                est = self._estimator_gen_fn_wrapper(param)
+                est.setRunId(m.id)
+                est.setEpochs(m.num_trained_epochs)
 
-            if m.status == CREATED_STATUS:
-                m.status = RUNNING_STATUS
+                # Creating model checkpoint
+                remote_store = self.store.to_remote(est.getRunId())
+                with remote_store.get_local_output_dir() as run_output_dir:
+                    tf.compat.v1.reset_default_graph
+                    model = est._compile_model(est._get_keras_utils())
+
+                    if m.warm_start_model_id is not None and not est._has_checkpoint(m.id):
+                        # https://www.tensorflow.org/guide/keras/save_and_serialize#apis_for_in-memory_weight_transfer
+                        remote_store2 = self.store.to_remote(m.warm_start_model_id)
+                        with remote_store2.get_local_output_dir() as run_output_dir2:
+                            model2 = est._compile_model(est._get_keras_utils())
+                            model.set_weights(model2.get_weights())
+
+                        warm_start_model = Model.query.filter(Model.id == m.warm_start_model_id).one()
+                        db.session.refresh(m)
+                        m.num_trained_epochs = warm_start_model.num_trained_epochs
+                        db.session.commit()
+
+                        est.setEpochs(m.num_trained_epochs)
+
+                        for metric in warm_start_model.metrics:
+                            new_metric = Metric(m.id, metric.name, [float(x) for x in metric.values.split(",")])
+                            db.session.add(new_metric)
+                            db.session.commit()
+
+                    ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
+                    model.save(ckpt_file)
+                    remote_store.sync(run_output_dir)
+                    tf.compat.v1.reset_default_graph
+
+                estimators.append(est)
+                
+                if m.status == CREATED_STATUS:
+                    db.session.refresh(m)
+                    m.status = RUNNING_STATUS
+                    db.session.commit()
+                    # log hyperparameters to TensorBoard
+                    self._log_hp_to_tensorboard([est], [param])
+
+                estimator_results[m.id] = {}
+                for metric in m.metrics:
+                    estimator_results[m.id][metric.name] = [float(x) for x in metric.values.split(',')]
+            except Exception as e:
+                logging.error(traceback.format_exc())
+                db.session.refresh(m)
+                m.status = FAILED_STATUS
+                m.exception_message = str(traceback.format_exc())
                 db.session.commit()
-                # log hyperparameters to TensorBoard
-                self._log_hp_to_tensorboard([est], [param])
-            
-            estimator_results[m.id] = {}
-            for metric in m.metrics:
-                estimator_results[m.id][metric.name] = [float(x) for x in metric.values.split(',')]
 
         # Trains all the models for one epoch. Also performs validation
         epoch_results = self.backend.train_for_one_epoch(estimators, self.store, self.feature_cols, self.label_cols)
@@ -305,9 +347,9 @@ def _hil_fit_on_prepared_data(self, metadata):
             # Refresh to sync any model stop requests from the db
             db.session.refresh(m)
             m.num_trained_epochs += 1
-            if m.num_trained_epochs == m.max_train_epochs:
+            if m.num_trained_epochs >= m.max_train_epochs:
                 m.status = COMPLETED_STATUS
-                db.session.commit()
+            db.session.commit()
 
         # create estimators for the next epoch
         all_models = Model.query.filter(and_(Model.status.in_([CREATED_STATUS, RUNNING_STATUS])), Model.max_train_epochs > Model.num_trained_epochs).all()

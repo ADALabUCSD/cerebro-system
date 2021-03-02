@@ -123,12 +123,6 @@ class CerebroEstimatorParams(object):
     def getTransformationFn(self):
         raise NotImplementedError('Abstract class. Method not implement!')
 
-    def setModelUpdateFn(self, value):
-        raise NotImplementedError('Abstract class. Method not implement!')
-
-    def getModelUpdateFn(self):
-        raise NotImplementedError('Abstract class. Method not implement!')
-
 
 class CerebroModelParams(object):
 
