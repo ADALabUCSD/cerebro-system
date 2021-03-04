@@ -204,7 +204,8 @@ class ModelSelection(object):
             if self.verbose >= 1: print(
                 'CEREBRO => Time: {}, Terminating Workers'.format(
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            self.backend.teardown_workers()
+            if self.backend is not None:
+                self.backend.teardown_workers()
 
     def fit_on_prepared_data(self):
         """
@@ -234,51 +235,22 @@ class ModelSelection(object):
             if self.verbose >= 1: print(
                 'CEREBRO => Time: {}, Terminating Workers'.format(
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            self.backend.teardown_workers()
+            if self.backend is not None:
+                self.backend.teardown_workers()
 
     def _fit_on_prepared_data(self):
         raise NotImplementedError('method not implemented')
 
     def _estimator_gen_fn_wrapper(self, params):
-        # Disable GPUs when building the model to prevent memory leaks
-        if LooseVersion(tf.__version__) >= LooseVersion('2.0.0'):
-            # See https://github.com/tensorflow/tensorflow/issues/33168
-            os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-        else:
-            tf.keras.set_session(tf.Session(config=tf.ConfigProto(device_count={'GPU': 0})))
-
-        tf.keras.backend.clear_session()
-        est = self.estimator_gen_fn(params)
-        est.setHyperParams(params)
-        est.setFeatureCols(self.feature_cols)
-        est.setLabelCols(self.label_cols)
-        est.setStore(self.store)
-        est.setVerbose(self.verbose)
-
-        # Workaround for the issue with huggingface layers needing a python
-        # object as config (not a dict) and explicit definition of get_config method.
-        # We monkey patch the __init__ method get_config methods of such layers.
-        fix_huggingface_layer_methods_and_add_to_custom_objects(est)
-
-        return est
+        return estimator_gen_fn_wrapper(self.estimator_gen_fn, params, self.feature_cols, self.label_cols, self.store, self.verbose)
 
     def _log_epoch_metrics_to_tensorboard(self, estimators, estimator_results):
         # logging to TensorBoard
-        for est in estimators:
-            remote_store = self.store.to_remote(est.getRunId(), None)
-            with remote_store.get_local_output_dir() as logs_dir:
-                log_model_epoch_metrics(est.getRunId(), logs_dir,
-                                        estimator_results[est.getRunId()],
-                                        est.getEpochs(), self.verbose)
-            remote_store.sync(logs_dir)
+        log_epoch_metrics_to_tensorboard(estimators, estimator_results, store, verbose)
 
     def _log_hp_to_tensorboard(self, estimators, hparams):
         # logging to TensorBoard
-        for i, est in enumerate(estimators):
-            remote_store = self.store.to_remote(est.getRunId(), None)
-            with remote_store.get_local_output_dir() as logs_dir:
-                log_model_hps(logs_dir, est.getRunId(), hparams[i], self.verbose)
-            remote_store.sync(logs_dir)
+        log_hp_to_tensorboard(estimators, hparams, self.store, self.verbose)
 
 
 class ModelSelectionResult(object):
@@ -378,7 +350,7 @@ def log_model_epoch_metrics(model_id, logdir, metrics, step_number, verbose=1):
     :param logdir:
     :param metrics:
     :param step_number:
-    :param verbose:
+    :param verbose:log_epoch_metrics_to_tensorboard(estimators, estimator_results, store, verbose)
     """
     with tf.summary.create_file_writer(logdir).as_default():
         for key in metrics:
@@ -432,3 +404,66 @@ def update_model_results(estimator_results, epoch_results):
                 estimator_results[model_id][k].append(res[k])
             else:
                 estimator_results[model_id][k] = [res[k]]
+
+def log_hp_to_tensorboard(estimators, hparams, store, verbose):
+    """
+    Helper method to log hparams to the TensorBoard
+    :param estimators:
+    :param hparams:
+    :param store: A single store common for all estimators or a dictionary containing stores for each estimator indexed by model id.
+    :param verbose:
+    """
+    for i, est in enumerate(estimators):
+        if type(store) == dict:
+            a_store = store[est.getRunId()]
+        else:
+            a_store = store
+        remote_store = a_store.to_remote(est.getRunId(), None)
+        with remote_store.get_local_output_dir() as logs_dir:
+            log_model_hps(logs_dir, est.getRunId(), hparams[i], verbose)
+        remote_store.sync(logs_dir)
+
+def log_epoch_metrics_to_tensorboard(estimators, estimator_results, store, verbose):
+    """
+    Helper method to log hparams to the TensorBoard
+    :param estimators:
+    :param estimator_results:
+    :param store: A single store common for all estimators or a dictionary containing stores for each estimator indexed by model id.
+    :param verbose:
+    """
+    for est in estimators:
+        if type(store) == dict:
+            a_store = store[est.getRunId()]
+        else:
+            a_store = store
+        remote_store = a_store.to_remote(est.getRunId(), None)
+        with remote_store.get_local_output_dir() as logs_dir:
+            log_model_epoch_metrics(est.getRunId(), logs_dir, estimator_results[est.getRunId()], est.getEpochs(), verbose)
+        remote_store.sync(logs_dir)
+
+
+def estimator_gen_fn_wrapper(estimator_gen_fn, params, feature_cols, label_cols, store, verbose):
+    """
+    Function wrapping a user provided estimator gen function.
+    """
+    # Disable GPUs when building the model to prevent memory leaks
+    if LooseVersion(tf.__version__) >= LooseVersion('2.0.0'):
+        # See https://github.com/tensorflow/tensorflow/issues/33168
+        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    else:
+        tf.keras.set_session(tf.Session(config=tf.ConfigProto(device_count={'GPU': 0})))
+
+    tf.keras.backend.clear_session()
+    est = estimator_gen_fn(params)
+    est.setHyperParams(params)
+    est.setFeatureCols(feature_cols)
+    est.setLabelCols(label_cols)
+    est.setStore(store)
+    est.setVerbose(verbose)
+
+    # Workaround for the issue with huggingface layers needing a python
+    # object as config (not a dict) and explicit definition of get_config method.
+    # We monkey patch the __init__ method get_config methods of such layers.
+    fix_huggingface_layer_methods_and_add_to_custom_objects(est)
+
+    return est

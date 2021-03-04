@@ -12,22 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
+import os
 import time
-from threading import Lock
+import random
+import signal
+from threading import Lock, Event
 
 LOCK = Lock()
 MODEL_ID = -1
 
-def next_model_id():
+MODEL_NAMES = [l.strip().lower().replace(' ', '_') for l in open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'model_names.txt')).readlines()]
+random.shuffle(MODEL_NAMES)
+
+def next_user_friendly_model_id():
     global LOCK, MODEL_ID
     with LOCK:
         MODEL_ID += 1
-        return 'model_' + str(MODEL_ID) + '_' + str(int(time.time()))
+        model_name = MODEL_NAMES[MODEL_ID]
+        if MODEL_ID >= len(MODEL_NAMES):
+            model_name = model_name + "_" + int(MODEL_ID/len(MODEL_NAMES))
+        return model_name
 
-def reset_model_id():
+def reset_user_friendly_model_id():
     global LOCK, MODEL_ID
     with LOCK:
         MODEL_ID = -1
+
+
+exit_event = Event()    
+for sig in ('TERM', 'HUP', 'INT'):
+    signal.signal(getattr(signal, 'SIG'+sig), lambda: exit_event.set())
 
 
 ## Experiment and Model statusses

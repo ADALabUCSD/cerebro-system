@@ -14,6 +14,7 @@
 # ==============================================================================
 import os
 import itertools
+import datetime
 import tensorflow as tf
 from sqlalchemy import and_
 import numpy as np
@@ -107,8 +108,14 @@ class HILGridSearch(GridSearch):
         self.exp_id = exp_id
         self.db = db
 
-    def _fit_on_prepared_data(self, metadata):
-        return _hil_fit_on_prepared_data(self, metadata)
+    def fit(self, df):
+        raise NotImplementedError('method not implemented')
+
+    def fit_on_prepared_data(self):
+        """
+         Execute the model selection/AutoML workload on already prepared data.
+        """
+        _hil_fit_on_prepared_data(self)
 
 
 class RandomSearch(ModelSelection):
@@ -194,8 +201,14 @@ class HILRandomSearch(RandomSearch):
         self.exp_id = exp_id
         self.db = db
 
-    def _fit_on_prepared_data(self, metadata):
-        return _hil_fit_on_prepared_data(self, metadata)
+    def fit(self, df):
+        raise NotImplementedError('method not implemented')
+
+    def fit_on_prepared_data(self):
+        """
+         Execute the model selection/AutoML workload on already prepared data.
+        """
+        _hil_fit_on_prepared_data(self)
 
 
 # Batch implementation (i.e., without any user interaction) of model selection.
@@ -229,16 +242,25 @@ def _fit_on_prepared_data(self, metadata):
 
 
 # Human-in-the-loop implementation
-def _hil_fit_on_prepared_data(self, metadata):
+def _hil_fit_on_prepared_data(self):
+    _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
+
+    if self.verbose >= 1: print(
+        'CEREBRO => Time: {}, Initializing Data Loaders'.format(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    self.backend.initialize_data_loaders(self.store, self.feature_cols + self.label_cols)
+
+    if self.verbose >= 1: print('CEREBRO => Time: {}, Launching Model Selection Workload'.format(
+        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
     exp_id = self.exp_id
     exp_obj = Experiment.query.filter(Experiment.id == exp_id).one()
     db = self.db
-    max_epochs = self.num_epochs
 
     # Creating the intial model specs.
     param_maps = self.estimator_param_maps
     for param_map in param_maps:
-        model_id = next_model_id()
+        model_id = next_user_friendly_model_id()
         model_dao = Model(model_id, exp_obj.id, 0, int(exp_obj.max_train_epochs))
         db.session.add(model_dao)
 
@@ -250,106 +272,3 @@ def _hil_fit_on_prepared_data(self, metadata):
     db.session.commit()
     exp_obj.status = RUNNING_STATUS
     db.session.commit()
-
-    # create estimators
-    all_models = Model.query.filter(and_(Model.status.in_([CREATED_STATUS, RUNNING_STATUS])), Model.max_train_epochs > Model.num_trained_epochs).all()
-    while all_models is not None and len(all_models) > 0:
-        estimators = []
-        estimator_results = {}
-        for m in all_models:
-            try:
-                param = {}
-                for d in m.param_vals:
-                    if d.dtype == DTYPE_FLOAT:
-                        param[d.name] = float(d.value)
-                    elif d.dtype == DTYPE_INT:
-                        param[d.name] = int(d.value)
-                    else:
-                        param[d.name] = d.value
-
-                est = self._estimator_gen_fn_wrapper(param)
-                est.setRunId(m.id)
-                est.setEpochs(m.num_trained_epochs)
-
-                # Creating model checkpoint
-                remote_store = self.store.to_remote(est.getRunId())
-                with remote_store.get_local_output_dir() as run_output_dir:
-                    tf.compat.v1.reset_default_graph
-                    model = est._compile_model(est._get_keras_utils())
-
-                    if m.warm_start_model_id is not None and not est._has_checkpoint(m.id):
-                        # https://www.tensorflow.org/guide/keras/save_and_serialize#apis_for_in-memory_weight_transfer
-                        remote_store2 = self.store.to_remote(m.warm_start_model_id)
-                        with remote_store2.get_local_output_dir() as run_output_dir2:
-                            model2 = est._compile_model(est._get_keras_utils())
-                            model.set_weights(model2.get_weights())
-
-                        warm_start_model = Model.query.filter(Model.id == m.warm_start_model_id).one()
-                        db.session.refresh(m)
-                        m.num_trained_epochs = warm_start_model.num_trained_epochs
-                        db.session.commit()
-
-                        est.setEpochs(m.num_trained_epochs)
-
-                        for metric in warm_start_model.metrics:
-                            new_metric = Metric(m.id, metric.name, [float(x) for x in metric.values.split(",")])
-                            db.session.add(new_metric)
-                            db.session.commit()
-
-                    ckpt_file = os.path.join(run_output_dir, remote_store.checkpoint_filename)
-                    model.save(ckpt_file)
-                    remote_store.sync(run_output_dir)
-                    tf.compat.v1.reset_default_graph
-
-                estimators.append(est)
-                
-                if m.status == CREATED_STATUS:
-                    db.session.refresh(m)
-                    m.status = RUNNING_STATUS
-                    db.session.commit()
-                    # log hyperparameters to TensorBoard
-                    self._log_hp_to_tensorboard([est], [param])
-
-                estimator_results[m.id] = {}
-                for metric in m.metrics:
-                    estimator_results[m.id][metric.name] = [float(x) for x in metric.values.split(',')]
-            except Exception as e:
-                logging.error(traceback.format_exc())
-                db.session.refresh(m)
-                m.status = FAILED_STATUS
-                m.exception_message = str(traceback.format_exc())
-                db.session.commit()
-
-        # Trains all the models for one epoch. Also performs validation
-        epoch_results = self.backend.train_for_one_epoch(estimators, self.store, self.feature_cols, self.label_cols)
-        update_model_results(estimator_results, epoch_results)
-
-        epoch_results = self.backend.train_for_one_epoch(estimators, self.store, self.feature_cols, self.label_cols, is_train=False)
-        update_model_results(estimator_results, epoch_results)
-
-        self._log_epoch_metrics_to_tensorboard(estimators, estimator_results)
-
-        for m in all_models:
-            est_results = estimator_results[m.id]
-            # Refresh to sync any model stop requests from the db
-            db.session.refresh(m)
-            metrics = m.metrics.all()
-            if len(metrics) == 0:
-                for k in est_results:
-                    db.session.add(Metric(m.id, k, est_results[k]))
-            else:
-                for k in est_results:
-                    metric = [metric for metric in metrics if metric.name == k][0]
-                    metric.values = ",".join(["{:.4f}".format(x) for x in est_results[k]])
-            db.session.commit()
-
-        for m in all_models:
-            # Refresh to sync any model stop requests from the db
-            db.session.refresh(m)
-            m.num_trained_epochs += 1
-            if m.num_trained_epochs >= m.max_train_epochs:
-                m.status = COMPLETED_STATUS
-            db.session.commit()
-
-        # create estimators for the next epoch
-        all_models = Model.query.filter(and_(Model.status.in_([CREATED_STATUS, RUNNING_STATUS])), Model.max_train_epochs > Model.num_trained_epochs).all()

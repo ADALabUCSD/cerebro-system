@@ -50,6 +50,7 @@ metric = api.model('Metric', {
 #################### Model ######################
 model = api.model('Model', {
     'id': fields.String(readonly=True, description='Model UID'),
+    'name': fields.String(readonly=True, description='Userfriendly model name'),
     'exp_id': fields.String(required=True, description='Experiment UID'),
     'creation_time': fields.DateTime(readonly=True, description='Experiment creation time'),
     'last_update_time': fields.DateTime(readonly=True, description='Experiment last update time'),

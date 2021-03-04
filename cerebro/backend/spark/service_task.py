@@ -34,13 +34,15 @@ class SetLocalTaskIndexRequest(object):
 
 
 class InitDataLoadersRequest(object):
-    def __init__(self, initialize_data_loaders_fn):
+    def __init__(self, store_prefix_path, initialize_data_loaders_fn):
+        self.store_prefix_path = store_prefix_path
         self.initialize_data_loaders_fn = initialize_data_loaders_fn
 
 
 class ExecuteSubEpochRequest(object):
-    def __init__(self, sub_epoch_fn, train, initial_epoch):
+    def __init__(self, sub_epoch_fn, store_prefix_path, train, initial_epoch):
         self.sub_epoch_fn = sub_epoch_fn
+        self.store_prefix_path = store_prefix_path
         self.is_train = train
         self.initial_epoch = initial_epoch
 
@@ -98,8 +100,8 @@ class SparkTaskService:
         self._sub_epoch_thread = None
         self._sub_epoch_status = None
 
-        self._train_reader = None
-        self._val_reader = None
+        self._train_readers = {}
+        self._val_readers = {}
 
     def _make_handler(self):
         server = self
@@ -166,7 +168,11 @@ class SparkTaskService:
         if isinstance(req, InitDataLoadersRequest):
             self._wait_cond.acquire()
             try:
-                self._train_reader, self._val_reader = req.initialize_data_loaders_fn(self._index)
+                store_prefix_path = req.store_prefix_path
+                if store_prefix_path not in self._train_readers:
+                    train_reader, val_reader = req.initialize_data_loaders_fn(self._index)
+                    self._train_readers[store_prefix_path] = train_reader
+                    self._val_readers[store_prefix_path] = val_reader
             finally:
                 self._wait_cond.notify_all()
                 self._wait_cond.release()
@@ -182,13 +188,13 @@ class SparkTaskService:
                 if self._sub_epoch_thread is None or not self._sub_epoch_thread.is_alive():
                     self._sub_epoch_status = None
 
-                    def bg_execute(fn, is_train, initial_epoch):
+                    def bg_execute(fn, store_prefix_path, is_train, initial_epoch):
                         try:
                             self._sub_epoch_status = {"status": "RUNNING", "result": None}
                             if is_train:
-                                reader = self._train_reader
+                                reader = self._train_readers[store_prefix_path]
                             else:
-                                reader = self._val_reader
+                                reader = self._val_readers[store_prefix_path]
                             func_result = fn(reader, is_train, initial_epoch,
                                              local_task_index=self.local_task_index)
                             self._sub_epoch_status = {"status": "COMPLETED", "result": func_result}
@@ -196,7 +202,7 @@ class SparkTaskService:
                             self._sub_epoch_status = {"status": "FAILED", "result": None,
                                                       "error": str(e) + "\n" + traceback.format_exc()}
 
-                    self._sub_epoch_thread = threading.Thread(target=bg_execute, args=(req.sub_epoch_fn, req.is_train,
+                    self._sub_epoch_thread = threading.Thread(target=bg_execute, args=(req.sub_epoch_fn, req.store_prefix_path, req.is_train,
                                                                                        req.initial_epoch))
                     self._sub_epoch_thread.start()
             finally:
@@ -372,11 +378,11 @@ class SparkTaskClient:
     def notify_workload_complete(self):
         self._send(NotifyWorkloadCompleteRequest())
 
-    def initialize_data_loaders(self, fn):
-        self._send(InitDataLoadersRequest(fn))
+    def initialize_data_loaders(self, store_prefix_path, fn):
+        self._send(InitDataLoadersRequest(store_prefix_path, fn))
 
-    def execute_sub_epoch(self, fn, train=True, initial_epoch=0):
-        self._send(ExecuteSubEpochRequest(fn, train, initial_epoch))
+    def execute_sub_epoch(self, fn, store_prefix_path, train=True, initial_epoch=0):
+        self._send(ExecuteSubEpochRequest(fn, store_prefix_path, train, initial_epoch))
 
     def sub_epoch_completed(self):
         return self._send(SubEpochCompletedRequest())

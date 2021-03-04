@@ -41,9 +41,9 @@ class Backend(object):
         Takes a set of Keras models and trains for one epoch. If is_train is False, validation is performed
          instead of training.
         :param models:
-        :param store:
-        :param feature_col:
-        :param label_col:
+        :param store: single store object common for all models or a dictionary of store objects indexed by model id.
+        :param feature_col: single list of feature columns common for all models or a dictionary of feature lists indexed by model id.
+        :param label_col: single list of label columns common for all models or a dictionary of label lists indexed by model id.
         :param is_train:
         """
         raise NotImplementedError()

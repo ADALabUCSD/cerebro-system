@@ -23,7 +23,7 @@ from ..parsers import experiment_id_argument
 from ...db.dao import Model, Experiment, ParamVal, ParamDef
 from ...db import db
 from ...commons.constants import *
-from .experiments import next_model_id
+from .experiments import next_user_friendly_model_id
 
 ns = api.namespace('models', description='Operations related to models')
 
@@ -61,7 +61,8 @@ class ModelsCollection(Resource):
         if exp.status in [FAILED_STATUS, STOPPED_STATUS, COMPLETED_STATUS]:
             raise BadRequest('Experiment is in {} staus. Cannot create new models.'.format(exp.status))
 
-        model_dao = Model(next_model_id(), exp_id, num_trained_epochs, max_train_epochs, warm_start_model_id)
+        model_id = next_user_friendly_model_id()
+        model_dao = Model(model_id, exp_id, num_trained_epochs, max_train_epochs, warm_start_model_id)
 
         for pval in data.get('param_vals'):
             name = pval.get('name')

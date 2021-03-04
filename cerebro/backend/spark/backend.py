@@ -35,6 +35,7 @@ from .. import constants
 from .. import timeout, settings as spark_settings, secret, host_hash, job_id
 from ..backend import Backend
 from ...commons.util import patch_hugginface_layer_methods
+from ...commons.constants import exit_event
 
 PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 TOTAL_BUFFER_MEMORY_CAP_GIB = constants.TOTAL_BUFFER_MEMORY_CAP_GIB
@@ -57,7 +58,7 @@ class KerasStepCounter(tf.keras.callbacks.Callback):
 
     def on_test_batch_begin(self, batch, logs={}):
         self.counter += 1
-
+    
     def get_step_count(self):
         return self.counter
 
@@ -170,14 +171,14 @@ class SparkBackend(Backend):
                                                self.settings.data_readers_pool_type, self.settings.num_data_readers)
 
             for task_client in self.task_clients:
-                task_client.initialize_data_loaders(data_readers_fn)
+                task_client.initialize_data_loaders(store.prefix_path, data_readers_fn)
 
             self.data_loaders_initialized = False
         else:
             raise Exception('Spark tasks not initialized for Cerebro. Please run SparkBackend.initialize_workers() '
                             'first!')
 
-    def train_for_one_epoch(self, models, store, feature_col, label_col, is_train=True):
+    def train_for_one_epoch(self, models, store, feature_cols, label_cols, is_train=True):
 
         mode = "Training"
         if not is_train:
@@ -185,9 +186,24 @@ class SparkBackend(Backend):
         if self.settings.verbose >= 1:
             print('CEREBRO => Time: {}, Starting EPOCH {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), mode))
 
-        sub_epoch_trainers = [_get_remote_trainer(model, self, store, None, feature_col, label_col,
-                                                  is_train, self.settings.verbose) \
-                              for model in models]
+        sub_epoch_trainers = []
+        for model in models:
+            if type(store) == dict:
+                a_store = store[model.getRunId()]
+            else:
+                a_store = store
+            
+            if type(feature_cols) == dict:
+                a_feature_col = feature_cols[model.getRunId()]
+            else:
+                a_feature_col = feature_cols
+            
+            if type(label_cols) == dict:
+                a_label_col = label_cols[model.getRunId()]
+            else:
+                a_label_col = label_cols
+            
+            sub_epoch_trainers.append(_get_remote_trainer(model, self, a_store, None, a_feature_col, a_label_col, is_train, self.settings.verbose))
 
         model_worker_pairs = [(i, j) for i in range(len(models)) for j in range(self._num_workers())]
         # take a random ordering
@@ -200,7 +216,7 @@ class SparkBackend(Backend):
         model_results = {model.getRunId(): None for model in models}
         model_sub_epoch_steps = {model.getRunId(): None for model in models}
 
-        while len(model_worker_pairs) > 0:
+        while not exit_event.is_set() and len(model_worker_pairs) > 0:
 
             for w in range(self._num_workers()):
                 # worker idle
@@ -211,8 +227,14 @@ class SparkBackend(Backend):
                         if self.settings.verbose >= 1:
                             print('CEREBRO => Time: {}, Scheduling Model: {}, on Worker: {}'.format(
                                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), models[m].getRunId(), w))
+                        
+                        if type(store) == dict:
+                            a_store = store[models[m].getRunId()]
+                        else:
+                            a_store = store
+
                         self.task_clients[w].execute_sub_epoch(
-                            fn=sub_epoch_trainers[m], train=is_train, initial_epoch=models[m].getEpochs())
+                            fn=sub_epoch_trainers[m], store_prefix_path=a_store.prefix_path, train=is_train, initial_epoch=models[m].getEpochs())
 
                         model_states[m] = True
                         worker_states[w] = True
@@ -251,7 +273,7 @@ class SparkBackend(Backend):
                                 print('CEREBRO => Time: {}, Completed Model: {}, on Worker: {}'.format(
                                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), models[m].getRunId(), w))
 
-            time.sleep(self.settings.polling_period)
+            exit_event.wait(self.settings.polling_period)
 
         # incrementing the model epoch number
         if is_train:
@@ -363,7 +385,7 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
 
         PETASTORM_HDFS_DRIVER = constants.PETASTORM_HDFS_DRIVER
 
-        train_reader = make_reader(remote_store.train_data_path, shuffle_row_groups=False, num_epochs=None,
+        train_reader = make_reader(remote_store.train_data_path, shuffle_row_groups=False, num_epochs=1,
                                    cur_shard=index,
                                    shard_count=shard_count,
                                    hdfs_driver=PETASTORM_HDFS_DRIVER,
@@ -375,7 +397,7 @@ def _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size, cac
                                    cache_extra_settings={'cleanup': True})
 
         if remote_store.val_data_path != '' and remote_store.val_data_path is not None:
-            val_reader = make_reader(remote_store.val_data_path, shuffle_row_groups=False, num_epochs=None,
+            val_reader = make_reader(remote_store.val_data_path, shuffle_row_groups=False, num_epochs=1,
                                      cur_shard=index,
                                      shard_count=shard_count,
                                      hdfs_driver=PETASTORM_HDFS_DRIVER,
@@ -486,7 +508,6 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
             if issubclass(custom_objects[k], tf.keras.layers.Layer) and inspect.getmodule(custom_objects[k]).__name__.startswith('transformers.'):
                 patch_hugginface_layer_methods(custom_objects[k])
 
-
         tf.keras.backend.set_floatx(floatx)
         pin_gpu(local_task_index)
 
@@ -516,13 +537,6 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                 model = deserialize_keras_model(
                     remote_store.get_last_checkpoint(), lambda x: tf.keras.models.load_model(x))
 
-            steps_per_epoch = int(math.ceil(train_rows / batch_size / num_workers))
-
-            # math.ceil because if val_rows is smaller than batch_size we still get the at least
-            # one step. float(val_rows) because val_rows/batch_size evaluates to zero before
-            # math.ceil
-            validation_steps = int(math.ceil(float(val_rows) / batch_size / num_workers))
-
             schema_fields = feature_columns + label_columns
             if sample_weight_col:
                 schema_fields.append(sample_weight_col)
@@ -531,8 +545,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                 train_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
                 initialization_time = time.time() - begin_time
                 begin_time = time.time()
-                result = fit_sub_epoch_fn(starting_epoch, model, train_data, steps_per_epoch, callbacks,
-                                          verbose).history
+                result = fit_sub_epoch_fn(starting_epoch, model, train_data, callbacks, verbose).history
                 training_time = time.time() - begin_time
                 begin_time = time.time()
                 result = {'train_' + name: result[name] for name in result}
@@ -541,7 +554,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                 val_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
                 initialization_time = time.time() - begin_time
                 begin_time = time.time()
-                result = eval_sub_epoch_fn(starting_epoch, model, val_data, validation_steps, callbacks, verbose)
+                result = eval_sub_epoch_fn(starting_epoch, model, val_data, callbacks, verbose)
                 training_time = time.time() - begin_time
                 begin_time = time.time()
                 result = [[x] for x in result]
@@ -560,6 +573,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                       'Finalization Time: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         run_id, 'TRAIN' if is_train else 'VALID', initialization_time, training_time, finalization_time))
 
+            data_reader.reset()
             return result, step_counter_callback.get_step_count()
 
     return train
