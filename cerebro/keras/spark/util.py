@@ -34,11 +34,10 @@ class TFKerasUtil(object):
 
     @staticmethod
     def fit_sub_epoch_fn():
-        def fn(starting_epoch, model, train_data, steps_per_epoch, callbacks, verbose):
+        def fn(starting_epoch, model, train_data, callbacks, verbose):
             return model.fit(
                 train_data,
                 initial_epoch=starting_epoch,
-                steps_per_epoch=steps_per_epoch,
                 callbacks=callbacks,
                 verbose=verbose,
                 epochs=starting_epoch + 1)
@@ -47,9 +46,8 @@ class TFKerasUtil(object):
 
     @staticmethod
     def eval_sub_epoch_fn():
-        def fn(_, model, val_data, validation_steps, callbacks, verbose):
-            return model.evaluate(val_data, steps=validation_steps, callbacks=callbacks,
-                                  verbose=verbose)
+        def fn(_, model, val_data, callbacks, verbose):
+            return model.evaluate(val_data, callbacks=callbacks, verbose=verbose)
 
         return fn
 
@@ -57,14 +55,10 @@ class TFKerasUtil(object):
     def make_dataset_fn(feature_columns, label_columns, sample_weight_col, metadata,
                         input_shapes, output_shapes, output_names, batch_size):
         # Check if any of the columns are only SparseVector
-        has_sparse_col = any(metadata[col]['is_sparse_vector_only']
-                             for col in label_columns + feature_columns)
+        has_sparse_col = any(metadata[col]['is_sparse_vector_only'] for col in label_columns + feature_columns)
 
-        reshape = TFKerasUtil._reshape_fn(
-            sample_weight_col, feature_columns, label_columns, metadata)
-        prep_data_tf_keras = _prep_data_fn(
-            has_sparse_col, sample_weight_col, feature_columns,
-            label_columns, input_shapes, output_shapes, output_names)
+        reshape = TFKerasUtil._reshape_fn(sample_weight_col, feature_columns, label_columns, metadata)
+        prep_data_tf_keras = _prep_data_fn(has_sparse_col, sample_weight_col, feature_columns, label_columns, input_shapes, output_shapes, output_names)
 
         def fn(reader, shuffle_buffer_size, shuffle=False):
             from petastorm.tf_utils import make_petastorm_dataset
@@ -77,8 +71,8 @@ class TFKerasUtil(object):
             if has_sparse_col:
                 dataset = dataset.batch(1).map(reshape, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
-            dataset = dataset.batch(batch_size) \
-                .map(prep_data_tf_keras, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            dataset = dataset.batch(batch_size).map(prep_data_tf_keras, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            
             return dataset
 
         return fn

@@ -72,8 +72,10 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
     verbose = Param(Params._dummy(), 'verbose', 'verbose flag (0=silent, 1=enabled, other values used by frameworks)',
                     typeConverter=TypeConverters.toInt)
 
-    run_id = Param(Params._dummy(), 'run_id',
-                   'unique ID for this run, if run already exists, '
+    run_id = Param(Params._dummy(), 'run_id', 'unique ID for this run', typeConverter=TypeConverters.toString)
+    
+    run_name = Param(Params._dummy(), 'run_name',
+                   'unique name for this run, if checkpoint already exists for the run name, '
                    'then training will resume from last checkpoint in the store',
                    typeConverter=TypeConverters.toString)
 
@@ -243,17 +245,18 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
     def getRunId(self):
         return self.getOrDefault(self.run_id)
 
+    def setRunName(self, value):
+        return self._set(run_name=value)
+
+    def getRunName(self):
+        return self.getOrDefault(self.run_name)
+
     def setTransformationFn(self, value):
         return self._set(transformation_fn=value)
 
     def getTransformationFn(self):
         return self.getOrDefault(self.transformation_fn)
 
-    def setModelUpdateFn(self, value):
-        return self._set(model_update_fn=value)
-
-    def getModelUpdateFn(self):
-        return self.getOrDefault(self.model_update_fn)
 
 class SparkModelParams(HasOutputCols, CerebroModelParams):
     history = Param(Params._dummy(), 'history', 'history')

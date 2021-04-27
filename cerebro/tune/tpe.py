@@ -91,7 +91,7 @@ class TPESearch(ModelSelection):
         self.num_params = num_models
         self.num_epochs = num_epochs
 
-    def _fit_on_prepared_data(self, dataset_idx, metadata):
+    def _fit_on_prepared_data(self, metadata):
         trials = Trials()
         domain = Domain(None, self.hyperopt_search_space)
         rand = np.random.RandomState(constants.RANDOM_SEED)
@@ -131,11 +131,11 @@ class TPESearch(ModelSelection):
 
             # Trains the models up to the number of epochs specified. For each iteration also performs validation
             for epoch in range(self.num_epochs):
-                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
+                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, self.feature_cols,
                                                                  self.label_cols)
                 update_model_results(estimator_results, epoch_results)
 
-                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
+                epoch_results = self.backend.train_for_one_epoch(estimators, self.store, self.feature_cols,
                                                                  self.label_cols, is_train=False)
                 update_model_results(estimator_results, epoch_results)
 

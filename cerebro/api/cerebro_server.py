@@ -13,29 +13,35 @@
 # limitations under the License.
 # ==============================================================================
 import os
+import sys
 import werkzeug
 werkzeug.cached_property = werkzeug.utils.cached_property
 import argparse
+import datetime
+import signal
+from threading import Thread, Event
+
+from pyspark.sql import SparkSession
+from ..backend import SparkBackend
 
 from flask import Flask, Blueprint
-from .api.restplus import api
-from .database import db
-from .database.models import *
+from .restplus import api
+from ..db import db
+from ..db.dao import *
 
-import logging.config
+from ..tune.daemon import sub_epoch_scheduler
 
 app = Flask(__name__)
-logging_conf_path = os.path.normpath(os.path.join(os.path.dirname(__file__), '../logging.conf'))
-logging.config.fileConfig(logging_conf_path)
-log = logging.getLogger(__name__)
 
-from .api.endpoints.experiments import ns as experiments_namespace
-from .api.endpoints.models import ns as models_namespace
-from .api.endpoints.scripts import ns as scripts_namespace
+from .endpoints.experiments import ns as experiments_namespace
+from .endpoints.models import ns as models_namespace
+from .endpoints.scripts import ns as scripts_namespace
+
 
 def configure_app(flask_app, args):
     flask_app.config['SERVER_NAME'] = args.server_url
     flask_app.config['SPARK_MASTER_URL'] = args.spark_master_url
+    flask_app.config['NUM_WORKERS'] = args.num_workers
     flask_app.config['TEMP_DATA_DIR'] = args.temp_data_dir
     flask_app.config['SCRIPTS_DIR'] = os.path.join(args.temp_data_dir, 'scripts')
 
@@ -73,23 +79,39 @@ def main():
     parser = argparse.ArgumentParser(description='Argument parser for Cerebro API server.')
 
     parser.add_argument('--server-url', help='API server URL.', default='localhost:8888')
-    parser.add_argument('--spark-master-url', help='Spark master URL.', default='spark://localhost:7077')
+    parser.add_argument('--spark-master-url', help='Spark master URL.', default='local[3]')
+    parser.add_argument('--num-workers', help='Cerebro number of workers.', default=3)
     parser.add_argument('--database-uri', help='Database URI.', default='sqlite://')
     parser.add_argument('--temp-data-dir', help='Temp data directory.', default='/tmp')
+    parser.add_argument('--inter-epoch-wait-time', help='Time delay between epoch schedulings', type=int, default=5)
     parser.add_argument('--swagger-ui-doc-expansion', help='Swagger UI doc expansion model.', default='list')
     parser.add_argument('--no-restplus-validation', help='No RESTPlus validation.', default=False, action='store_true')
     parser.add_argument('--restplus-mask-swagger', help='Whether to mask swagger.', default=False, action='store_true')
     parser.add_argument('--restplus-error-404-help', help='Output 404 error help.', default=False, action='store_true')
     parser.add_argument('--debug', help='Run in debug mode.', default=False, action='store_true')
     args = parser.parse_args()
-    
+
     initialize_app(app, args)
-    log.info('>>>>> Starting development server at http://{}/api/ <<<<<'.format(app.config['SERVER_NAME']))
+    print('>>>>> Starting development server at http://{}/api/ <<<<<'.format(app.config['SERVER_NAME']))
     
     with app.app_context():
         db.create_all()
+
+    #intiate the model selection daemon
+    sys.path.append(app.config['SCRIPTS_DIR'])
+    spark = SparkSession.builder.appName("Cerebro Backend").master(app.config['SPARK_MASTER_URL']).getOrCreate()
+    backend = SparkBackend(spark_context=spark.sparkContext, num_workers=app.config['NUM_WORKERS'])
     
+    # initialize backend and data loaders
+    if args.debug: print('CEREBRO => Time: {}, Initializing Workers'.format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    backend.initialize_workers()
+    app.config['CEREBRO_BACKEND'] = backend
+    
+    sub_epoch_scheduler_thread = Thread(target=sub_epoch_scheduler, args=(app, db, backend, args.inter_epoch_wait_time, 2 if args.debug == True else 0,))
+    sub_epoch_scheduler_thread.start()
+
     app.run(debug=args.debug)
+    sub_epoch_scheduler_thread.join()
 
 
 if __name__ == "__main__":

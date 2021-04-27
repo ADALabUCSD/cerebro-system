@@ -12,12 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # ==============================================================================
-
+import os
 import itertools
-
+import datetime
+import tensorflow as tf
+from sqlalchemy import and_
 import numpy as np
+import logging
+import traceback
+from ..commons.constants import *
 
 from .base import ModelSelection, is_larger_better, ModelSelectionResult, _HP, _HPChoice, update_model_results
+from ..db.dao import Model, Metric, ParamVal, ParamDef, Experiment
+from ..commons.constants import CREATED_STATUS, RUNNING_STATUS, COMPLETED_STATUS
 
 
 class GridSearch(ModelSelection):
@@ -75,8 +82,40 @@ class GridSearch(ModelSelection):
         return [dict(_to_key_value_pairs(keys, prod)) for prod in itertools.product(*[v if isinstance(v, list) else \
                                                                                           v() for v in grid_values])]
 
-    def _fit_on_prepared_data(self, dataset_idx, metadata):
-        return _fit_on_prepared_data(self, dataset_idx, metadata)
+    def _fit_on_prepared_data(self, metadata):
+        return _fit_on_prepared_data(self, metadata)
+
+
+class HILGridSearch(GridSearch):
+    """Performs intermittent HIL grid search using the given param grid
+    :param exp_id: Experiment ID.
+    :param backend: Cerebro backend object (e.g., SparkBackend).
+    :param store: Cerebro store object (e.g., LocalStore, HDFSStore).
+    :param estimator_gen_fn: A function which takes 
+     in a dictionary of parameters and returns a Cerebro Estimator (e.g., cerebro.SparkEstimator).
+    :param search_space: A dictionary object defining the parameter search space.
+    :param num_epochs: Number of maximum epochs each model should be trained for.
+    :param db: SQLAlchemy DB object.
+    :param label_columns: (Optional) A list containing the names of the label/output columns (default ['label']).
+    :param feature_columns: (Optional) A list containing the names of the feature columns (default ['features']).
+    :param verbose: Debug output verbosity (0-2). Defaults to 1.
+    """
+
+    def __init__(self, exp_id, backend, store, estimator_gen_fn, search_space, num_epochs, db,
+                 label_columns=['label'], feature_columns=['features'], verbose=1):
+        super(HILGridSearch, self).__init__(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+            num_epochs=num_epochs, label_columns=label_columns, feature_columns=feature_columns, verbose=verbose)
+        self.exp_id = exp_id
+        self.db = db
+
+    def fit(self, df):
+        raise NotImplementedError('method not implemented')
+
+    def fit_on_prepared_data(self):
+        """
+         Execute the model selection/AutoML workload on already prepared data.
+        """
+        _hil_fit_on_prepared_data(self)
 
 
 class RandomSearch(ModelSelection):
@@ -87,6 +126,7 @@ class RandomSearch(ModelSelection):
     :param estimator_gen_fn: A function which takes
      in a dictionary of parameters and returns a Cerebro Estimator (e.g., cerebro.SparkEstimator).
     :param search_space: A dictionary object defining the parameter search space.
+    :param num_models: Maximum number of models to be explored.
     :param num_epochs: Number of maximum epochs each model should be trained for.
     :param evaluation_metric: Evaluation metric used to pick the best model (default: "loss").
     :param validation: (Optional) The ratio of the validation set (default: 0.25) or a string defining the column name
@@ -133,11 +173,46 @@ class RandomSearch(ModelSelection):
             params.append(param_dict)
         return params
 
-    def _fit_on_prepared_data(self, dataset_idx, metadata):
-        return _fit_on_prepared_data(self, dataset_idx, metadata)
+    def _fit_on_prepared_data(self, metadata):
+        return _fit_on_prepared_data(self, metadata)
 
 
-def _fit_on_prepared_data(self, dataset_idx, metadata):
+class HILRandomSearch(RandomSearch):
+    """Performs intermittent HIL random search using the given param grid
+    :param exp_id: Experiment ID.
+    :param backend: Cerebro backend object (e.g., SparkBackend).
+    :param store: Cerebro store object (e.g., LocalStore, HDFSStore).
+    :param estimator_gen_fn: A function which takes 
+     in a dictionary of parameters and returns a Cerebro Estimator (e.g., cerebro.SparkEstimator).
+    :param search_space: A dictionary object defining the parameter search space.
+    :param num_models: Maximum number of models to be explored.
+    :param num_epochs: Number of maximum epochs each model should be trained for.
+    :param db: SQLAlchemy DB object.
+    :param label_columns: (Optional) A list containing the names of the label/output columns (default ['label']).
+    :param feature_columns: (Optional) A list containing the names of the feature columns (default ['features']).
+    :param verbose: Debug output verbosity (0-2). Defaults to 1.
+
+    """
+
+    def __init__(self, exp_id, backend, store, estimator_gen_fn, search_space, num_models, num_epochs, db,
+                 label_columns=['label'], feature_columns=['features'], verbose=1):
+        super(HILRandomSearch, self).__init__(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
+            num_models=num_models, num_epochs=num_epochs, label_columns=label_columns, feature_columns=feature_columns, verbose=verbose)
+        self.exp_id = exp_id
+        self.db = db
+
+    def fit(self, df):
+        raise NotImplementedError('method not implemented')
+
+    def fit_on_prepared_data(self):
+        """
+         Execute the model selection/AutoML workload on already prepared data.
+        """
+        _hil_fit_on_prepared_data(self)
+
+
+# Batch implementation (i.e., without any user interaction) of model selection.
+def _fit_on_prepared_data(self, metadata):
     # create estimators
     estimators = [self._estimator_gen_fn_wrapper(param) for param in self.estimator_param_maps]
     estimator_results = {model.getRunId(): {} for model in estimators}
@@ -147,11 +222,11 @@ def _fit_on_prepared_data(self, dataset_idx, metadata):
 
     # Trains the models up to the number of epochs specified. For each iteration also performs validation
     for epoch in range(self.num_epochs):
-        epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
+        epoch_results = self.backend.train_for_one_epoch(estimators, self.store, self.feature_cols,
                                                          self.label_cols)
         update_model_results(estimator_results, epoch_results)
 
-        epoch_results = self.backend.train_for_one_epoch(estimators, self.store, dataset_idx, self.feature_cols,
+        epoch_results = self.backend.train_for_one_epoch(estimators, self.store, self.feature_cols,
                                                          self.label_cols, is_train=False)
         update_model_results(estimator_results, epoch_results)
 
@@ -164,3 +239,36 @@ def _fit_on_prepared_data(self, dataset_idx, metadata):
     best_model = models[best_model_idx]
 
     return ModelSelectionResult(best_model, estimator_results, models, [x+'__output' for x in self.label_cols])
+
+
+# Human-in-the-loop implementation
+def _hil_fit_on_prepared_data(self):
+    _, _, metadata, _ = self.backend.get_metadata_from_parquet(self.store, self.label_cols, self.feature_cols)
+
+    if self.verbose >= 1: print(
+        'CEREBRO => Time: {}, Initializing Data Loaders'.format(
+            datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    self.backend.initialize_data_loaders(self.store, self.feature_cols + self.label_cols)
+
+    if self.verbose >= 1: print('CEREBRO => Time: {}, Launching Model Selection Workload'.format(
+        datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+
+    exp_id = self.exp_id
+    exp_obj = Experiment.query.filter(Experiment.id == exp_id).one()
+    db = self.db
+
+    # Creating the intial model specs.
+    param_maps = self.estimator_param_maps
+    for param_map in param_maps:
+        model_id = next_user_friendly_model_id()
+        model_dao = Model(model_id, exp_obj.id, 0, int(exp_obj.max_train_epochs))
+        db.session.add(model_dao)
+
+        for k in param_map:
+            dtype = ParamDef.query.filter(and_(ParamDef.exp_id == exp_id, ParamDef.name == k)).one().dtype
+            pval_dao = ParamVal(model_id, k, param_map[k], dtype)
+            db.session.add(pval_dao)
+            db.session.add(model_dao)
+    db.session.commit()
+    exp_obj.status = RUNNING_STATUS
+    db.session.commit()
