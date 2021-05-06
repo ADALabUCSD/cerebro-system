@@ -1,0 +1,1 @@
+/home/snakanda/Work/cerebro-system/examples/deep_postures/data/valid/AuID004

@@ -51,7 +51,8 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'cerebro = cerebro.api.cerebro_server:main',
+            'cerebro-api = cerebro.api.cerebro_server:main',
+            'cerebro-standalone-worker = cerebro.standalone.worker:main',
         ],
     },
     classifiers=[
