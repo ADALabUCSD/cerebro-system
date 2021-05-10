@@ -44,11 +44,6 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
     """loss_weights: Optional list of float weight values to assign each loss."""
     loss_weights = Param(Params._dummy(), 'loss_weights', 'loss weights',
                          typeConverter=TypeConverters.toListFloat)
-
-    """sample_weight_col: Optional column indicating the weight of each sample."""
-    sample_weight_col = Param(Params._dummy(), 'sample_weight_col',
-                              'name of the column containing sample weights',
-                              typeConverter=TypeConverters.toString)
     feature_cols = Param(Params._dummy(), "feature_cols", "feature column names",
                          typeConverter=TypeConverters.toListString)
     label_cols = Param(Params._dummy(), 'label_cols', 'label column names',
@@ -61,14 +56,6 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
                        typeConverter=TypeConverters.toInt)
     epochs = Param(Params._dummy(), 'epochs', 'epochs', typeConverter=TypeConverters.toInt)
 
-    """shuffle_buffer_size: Optional size of in-memory shuffle buffer in rows. Allocating a larger buffer size
-                                 increases randomness of shuffling at the cost of more host memory. Defaults to estimating
-                                 with an assumption of 4GB of memory per host."""
-    shuffle_buffer_size = Param(Params._dummy(),
-                                'shuffle_buffer_size',
-                                'shuffling buffer size of data before training in number of samples',
-                                typeConverter=TypeConverters.toInt)
-
     verbose = Param(Params._dummy(), 'verbose', 'verbose flag (0=silent, 1=enabled, other values used by frameworks)',
                     typeConverter=TypeConverters.toInt)
 
@@ -79,22 +66,10 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
                    'then training will resume from last checkpoint in the store',
                    typeConverter=TypeConverters.toString)
 
-    """transformation_fn: Optional function that takes a row as its parameter
-       and returns a modified row that is then fed into the
-       train or validation step. This transformation is
-       applied after batching. See Petastorm [TransformSpec](https://github.com/uber/petastorm/blob/master/petastorm/transform.py)
-       for more details. Note that this fucntion constructs
-       another function which should perform the
-       transformation."""
-    transformation_fn = Param(Params._dummy(), 'transformation_fn',
-                              'functions that construct the transformation '
-                              'function that applies custom transformations to '
-                              'every batch before train and validation steps')
-
-    model_update_fn = Param(Params._dummy(), 'model_update_fn', 'Function that can be used to update a Keras model'
-                                                                ' (e.g., freeze/unfreeze layers) after every epoch.'
-                                                                ' Takes in a Keras model and epoch number as input and'
-                                                                ' returns a potentially updated Keras model.')
+    transformation_fn = Param(Params._dummy(), 'transformation_fn', '(Optional) Function that takes a TensorFlow Dataset as its parameter'
+                                                                    ' and returns a modified Dataset that is then fed into the'
+                                                                    ' train or validation step. This transformation is'
+                                                                    ' applied before batching.')
 
     def __init__(self):
         super(SparkEstimatorParams, self).__init__()
@@ -105,7 +80,6 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
             optimizer=None,
             loss=None,
             loss_weights=None,
-            sample_weight_col=None,
             metrics=[],
             feature_cols=None,
             label_cols=None,
@@ -114,9 +88,7 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
             epochs=0,
             verbose=1,
             callbacks=[],
-            shuffle_buffer_size=None,
             run_id=None,
-            model_update_fn=None,
             transformation_fn=None
         )
 
@@ -173,12 +145,6 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
     def getLossWeights(self):
         return self.getOrDefault(self.loss_weights)
 
-    def setSampleWeightCol(self, value):
-        return self._set(sample_weight_col=value)
-
-    def getSampleWeightCol(self):
-        return self.getOrDefault(self.sample_weight_col)
-
     def setMetrics(self, value):
         return self._set(metrics=value)
 
@@ -226,12 +192,6 @@ class SparkEstimatorParams(Params, CerebroEstimatorParams):
 
     def getVerbose(self):
         return self.getOrDefault(self.verbose)
-
-    def setShufflingBufferSize(self, value):
-        return self._set(shuffle_buffer_size=value)
-
-    def getShufflingBufferSize(self):
-        return self.getOrDefault(self.shuffle_buffer_size)
 
     def setOptimizer(self, value):
         return self._set(optimizer=value)

@@ -4,14 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Getting Started &#8212; Cerebro  documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -33,9 +34,9 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="getting-started">
+  <section id="getting-started">
 <h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="executing-a-model-selection-workload">
+<section id="executing-a-model-selection-workload">
 <h2>Executing a Model Selection Workload<a class="headerlink" href="#executing-a-model-selection-workload" title="Permalink to this headline">¶</a></h2>
 <p>Cerebro allows you to perform model selection of your deep neural network directly on an existing Spark DataFrame,
 leveraging Spark’s ability to scale across multiple workers:</p>
@@ -136,8 +137,8 @@ output DataFrame. It also contain all the other models and their training metric
 converted to Keras format and used in other ways.</p>
 <p>The user provided Store object is used to store all model checkpoints, all intermediate representations of the training
 data, and training metrics (for Tensorboard). Cerebro currently supports stores for HDFS and local filesystems.</p>
-</div>
-<div class="section" id="visualizing-the-model-selection-process">
+</section>
+<section id="visualizing-the-model-selection-process">
 <h2>Visualizing the Model Selection Process<a class="headerlink" href="#visualizing-the-model-selection-process" title="Permalink to this headline">¶</a></h2>
 <p>Cerebro logs model training metrics into the <code class="docutils literal notranslate"><span class="pre">&lt;prefix_path&gt;/runs/logs</span></code> directory of your Storage object.
 To visualize the model selection process, launch a Tensorboard instance as follows:</p>
@@ -145,8 +146,8 @@ To visualize the model selection process, launch a Tensorboard instance as follo
 </pre></div>
 </div>
 <p><img alt="tensorboard" src="_images/tensorboard.png" /></p>
-</div>
-<div class="section" id="training-on-existing-petastorm-datasets">
+</section>
+<section id="training-on-existing-petastorm-datasets">
 <h2>Training on Existing Petastorm Datasets<a class="headerlink" href="#training-on-existing-petastorm-datasets" title="Permalink to this headline">¶</a></h2>
 <p>Cerebro uses <a class="reference external" href="https://github.com/uber/petastorm">Petastorm</a> as the data format for storing intermediate data.
 So if your data is already in petastorm format you can create the store object to point to the location of the data
@@ -172,8 +173,8 @@ as shown below.</p>
 </div>
 <p>Once the data has been materialized, you can reuse it in future Cerebro applications without needing to call
 <code class="docutils literal notranslate"><span class="pre">backend.prepare_data</span></code> again.</p>
-</div>
-<div class="section" id="end-to-end-example">
+</section>
+<section id="end-to-end-example">
 <h2>End-to-End Example<a class="headerlink" href="#end-to-end-example" title="Permalink to this headline">¶</a></h2>
 <p>We explain how a deep learning model training workload on Spark using <a class="reference external" href="https://github.com/horovod/horovod/blob/master/examples/keras_spark_rossmann_estimator.py">Horovod</a> can be extended to perform model selection using Cerebro.</p>
 <p><a class="reference external" href="https://raw.githubusercontent.com/ADALabUCSD/cerebro-system/master/examples/rossmann_model_selection.py">rossmann_model_selection.py</a>
@@ -193,8 +194,8 @@ $ tar zxvf rossmann.tgz
 $ python3 rossmann_model_selection.py
 </pre></div>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -244,7 +245,7 @@ $ python3 rossmann_model_selection.py
       &copy;2020, Supun Nakandala, Yuhao Zhang, Arun Kumar.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

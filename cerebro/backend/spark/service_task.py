@@ -76,7 +76,7 @@ class SparkTaskService:
 
     def __init__(self, index, key, nics):
         # disabling eager
-        tf.compat.v1.disable_eager_execution()
+        # tf.compat.v1.disable_eager_execution()
 
         service_name = SparkTaskService.NAME_FORMAT % index
         self._index = index

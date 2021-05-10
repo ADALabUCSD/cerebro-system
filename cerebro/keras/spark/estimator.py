@@ -178,25 +178,13 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         loss: Keras loss or list of losses.
         batch_size: Number of rows from the DataFrame per batch.
         loss_weights: (Optional) List of float weight values to assign each loss.
-        sample_weight_col:(Optional) Column indicating the weight of each sample.
         metrics: (Optional) List of Keras metrics to record.
         callbacks: (Optional) List of Keras callbacks.
-        model_update_fn: (Optional) Function that can be used to update a Keras model (e.g., freeze/unfreeze layers) after 
-                          every epoch. Takes in a Keras model and epoch number as input and returns a potentially updated Keras model.
+        transformation_fn: (Optional) Function that takes a TensorFlow Dataset as its parameter
+                       and returns a modified Dataset that is then fed into the
+                       train or validation step. This transformation is applied before batching.
     """
-
-    # TODO
-    # shuffle_buffer_size: (Optional) Size of in-memory shuffle buffer in rows. Allocating a larger buffer size
-    #                      increases randomness of shuffling at the cost of more host memory. Defaults to estimating
-    #                      with an assumption of 4GB of memory per host.
-    # transformation_fn: (Optional) Function that takes a row as its parameter
-    #                    and returns a modified row that is then fed into the
-    #                    train or validation step. This transformation is
-    #                    applied after batching. See Petastorm TransformSpec
-    #                    for more details. Note that this fucntion constructs
-    #                    another function which should perform the
-    #                    transformation.
-
+    
     custom_objects = Param(Params._dummy(), 'custom_objects', 'custom objects')
     _keras_pkg_type = Param(Params._dummy(), '_keras_pkg_type', 'keras package type')
 
@@ -208,12 +196,9 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
                  loss=None,
                  batch_size=None,
                  loss_weights=None,
-                 sample_weight_col=None,
                  metrics=None,
                  callbacks=None,
-                 shuffle_buffer_size=None,
-                 transformation_fn=None,
-                 model_update_fn=None
+                 transformation_fn=None
                  ):
 
         super(SparkEstimator, self).__init__()

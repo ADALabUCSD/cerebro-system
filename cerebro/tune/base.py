@@ -246,7 +246,7 @@ class ModelSelection(object):
 
     def _log_epoch_metrics_to_tensorboard(self, estimators, estimator_results):
         # logging to TensorBoard
-        log_epoch_metrics_to_tensorboard(estimators, estimator_results, store, verbose)
+        log_epoch_metrics_to_tensorboard(estimators, estimator_results, self.store, self.verbose)
 
     def _log_hp_to_tensorboard(self, estimators, hparams):
         # logging to TensorBoard

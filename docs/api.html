@@ -4,14 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Cerebro API &#8212; Cerebro  documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -33,18 +34,18 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-cerebro.keras">
+  <section id="module-cerebro.keras">
 <span id="cerebro-api"></span><h1>Cerebro API<a class="headerlink" href="#module-cerebro.keras" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="cerebro-keras">
+<section id="cerebro-keras">
 <h2>cerebro.keras<a class="headerlink" href="#cerebro-keras" title="Permalink to this headline">¶</a></h2>
 <p>This module contains Keras abstractions for Cerebro.</p>
 <dl class="py class">
 <dt id="cerebro.keras.CerebroModel">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.keras.</code><code class="sig-name descname">CerebroModel</code><a class="headerlink" href="#cerebro.keras.CerebroModel" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cerebro.keras.</span></code><code class="sig-name descname"><span class="pre">CerebroModel</span></code><a class="headerlink" href="#cerebro.keras.CerebroModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Wrapper object containing a trained Keras model. Can be used for making predictions on a DataFrame.</p>
 <dl class="py method">
 <dt id="cerebro.keras.CerebroModel.keras">
-<code class="sig-name descname">keras</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.CerebroModel.keras" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">keras</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.CerebroModel.keras" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the trained model in Keras format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -55,7 +56,7 @@
 
 <dl class="py method">
 <dt id="cerebro.keras.CerebroModel.set_output_columns">
-<code class="sig-name descname">set_output_columns</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_columns</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.CerebroModel.set_output_columns" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">set_output_columns</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_columns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.CerebroModel.set_output_columns" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the output column names</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -66,7 +67,7 @@
 
 <dl class="py method">
 <dt id="cerebro.keras.CerebroModel.transform">
-<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.CerebroModel.transform" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.CerebroModel.transform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Transforms the given DataFrame using the trained ML model</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -82,7 +83,7 @@
 
 <dl class="py class">
 <dt id="cerebro.keras.SparkEstimator">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.keras.</code><code class="sig-name descname">SparkEstimator</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">custom_objects</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">optimizer</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">loss</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">batch_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">loss_weights</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">sample_weight_col</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">metrics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">callbacks</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">shuffle_buffer_size</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">transformation_fn</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">model_update_fn</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkEstimator" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cerebro.keras.</span></code><code class="sig-name descname"><span class="pre">SparkEstimator</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">custom_objects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimizer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_weights</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sample_weight_col</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">callbacks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transformation_fn</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.keras.SparkEstimator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cerebro Spark Estimator for fitting Keras model to a DataFrame.</p>
 <p>Supports <code class="docutils literal notranslate"><span class="pre">tf.keras</span> <span class="pre">&gt;=</span> <span class="pre">2.2</span></code>.</p>
 <dl class="field-list simple">
@@ -98,20 +99,22 @@ during serialization/deserialization.</p></li>
 <li><p><strong>sample_weight_col</strong> – (Optional) Column indicating the weight of each sample.</p></li>
 <li><p><strong>metrics</strong> – (Optional) List of Keras metrics to record.</p></li>
 <li><p><strong>callbacks</strong> – (Optional) List of Keras callbacks.</p></li>
-<li><p><strong>model_update_fn</strong> – (Optional) Function that can be used to update a Keras model (e.g., freeze/unfreeze layers) after
-every epoch. Takes in a Keras model and epoch number as input and returns a potentially updated Keras model.</p></li>
+<li><p><strong>transformation_fn</strong> – (Optional) Function that takes a TensorFlow Dataset as its parameter
+and returns a modified Dataset that is then fed into the
+train or validation step. This transformation is
+applied before batching.</p></li>
 </ul>
 </dd>
 </dl>
 </dd></dl>
 
-</div>
-<span class="target" id="module-cerebro.tune"></span><div class="section" id="cerebro-tune">
+</section>
+<span class="target" id="module-cerebro.tune"></span><section id="cerebro-tune">
 <h2>cerebro.tune<a class="headerlink" href="#cerebro-tune" title="Permalink to this headline">¶</a></h2>
 <p>This module contains several AutoML/Model Selection procedures and utility functions for defining search spaces.</p>
 <dl class="py class">
 <dt id="cerebro.tune.GridSearch">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">GridSearch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">backend</span></em>, <em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">estimator_gen_fn</span></em>, <em class="sig-param"><span class="n">search_space</span></em>, <em class="sig-param"><span class="n">num_epochs</span></em>, <em class="sig-param"><span class="n">evaluation_metric</span><span class="o">=</span><span class="default_value">'loss'</span></em>, <em class="sig-param"><span class="n">validation</span><span class="o">=</span><span class="default_value">0.25</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.GridSearch" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cerebro.tune.</span></code><code class="sig-name descname"><span class="pre">GridSearch</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimator_gen_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_space</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluation_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['label']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['features']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.GridSearch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs grid search using the given param grid</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -136,7 +139,7 @@ defining the validation set. In the latter case the column value can be bool or 
 </dl>
 <dl class="py method">
 <dt id="cerebro.tune.GridSearch.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.GridSearch.fit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.GridSearch.fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the model selection/AutoML workload on the given DataFrame.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -150,7 +153,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.GridSearch.fit_on_prepared_data">
-<code class="sig-name descname">fit_on_prepared_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.GridSearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">fit_on_prepared_data</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.GridSearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Execute the model selection/AutoML workload on already prepared data.</p>
 </div></blockquote>
@@ -165,11 +168,11 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py class">
 <dt id="cerebro.tune.ModelSelectionResult">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">ModelSelectionResult</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">best_model</span></em>, <em class="sig-param"><span class="n">metrics</span></em>, <em class="sig-param"><span class="n">all_models</span></em>, <em class="sig-param"><span class="n">output_columns</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cerebro.tune.</span></code><code class="sig-name descname"><span class="pre">ModelSelectionResult</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">best_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metrics</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">all_models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_columns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult" title="Permalink to this definition">¶</a></dt>
 <dd><p>Output of a model selection workload performed using <code class="docutils literal notranslate"><span class="pre">fit(df)</span></code> or <code class="docutils literal notranslate"><span class="pre">fit_on_prepared_data()</span></code> method.</p>
 <dl class="py method">
 <dt id="cerebro.tune.ModelSelectionResult.get_all_model_history">
-<code class="sig-name descname">get_all_model_history</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.get_all_model_history" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_all_model_history</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.get_all_model_history" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of model training metrics.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -180,7 +183,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.ModelSelectionResult.get_all_models">
-<code class="sig-name descname">get_all_models</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.get_all_models" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_all_models</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.get_all_models" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of all models.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -191,7 +194,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.ModelSelectionResult.get_best_model">
-<code class="sig-name descname">get_best_model</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.get_best_model" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_best_model</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.get_best_model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the best model.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -202,7 +205,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.ModelSelectionResult.get_best_model_history">
-<code class="sig-name descname">get_best_model_history</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.get_best_model_history" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">get_best_model_history</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.get_best_model_history" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get best model training history.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -213,7 +216,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.ModelSelectionResult.keras">
-<code class="sig-name descname">keras</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.keras" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">keras</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.keras" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the best model in Keras format.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Returns</dt>
@@ -224,7 +227,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.ModelSelectionResult.set_output_columns">
-<code class="sig-name descname">set_output_columns</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">output_columns</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.set_output_columns" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">set_output_columns</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">output_columns</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.set_output_columns" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the output column names.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -235,7 +238,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.ModelSelectionResult.transform">
-<code class="sig-name descname">transform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">dataset</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.transform" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">transform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.ModelSelectionResult.transform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs inference on a given dataset. Will run on CPU.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -251,7 +254,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py class">
 <dt id="cerebro.tune.RandomSearch">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">RandomSearch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">backend</span></em>, <em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">estimator_gen_fn</span></em>, <em class="sig-param"><span class="n">search_space</span></em>, <em class="sig-param"><span class="n">num_models</span></em>, <em class="sig-param"><span class="n">num_epochs</span></em>, <em class="sig-param"><span class="n">evaluation_metric</span><span class="o">=</span><span class="default_value">'loss'</span></em>, <em class="sig-param"><span class="n">validation</span><span class="o">=</span><span class="default_value">0.25</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.RandomSearch" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cerebro.tune.</span></code><code class="sig-name descname"><span class="pre">RandomSearch</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimator_gen_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_space</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluation_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['label']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['features']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.RandomSearch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs Random Search over the param grid</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -261,6 +264,7 @@ defining the validation set. In the latter case the column value can be bool or 
 <li><p><strong>estimator_gen_fn</strong> – A function which takes
 in a dictionary of parameters and returns a Cerebro Estimator (e.g., cerebro.SparkEstimator).</p></li>
 <li><p><strong>search_space</strong> – A dictionary object defining the parameter search space.</p></li>
+<li><p><strong>num_models</strong> – Maximum number of models to be explored.</p></li>
 <li><p><strong>num_epochs</strong> – Number of maximum epochs each model should be trained for.</p></li>
 <li><p><strong>evaluation_metric</strong> – Evaluation metric used to pick the best model (default: “loss”).</p></li>
 <li><p><strong>validation</strong> – (Optional) The ratio of the validation set (default: 0.25) or a string defining the column name
@@ -276,7 +280,7 @@ defining the validation set. In the latter case the column value can be bool or 
 </dl>
 <dl class="py method">
 <dt id="cerebro.tune.RandomSearch.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.RandomSearch.fit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.RandomSearch.fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the model selection/AutoML workload on the given DataFrame.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -290,7 +294,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py method">
 <dt id="cerebro.tune.RandomSearch.fit_on_prepared_data">
-<code class="sig-name descname">fit_on_prepared_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.RandomSearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">fit_on_prepared_data</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.RandomSearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Execute the model selection/AutoML workload on already prepared data.</p>
 </div></blockquote>
@@ -305,7 +309,7 @@ defining the validation set. In the latter case the column value can be bool or 
 
 <dl class="py class">
 <dt id="cerebro.tune.TPESearch">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">TPESearch</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">backend</span></em>, <em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">estimator_gen_fn</span></em>, <em class="sig-param"><span class="n">search_space</span></em>, <em class="sig-param"><span class="n">num_models</span></em>, <em class="sig-param"><span class="n">num_epochs</span></em>, <em class="sig-param"><span class="n">evaluation_metric</span><span class="o">=</span><span class="default_value">'loss'</span></em>, <em class="sig-param"><span class="n">validation</span><span class="o">=</span><span class="default_value">0.25</span></em>, <em class="sig-param"><span class="n">label_columns</span><span class="o">=</span><span class="default_value">['label']</span></em>, <em class="sig-param"><span class="n">feature_columns</span><span class="o">=</span><span class="default_value">['features']</span></em>, <em class="sig-param"><span class="n">parallelism</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.TPESearch" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cerebro.tune.</span></code><code class="sig-name descname"><span class="pre">TPESearch</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">estimator_gen_fn</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_space</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_models</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evaluation_metric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'loss'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['label']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_columns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['features']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parallelism</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.TPESearch" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs Tree of Parzen Estimators (TPE) search using the given param grid.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -334,7 +338,7 @@ for better cluster utilization.</p></li>
 </dl>
 <dl class="py method">
 <dt id="cerebro.tune.TPESearch.fit">
-<code class="sig-name descname">fit</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">df</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.TPESearch.fit" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">fit</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">df</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.TPESearch.fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Execute the model selection/AutoML workload on the given DataFrame.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -348,7 +352,7 @@ for better cluster utilization.</p></li>
 
 <dl class="py method">
 <dt id="cerebro.tune.TPESearch.fit_on_prepared_data">
-<code class="sig-name descname">fit_on_prepared_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.TPESearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">fit_on_prepared_data</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.TPESearch.fit_on_prepared_data" title="Permalink to this definition">¶</a></dt>
 <dd><blockquote>
 <div><p>Execute the model selection/AutoML workload on already prepared data.</p>
 </div></blockquote>
@@ -363,7 +367,7 @@ for better cluster utilization.</p></li>
 
 <dl class="py function">
 <dt id="cerebro.tune.hp_choice">
-<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_choice</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">options</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_choice" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cerebro.tune.</span></code><code class="sig-name descname"><span class="pre">hp_choice</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">options</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_choice" title="Permalink to this definition">¶</a></dt>
 <dd><p>Categorical options.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -374,7 +378,7 @@ for better cluster utilization.</p></li>
 
 <dl class="py function">
 <dt id="cerebro.tune.hp_loguniform">
-<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_loguniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_loguniform" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cerebro.tune.</span></code><code class="sig-name descname"><span class="pre">hp_loguniform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_loguniform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Log uniform (base 10) distribution bounded by min and max.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -388,7 +392,7 @@ for better cluster utilization.</p></li>
 
 <dl class="py function">
 <dt id="cerebro.tune.hp_qloguniform">
-<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_qloguniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em>, <em class="sig-param"><span class="n">q</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_qloguniform" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cerebro.tune.</span></code><code class="sig-name descname"><span class="pre">hp_qloguniform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_qloguniform" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Quantized log uniform (base 10) distribution with a quantum of q, bounded by min and max. Returns a</dt><dd><p>value like round(exp(uniform(low, high)) / q) * q.</p>
 </dd>
@@ -406,7 +410,7 @@ for better cluster utilization.</p></li>
 
 <dl class="py function">
 <dt id="cerebro.tune.hp_quniform">
-<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_quniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em>, <em class="sig-param"><span class="n">q</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_quniform" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cerebro.tune.</span></code><code class="sig-name descname"><span class="pre">hp_quniform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">q</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_quniform" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="simple">
 <dt>Quantized uniform distribution with a quantum of q, bounded by min and max. Returns a</dt><dd><p>value like round(uniform(low, high) / q) * q.</p>
 </dd>
@@ -424,7 +428,7 @@ for better cluster utilization.</p></li>
 
 <dl class="py function">
 <dt id="cerebro.tune.hp_uniform">
-<code class="sig-prename descclassname">cerebro.tune.</code><code class="sig-name descname">hp_uniform</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">min</span></em>, <em class="sig-param"><span class="n">max</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_uniform" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">cerebro.tune.</span></code><code class="sig-name descname"><span class="pre">hp_uniform</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.tune.hp_uniform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uniform distribution bounded by min and max.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -436,13 +440,13 @@ for better cluster utilization.</p></li>
 </dl>
 </dd></dl>
 
-</div>
-<span class="target" id="module-cerebro.backend"></span><div class="section" id="cerebro-backend">
+</section>
+<span class="target" id="module-cerebro.backend"></span><section id="cerebro-backend">
 <h2>cerebro.backend<a class="headerlink" href="#cerebro-backend" title="Permalink to this headline">¶</a></h2>
 <p>This module contains different execution backends for Cerebro.</p>
 <dl class="py class">
 <dt id="cerebro.backend.SparkBackend">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.backend.</code><code class="sig-name descname">SparkBackend</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">spark_context</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">num_workers</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">start_timeout</span><span class="o">=</span><span class="default_value">600</span></em>, <em class="sig-param"><span class="n">disk_cache_size_gb</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">data_readers_pool_type</span><span class="o">=</span><span class="default_value">'thread'</span></em>, <em class="sig-param"><span class="n">num_data_readers</span><span class="o">=</span><span class="default_value">10</span></em>, <em class="sig-param"><span class="n">nics</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">verbose</span><span class="o">=</span><span class="default_value">1</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cerebro.backend.</span></code><code class="sig-name descname"><span class="pre">SparkBackend</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spark_context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_workers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">start_timeout</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">disk_cache_size_gb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_readers_pool_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'thread'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_data_readers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend" title="Permalink to this definition">¶</a></dt>
 <dd><p>Spark backend implementing Cerebro model hopping</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -462,7 +466,7 @@ available networking interfaces (default None)</p></li>
 </dl>
 <dl class="py method">
 <dt id="cerebro.backend.SparkBackend.prepare_data">
-<code class="sig-name descname">prepare_data</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">store</span></em>, <em class="sig-param"><span class="n">dataset</span></em>, <em class="sig-param"><span class="n">validation</span></em>, <em class="sig-param"><span class="n">num_partitions</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">parquet_row_group_size_mb</span><span class="o">=</span><span class="default_value">8</span></em>, <em class="sig-param"><span class="n">dataset_idx</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">prepare_data</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">store</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_partitions</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parquet_row_group_size_mb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_idx</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.backend.SparkBackend.prepare_data" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prepare data by writing out into persistent storage</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -481,13 +485,13 @@ input dataset partitions.</p></li>
 
 </dd></dl>
 
-</div>
-<span class="target" id="module-cerebro.storage"></span><div class="section" id="cerebro-storage">
+</section>
+<span class="target" id="module-cerebro.storage"></span><section id="cerebro-storage">
 <h2>cerebro.storage<a class="headerlink" href="#cerebro-storage" title="Permalink to this headline">¶</a></h2>
 <p>This module contains different storage backends for Cerebro.</p>
 <dl class="py class">
 <dt id="cerebro.storage.HDFSStore">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">HDFSStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">train_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">val_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">runs_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">temp_dir</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">host</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">user</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">kerb_ticket</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">driver</span><span class="o">=</span><span class="default_value">'libhdfs'</span></em>, <em class="sig-param"><span class="n">extra_conf</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.HDFSStore" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cerebro.storage.</span></code><code class="sig-name descname"><span class="pre">HDFSStore</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runs_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">port</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">user</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kerb_ticket</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">driver</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'libhdfs'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_conf</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.HDFSStore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses HDFS as a store of intermediate data and training artifacts.</p>
 <p>Initialized from a <cite>prefix_path</cite> that can take one of the following forms:</p>
 <ol class="arabic simple">
@@ -519,7 +523,7 @@ to &lt;prefix_path&gt;/runs</p></li>
 
 <dl class="py class">
 <dt id="cerebro.storage.LocalStore">
-<em class="property">class </em><code class="sig-prename descclassname">cerebro.storage.</code><code class="sig-name descname">LocalStore</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">prefix_path</span></em>, <em class="sig-param"><span class="n">train_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">val_path</span><span class="o">=</span><span class="default_value">None</span></em>, <em class="sig-param"><span class="n">runs_path</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.LocalStore" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">cerebro.storage.</span></code><code class="sig-name descname"><span class="pre">LocalStore</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">prefix_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">train_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">val_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runs_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cerebro.storage.LocalStore" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses the local filesystem as a store of intermediate data and training artifacts (also works with NFS mounted
 remote storage).</p>
 <dl class="field-list simple">
@@ -537,8 +541,8 @@ to &lt;prefix_path&gt;/runs</p></li>
 </dl>
 </dd></dl>
 
-</div>
-</div>
+</section>
+</section>
 
 
           </div>
@@ -588,7 +592,7 @@ to &lt;prefix_path&gt;/runs</p></li>
       &copy;2020, Supun Nakandala, Yuhao Zhang, Arun Kumar.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

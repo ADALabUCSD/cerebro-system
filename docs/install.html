@@ -4,14 +4,15 @@
 <html>
   <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
     <title>Install &#8212; Cerebro  documentation</title>
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
     <script src="_static/jquery.js"></script>
     <script src="_static/underscore.js"></script>
     <script src="_static/doctools.js"></script>
-    <script src="_static/language_data.js"></script>
     <link rel="author" title="About these documents" href="about.html" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
@@ -33,9 +34,9 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="install">
+  <section id="install">
 <h1>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="basic-installation">
+<section id="basic-installation">
 <h2>Basic Installation<a class="headerlink" href="#basic-installation" title="Permalink to this headline">¶</a></h2>
 <p>The best way to install the <code class="docutils literal notranslate"><span class="pre">Cerebro</span></code> is via pip.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">U</span> <span class="n">cerebro</span><span class="o">-</span><span class="n">dl</span>
@@ -46,13 +47,13 @@
 </pre></div>
 </div>
 <p>You MUST be running on <strong>Python &gt;= 3.6</strong> with <strong>Tensorflow &gt;= 2.2</strong> and <strong>Apache Spark &gt;= 2.4</strong></p>
-</div>
-<div class="section" id="spark-cluster-setup">
+</section>
+<section id="spark-cluster-setup">
 <h2>Spark Cluster Setup<a class="headerlink" href="#spark-cluster-setup" title="Permalink to this headline">¶</a></h2>
 <p>As deep learning workloads tend to have very different resource requirements
 from typical data processing workloads, there are certain considerations
 for DL Spark cluster setup.</p>
-<div class="section" id="gpu-training">
+<section id="gpu-training">
 <h3>GPU training<a class="headerlink" href="#gpu-training" title="Permalink to this headline">¶</a></h3>
 <p>For GPU training, one approach is to set up a separate GPU Spark cluster
 and configure each executor with <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">of</span> <span class="pre">CPU</span> <span class="pre">cores</span></code> = <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">of</span> <span class="pre">GPUs</span></code>. This can
@@ -65,8 +66,8 @@ $ /path/to/spark/sbin/start-all.sh
 requested per process (defaults to 1).</p>
 <p>The ongoing <a class="reference external" href="https://issues.apache.org/jira/browse/SPARK-24615">SPARK-24615</a> effort aims to
 introduce GPU-aware resource scheduling in future versions of Spark.</p>
-</div>
-<div class="section" id="cpu-training">
+</section>
+<section id="cpu-training">
 <h3>CPU training<a class="headerlink" href="#cpu-training" title="Permalink to this headline">¶</a></h3>
 <p>For CPU training, one approach is to specify the <code class="docutils literal notranslate"><span class="pre">spark.task.cpus</span></code> setting
 during the training session creation:</p>
@@ -78,9 +79,9 @@ during the training session creation:</p>
 </div>
 <p>This approach allows you to reuse the same Spark cluster for data preparation
 and training.</p>
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
           </div>
@@ -128,7 +129,7 @@ and training.</p>
       &copy;2020, Supun Nakandala, Yuhao Zhang, Arun Kumar.
       
       |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.0.3</a>
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
       
       |

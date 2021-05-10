@@ -165,7 +165,7 @@ class SparkBackend(Backend):
         if self.workers_initialized:
             remote_store = store.to_remote(self.spark_job_group, None)
             shard_count = self._num_workers()
-            _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None, None)
+            _, _, _, avg_row_size = util.get_simple_meta_from_parquet(store, schema_fields, None)
             data_readers_fn = _data_readers_fn(remote_store, shard_count, schema_fields, avg_row_size,
                                                self.settings.disk_cache_size_bytes,
                                                self.settings.data_readers_pool_type, self.settings.num_data_readers)
@@ -354,7 +354,6 @@ def _get_remote_trainer(estimator, backend, store, dataset_idx, feature_columns,
     train_rows, val_rows, metadata, avg_row_size = \
         util.get_simple_meta_from_parquet(store,
                                           schema_cols=label_columns + feature_columns,
-                                          sample_weight_col=None,
                                           dataset_idx=dataset_idx)
     estimator._check_params(metadata)
     keras_utils = estimator._get_keras_utils()
@@ -469,28 +468,25 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
     feature_columns = estimator.getFeatureCols()
     user_callbacks = estimator.getCallbacks()
     batch_size = estimator.getBatchSize()
-    sample_weight_col = estimator.getSampleWeightCol()
     custom_objects = estimator.getCustomObjects()
-    user_shuffle_buffer_size = estimator.getShufflingBufferSize()
     metrics_names = [name.__name__ if callable(name) else name for name in estimator.getMetrics()]
     user_verbose = estimator.getVerbose()
 
     # Model parameters
     input_shapes, output_shapes = estimator.get_model_shapes()
     output_names = estimator.getModel().output_names
+    input_names = estimator.getModel().input_names
 
     floatx = tf.keras.backend.floatx()
     make_dataset = keras_utils.make_dataset_fn(
-        feature_columns, label_columns, sample_weight_col, metadata,
-        input_shapes, output_shapes, output_names, batch_size)
+        feature_columns, label_columns, metadata,
+        input_shapes, output_shapes, input_names, output_names, batch_size)
     fit_sub_epoch_fn = keras_utils.fit_sub_epoch_fn()
     eval_sub_epoch_fn = keras_utils.eval_sub_epoch_fn()
     transformation_fn = estimator.getTransformationFn()
-    transformation = transformation_fn if transformation_fn else None
 
     # Utility functions
     deserialize_keras_model = _deserialize_keras_model_fn()
-    calculate_shuffle_buffer_size = _calculate_shuffle_buffer_size_fn()
     pin_gpu = _pin_gpu_fn()
 
     # Storage
@@ -511,18 +507,6 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
         tf.keras.backend.set_floatx(floatx)
         pin_gpu(local_task_index)
 
-        # FIXME: Enable sub-epoch data shuffling
-        # if not user_shuffle_buffer_size:
-        #     shuffle_buffer_size = calculate_shuffle_buffer_size(
-        #         hvd, avg_row_size, train_rows / num_workers)
-        # else:
-        #     shuffle_buffer_size = user_shuffle_buffer_size
-
-        if not user_shuffle_buffer_size:
-            shuffle_buffer_size = 1024 * 3
-        else:
-            shuffle_buffer_size = user_shuffle_buffer_size
-
         # Verbose mode 1 will print a progress bar.
         verbose = user_verbose
 
@@ -538,11 +522,9 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                     remote_store.get_last_checkpoint(), lambda x: tf.keras.models.load_model(x))
 
             schema_fields = feature_columns + label_columns
-            if sample_weight_col:
-                schema_fields.append(sample_weight_col)
 
             if is_train:
-                train_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
+                train_data = make_dataset(data_reader, transformation_fn)
                 initialization_time = time.time() - begin_time
                 begin_time = time.time()
                 result = fit_sub_epoch_fn(starting_epoch, model, train_data, callbacks, verbose).history
@@ -551,7 +533,7 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
                 result = {'train_' + name: result[name] for name in result}
                 model.save(ckpt_file)
             else:
-                val_data = make_dataset(data_reader, shuffle_buffer_size, shuffle=False)
+                val_data = make_dataset(data_reader, transformation_fn)
                 initialization_time = time.time() - begin_time
                 begin_time = time.time()
                 result = eval_sub_epoch_fn(starting_epoch, model, val_data, callbacks, verbose)
@@ -587,47 +569,6 @@ def _deserialize_keras_model_fn():
             return load_model_fn(f)
 
     return deserialize_keras_model
-
-
-def _calculate_shuffle_buffer_size_fn():
-    def calculate_shuffle_buffer_size(hvd, avg_row_size, train_row_count_per_worker):
-        """
-        Determines the shuffling buffer size such that each worker gets at most 1GB for shuffling
-        buffer such that on a single machine, among all the workers on that machine, at most
-        memory_cap_gb GB are allocated for shuffling buffer. Also, it ensures that the buffer size
-        is identical among all the workers.
-
-        example 1:
-        memory_cap_gb = 4
-        machine1: 8 workers
-        machine2: 3 workers
-        shuffle_buffer_size = 0.5 GB
-
-        example 2:
-        memory_cap_gb = 4
-            machine1: 2 workers
-            machine2: 3 workers
-        shuffle_buffer_size = 1 GB
-
-        example 3:
-        memory_cap_gb = 4
-            machine1: 2 workers
-            machine2: 8 workers
-            machine3: 5 workers
-        shuffle_buffer_size = 0.5 GB
-        """
-        local_size = hvd.local_size()
-        local_sizes = hvd.allgather([local_size])
-        max_local_size = max(local_sizes)
-
-        if max_local_size > TOTAL_BUFFER_MEMORY_CAP_GIB:
-            shuffle_buffer_size = TOTAL_BUFFER_MEMORY_CAP_GIB * BYTES_PER_GIB / avg_row_size / max_local_size
-        else:
-            shuffle_buffer_size = BYTES_PER_GIB / avg_row_size
-
-        return int(min(shuffle_buffer_size, train_row_count_per_worker))
-
-    return calculate_shuffle_buffer_size
 
 
 def _pin_gpu_fn():
