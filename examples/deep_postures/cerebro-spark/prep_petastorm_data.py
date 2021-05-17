@@ -40,7 +40,7 @@ def load_h5(h5_path):
     return pd.concat(dfs).values.tolist()
 
 
-if __name__ == "__main__":
+def main():
     SPARK_MASTER_URL = 'spark://...' # Change the Spark master URL.
     H5_PRE_PROCESSED_DATA_DIR = 'file://...' # Change pre-processed data input path. Should be accessible from all Spark workers.
     OUTPUT_PATH = 'file:///...' # Change Petastorm output path. Should be accessible from all Spark workers.
@@ -102,3 +102,6 @@ if __name__ == "__main__":
         
         df = spark.createDataFrame(rdd, schema=schema.as_spark_schema())
         df.orderBy("id","time").coalesce(NUM_PARTITIONS).write.mode('overwrite').parquet(os.path.join(output_url, 'val_data'))
+
+if __name__ == "__main__":
+    main()

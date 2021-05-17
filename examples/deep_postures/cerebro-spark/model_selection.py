@@ -88,7 +88,7 @@ def estimator_gen_fn(params):
     return keras_estimator
 
 
-if __name__ == "__main__":
+def main():
     SPARK_MASTER_URL = 'spark://...' # Change the Spark master URL.
     DATA_STORE_PATH = 'file:///...' # Change data store path. Should be accessible from all Spark workers.
     
@@ -113,3 +113,5 @@ if __name__ == "__main__":
                         feature_columns=['id', 'time', 'non_wear', 'sleeping', 'label', 'data'], label_columns=['label'])
     model = model_selection.fit_on_prepared_data()
 
+if __name__ == "__main__":
+    main()
