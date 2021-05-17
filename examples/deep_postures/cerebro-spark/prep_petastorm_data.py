@@ -61,7 +61,7 @@ if __name__ == "__main__":
         proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 
         s_output, s_err = proc.communicate()
-        input_data = s_output.split()
+        input_data = ['hdfs://'+ path for path in s_output.split()]
     elif H5_PRE_PROCESSED_DATA_DIR.startswith('file://'):
         for dirname in os.listdir(H5_PRE_PROCESSED_DATA_DIR):
             if not os.path.join(H5_PRE_PROCESSED_DATA_DIR, dirname).startswith('.')
