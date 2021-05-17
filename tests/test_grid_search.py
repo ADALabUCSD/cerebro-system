@@ -25,6 +25,7 @@ from pyspark.sql import SparkSession
 
 def estimator_gen_fn(params):
     model = tf.keras.models.Sequential()
+    model.add(tf.keras.layers.Input(shape=692, name='features'))
     model.add(tf.keras.layers.Dense(100, input_dim=692))
     model.add(tf.keras.layers.Dense(1, input_dim=100))
     model.add(tf.keras.layers.Activation('sigmoid'))
@@ -32,12 +33,16 @@ def estimator_gen_fn(params):
     optimizer = tf.keras.optimizers.Adam(lr=params['lr'])
     loss = 'binary_crossentropy'
 
+    def transformation_fn(dataset):
+        return dataset.shuffle(1000)
+
     keras_estimator = SparkEstimator(
         model=model,
         optimizer=optimizer,
         loss=loss,
         metrics=['acc'],
-        batch_size=10)
+        batch_size=10,
+        transformation_fn=transformation_fn)
 
     return keras_estimator
 
