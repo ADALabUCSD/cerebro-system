@@ -55,7 +55,7 @@ def estimator_gen_fn(params):
     # can be fed to the BiLSTM. It reads accelrometer data in sorted order (sort by subject_id, timestamp).
     def transformation_fn(dataset):
         dataset = dataset.map(lambda row: list([getattr(row, col_name) for col_name in col_names]))
-        dataset = dataset.window(6*7, drop_remainder=True).flat_map(lambda *args: zip(*args).batch(6*7))
+        dataset = dataset.window(win_size, drop_remainder=True).flat_map(lambda *args: zip(*args).batch(6*7))
         dataset = dataset.map(lambda *args: {col_name: args[i] for i, col_name in enumerate(col_names)})
 
         def filter_fn(window):
