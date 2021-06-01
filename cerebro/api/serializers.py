@@ -69,6 +69,8 @@ experiment = api.model('Experiment', {
     'id': fields.String(readonly=True, description='Experiment UID'),
     'name': fields.String(required=True, description='Experiment name'),
     'description': fields.String(description='Experiment description'),
+    'clone_model_id': fields.String(description='Cloned model UID'),
+    'warm_start_from_cloned_model': fields.Boolean(description='Whether to warmstart the weights from the cloned model'),
     'creation_time': fields.DateTime(readonly=True, description='Experiment creation time'),
     'last_update_time': fields.DateTime(readonly=True, description='Experiment last update time'),
     'status': fields.String(readonly=True, description='Experiment status', enum=state_enums),

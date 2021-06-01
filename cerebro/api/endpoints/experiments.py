@@ -65,16 +65,19 @@ class ExperimentCollection(Resource):
         max_train_epochs = data.get('max_train_epochs')
         data_store_prefix_path =  data.get('data_store_prefix_path')
         executable_entrypoint = data.get('executable_entrypoint')
+        clone_model_id = data.get('clone_model_id')
+        warm_start_from_cloned_model = data.get('warm_start_from_cloned_model')
 
         # Experiment validation
         if model_selection_algorithm in [MS_RANDOM_SEARCH, MS_HYPEROPT_SEARCH]:
             assert max_num_models is not None and max_num_models > 0, '{} should have valid max_num_models value'.format(model_selection_algorithm)
 
-        exp_dao = Experiment(name, description, model_selection_algorithm, max_num_models, feature_columns, label_columns, max_train_epochs,
-            data_store_prefix_path, executable_entrypoint)
+        exp_dao = Experiment(name, description, clone_model_id, warm_start_from_cloned_model, model_selection_algorithm, max_num_models, feature_columns,
+                            label_columns, max_train_epochs, data_store_prefix_path, executable_entrypoint)
         db.session.add(exp_dao)
 
-        for pdef in data.get('param_defs'):
+        pdefs = data.get('param_defs')
+        for pdef in pdefs:
             name = pdef.get('name')
             param_type = pdef.get('param_type')
             choices = pdef.get('choices')
@@ -94,8 +97,24 @@ class ExperimentCollection(Resource):
             pdef_dao = ParamDef(exp_dao.id, name, param_type, choices, min, max, q, dtype)
             db.session.add(pdef_dao)
 
-        db.session.commit()        
 
+        # Cloning an expriment. Populating remaining hyperparameter values from the cloned model.
+        if clone_model_id is not None:
+            cloned_model = Model.query.filter(Model.id == clone_model_id).one()
+            cloned_model_param_vals = cloned_model.param_vals
+
+            for cparam_val in cloned_model_param_vals:
+                param_present = False
+                for pdef in pdefs:
+                    if cparam_val.name == pdef.name:
+                        param_present = True
+                        break
+
+                if not param_present:
+                    pdef_dao = ParamDef(exp_dao.id, cparam_val.name, HP_CHOICE, [cparam_val.value], None, None, None, cparam_val.dtype)
+                    db.session.add(pdef_dao)
+
+        db.session.commit()
         thread = Thread(target=experiment_runner, args=(exp_dao.id, app,))
         thread.start()
 

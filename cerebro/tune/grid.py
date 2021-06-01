@@ -257,11 +257,15 @@ def _hil_fit_on_prepared_data(self):
     exp_obj = Experiment.query.filter(Experiment.id == exp_id).one()
     db = self.db
 
+    warm_start_model_id = None
+    if exp_obj.warm_start_from_cloned_model:
+        warm_start_model_id = exp_obj.clone_model_id
+
     # Creating the intial model specs.
     param_maps = self.estimator_param_maps
     for param_map in param_maps:
         model_id = next_user_friendly_model_id()
-        model_dao = Model(model_id, exp_obj.id, 0, int(exp_obj.max_train_epochs))
+        model_dao = Model(model_id, exp_obj.id, 0, int(exp_obj.max_train_epochs), warm_start_model_id=warm_start_model_id)
         db.session.add(model_dao)
 
         for k in param_map:

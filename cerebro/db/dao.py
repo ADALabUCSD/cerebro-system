@@ -36,6 +36,8 @@ class Experiment(db.Model):
     id = db.Column(db.String(32), primary_key=True)
     name = db.Column(db.String(32))
     description = db.Column(db.String(512))
+    clone_model_id = db.Column(db.String(32))
+    warm_start_from_cloned_model = db.Column(db.Boolean())
     creation_time = db.Column(db.DateTime)
     last_update_time = db.Column(db.DateTime)
     status = db.Column(db.String(32))
@@ -52,12 +54,14 @@ class Experiment(db.Model):
     models = db.relationship('Model', backref='model', lazy='dynamic')
 
 
-    def __init__(self, name, description, model_selection_algorithm, max_num_models, feature_columns, label_columns, max_train_epochs,
-        data_store_prefix_path, executable_entrypoint):
+    def __init__(self, name, description, clone_model_id, warm_start_from_cloned_model, model_selection_algorithm, max_num_models, feature_columns,
+        label_columns, max_train_epochs, data_store_prefix_path, executable_entrypoint):
         
         self.id = str(uuid.uuid4())
         self.name = name
         self.description = description
+        self.clone_model_id = clone_model_id
+        self.warm_start_from_cloned_model = False if warm_start_from_cloned_model is None else warm_start_from_cloned_model
         self.creation_time = datetime.utcnow()
         self.last_update_time = self.creation_time
         self.status = 'created'
