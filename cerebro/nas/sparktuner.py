@@ -7,7 +7,7 @@ import keras_tuner as kt
 
 from autokeras.utils import utils, data_utils
 from autokeras.engine.tuner import AutoTuner
-from keras import estimator
+from keras import estimator, params
 from keras.spark.estimator import SparkEstimator
 from tune.base import ModelSelection
 
@@ -85,4 +85,5 @@ class SparkTuner(AutoTuner):
 
     # TODO
     def spark_fit(self, model, batch_size, **kwargs):
+        est = self.ms._estimator_gen_fn_wrapper(params)
         pass
