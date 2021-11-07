@@ -8,8 +8,6 @@ import keras_tuner as kt
 from tensorflow.keras import callbacks as tf_callbacks
 from autokeras.utils import utils, data_utils
 from autokeras.engine.tuner import AutoTuner
-from ..backend.backend import Backend
-from ..keras.spark.estimator import SparkEstimator
 from ..tune.base import ModelSelection
 
 

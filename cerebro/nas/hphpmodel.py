@@ -1,6 +1,6 @@
 
-from nas.tuners.hyperband import Hyperband
-from nas.sparktuner import SparkTuner
+from .tuners.hyperband import Hyperband
+from .sparktuner import SparkTuner
 from ..keras.spark.estimator import SparkEstimator
 
 from pathlib import Path
