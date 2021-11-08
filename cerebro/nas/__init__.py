@@ -1,4 +1,4 @@
-from nas.tuners.hyperband import Hyperband
+from .tuners.hyperband import Hyperband
 from .hphpmodel import HyperHyperModel
 
 HyperHyperModel.__module__ = "cerebro.nas"

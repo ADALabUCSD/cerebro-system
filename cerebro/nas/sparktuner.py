@@ -4,6 +4,7 @@ from keras_tuner.engine.tuner import Tuner
 from pyspark.ml import param
 import tensorflow as tf
 import keras_tuner as kt
+from tensorflow._api.v2 import data
 
 from tensorflow.keras import callbacks as tf_callbacks
 from autokeras.utils import utils, data_utils
@@ -11,7 +12,7 @@ from autokeras.engine.tuner import AutoTuner
 from ..tune.base import ModelSelection
 
 
-class SparkTuner(AutoTuner):
+class SparkTuner(kt.engine.tuner.Tuner):
     """
     SparkTuner inherits AutoTuner to tune the preprocessor blocks. Also it over-writes run_trial method to using cerebro as the underling training system
 
@@ -27,9 +28,19 @@ class SparkTuner(AutoTuner):
             hypermodel,
             model_selection: ModelSelection,
             **kwargs):
+        self._finished = False
         self.model_selection = model_selection
         super().__init__(oracle, hypermodel, **kwargs)
 
+    def _populate_initial_space(self):
+        return
+
+    def _prepare_model_IO(self, hp, dataset):
+        """
+        Prepare for building the Keras model.
+        Set the input shapes and output shapes of the HyperModel
+        """
+        self.hypermodel.hypermodel.set_io_shapes(data_utils.dataset_shape(dataset))
 
     """
     Over-write this function to train one epoch using cerebro
@@ -38,7 +49,7 @@ class SparkTuner(AutoTuner):
     """
     def _build_and_fit_model(self, trial, *args, **kwargs):
         dataset = kwargs["x"]
-        self.hypermodel.set_io_shapes(data_utils.dataset_shape(dataset))
+        self._prepare_model_IO(trial.hyperparameters, dataset=dataset)
         model = self.hypermodel.build(trial.hyperparameters)
         self.adapt(model, dataset)
         params = {
@@ -96,7 +107,7 @@ class SparkTuner(AutoTuner):
             if callbacks is None:
                 callbacks = []
 
-            self.hypermodel.set_fit_args(validation_split, epochs=epochs)
+            self.hypermodel.hypermodel.set_fit_args(validation_split, epochs=epochs)
 
             # Insert early-stopping for adaptive number of epochs.
             epochs_provided = True
@@ -119,10 +130,24 @@ class SparkTuner(AutoTuner):
             # Populate initial search space.
             hp = self.oracle.get_space()
             dataset = fit_kwargs["x"]
-            self.hypermodel.set_io_shapes(data_utils.dataset_shape(dataset))
+            self._prepare_model_IO(hp, dataset=dataset)
             self.hypermodel.build(hp)
             self.oracle.update_space(hp)
             super().search(
                 epochs=epochs, callbacks=new_callbacks, verbose=verbose, **fit_kwargs
             )
-            
+
+    def space_initialize_test(
+            self,
+            validation_split,
+            epochs,
+            **fit_kwargs
+        ):
+            self.hypermodel.hypermodel.set_fit_args(validation_split, epochs=epochs)
+
+            # Populate initial search space.
+            hp = self.oracle.get_space()
+            dataset = fit_kwargs["x"]
+            self._prepare_model_IO(hp, dataset=dataset)
+            self.hypermodel.build(hp)
+            self.oracle.update_space(hp)

@@ -18,12 +18,14 @@ from autokeras import blocks
 from autokeras import graph as graph_module
 from autokeras import pipeline
 from autokeras import tuners
+from autokeras import auto_model
 from autokeras.engine import head as head_module
 from autokeras.engine import node as node_module
 from autokeras.engine import tuner
 from autokeras.nodes import Input
 from autokeras.utils import data_utils
 from autokeras.utils import utils
+from keras_tuner import HyperParameters
 
 from ..tune.base import ModelSelection
 
@@ -113,11 +115,13 @@ class HyperHyperModel(object):
         objective: str = "val_loss",
         overwrite: bool = False,
         max_model_size: Optional[int] = None,
+        hyperparameters: Optional[HyperParameters] = None,
         **kwargs):
         if isinstance(tuner, str):
             tuner = get_tuner_class(tuner)
         self.tuner = tuner(
             hypermodel=self.graph,
+            hyperparameters=hyperparameters,
             model_selection=self.model_selection,
             overwrite=overwrite,
             objective=objective,
@@ -458,3 +462,22 @@ class HyperHyperModel(object):
             with trained weights.
         """
         return self.tuner.get_best_model()
+
+    def test_tuner_space(
+        self,
+        x,
+        y,
+        batch_size=32,
+        epochs=100,
+        **kwargs
+    ):
+        dataset, validation_data = self._convert_to_dataset(
+            x=x, y=y, validation_data=None, batch_size=batch_size
+        )
+        self._analyze_data(dataset)
+        self.tuner.space_initialize_test(
+            x=dataset,
+            validation_split=0.2,
+            epochs=epochs,
+            **kwargs
+        )
