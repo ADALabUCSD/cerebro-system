@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 duty=${1}
 set -e
 sudo apt-get update;
