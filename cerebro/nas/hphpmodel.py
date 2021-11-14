@@ -1,4 +1,6 @@
 
+from .tuners.randsearch import RandomSearch
+from .tuners.gridsearch import GridSearch
 from .tuners.hyperband import Hyperband
 from .sparktuner import SparkTuner
 from ..keras.spark.estimator import SparkEstimator
@@ -30,7 +32,9 @@ from keras_tuner import HyperParameters
 from ..tune.base import ModelSelection
 
 NAS_TUNERS = {
-    "hyperband": Hyperband
+    "hyperband": Hyperband,
+    "gridsearch": GridSearch,
+    "randomsearch": RandomSearch,
 }
 
 def get_tuner_class(tuner):
@@ -108,7 +112,8 @@ class HyperHyperModel(object):
         )
 
     def tuner_bind(self, 
-        tuner: Union[str, Type[SparkTuner]] = "hyperband",
+        # tuner: Union[str, Type[SparkTuner]] = "gridsearch",
+        tuner: str = "gridsearch",
         project_name: str = "test",
         max_trials: int = 100,
         directory: Union[str, Path, None] = None,
@@ -119,6 +124,9 @@ class HyperHyperModel(object):
         **kwargs):
         if isinstance(tuner, str):
             tuner = get_tuner_class(tuner)
+        else:
+            # return exception
+            pass
         self.tuner = tuner(
             hypermodel=self.graph,
             hyperparameters=hyperparameters,
@@ -250,7 +258,7 @@ class HyperHyperModel(object):
                 dataset, validation_split
             )
 
-        history = self.tuner.search(
+        self.tuner.search(
             x=dataset,
             epochs=epochs,
             callbacks=callbacks,
@@ -260,7 +268,7 @@ class HyperHyperModel(object):
             **kwargs
         )
 
-        return history
+        # return history
 
     def _adapt(self, dataset, hms, batch_size):
         if isinstance(dataset, tf.data.Dataset):

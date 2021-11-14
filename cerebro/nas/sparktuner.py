@@ -1,7 +1,6 @@
 from enum import auto
 from autokeras.auto_model import AutoModel
 from keras_tuner.engine.tuner import Tuner
-from pyspark.ml import param
 import tensorflow as tf
 import keras_tuner as kt
 from tensorflow._api.v2 import data
@@ -133,6 +132,8 @@ class SparkTuner(kt.engine.tuner.Tuner):
             self._prepare_model_IO(hp, dataset=dataset)
             self.hypermodel.build(hp)
             self.oracle.update_space(hp)
+            self.oracle.init_search_space()
+
             super().search(
                 epochs=epochs, callbacks=new_callbacks, verbose=verbose, **fit_kwargs
             )
