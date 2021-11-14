@@ -113,6 +113,7 @@ class HyperHyperModel(object):
 
     def tuner_bind(self, 
         # tuner: Union[str, Type[SparkTuner]] = "gridsearch",
+        parallelism = None,
         tuner: str = "gridsearch",
         project_name: str = "test",
         max_trials: int = 100,
@@ -127,7 +128,10 @@ class HyperHyperModel(object):
         else:
             # return exception
             pass
+        if parallelism is None:
+            parallelism = self.model_selection.backend._num_workers()
         self.tuner = tuner(
+            parallelism = parallelism,
             hypermodel=self.graph,
             hyperparameters=hyperparameters,
             model_selection=self.model_selection,

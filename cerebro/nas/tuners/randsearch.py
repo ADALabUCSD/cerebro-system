@@ -51,6 +51,9 @@ class RandomSearchOracle(CerebroOracle):
             trials.append(trial)
         return trials
     
+    def _init_search_space(self):
+        pass
+
 class RandomSearch(SparkTuner):
     def __init__(
         self, 

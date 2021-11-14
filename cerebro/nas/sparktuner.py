@@ -1,14 +1,19 @@
 from enum import auto
 from autokeras.auto_model import AutoModel
 from keras_tuner.engine.tuner import Tuner
+from pyspark.ml.param import Params
 import tensorflow as tf
 import keras_tuner as kt
 from tensorflow._api.v2 import data
+from tensorflow.python.util import nest
+from tensorflow.keras.layers.experimental import preprocessing
+import collections
 
 from tensorflow.keras import callbacks as tf_callbacks
 from autokeras.utils import utils, data_utils
 from autokeras.engine.tuner import AutoTuner
-from ..tune.base import ModelSelection
+from ..tune.base import ModelSelection, update_model_results
+from keras_tuner.engine import trial as trial_lib
 
 
 class SparkTuner(kt.engine.tuner.Tuner):
@@ -25,10 +30,13 @@ class SparkTuner(kt.engine.tuner.Tuner):
             self,
             oracle,
             hypermodel,
+            parallelism,
             model_selection: ModelSelection,
             **kwargs):
         self._finished = False
         self.model_selection = model_selection
+        self.parallelsim = parallelism
+        self.search_results = {}
         super().__init__(oracle, hypermodel, **kwargs)
 
     def _populate_initial_space(self):
@@ -92,10 +100,6 @@ class SparkTuner(kt.engine.tuner.Tuner):
         ):
             """Search for the best HyperParameters.
 
-            If there is not early-stopping in the callbacks, the early-stopping callback
-            is injected to accelerate the search process. At the end of the search, the
-            best model will be fully trained with the specified number of epochs.
-
             # Arguments
                 callbacks: A list of callback functions. Defaults to None.
                 validation_split: Float.
@@ -134,9 +138,66 @@ class SparkTuner(kt.engine.tuner.Tuner):
             self.oracle.update_space(hp)
             self.oracle.init_search_space()
 
-            super().search(
-                epochs=epochs, callbacks=new_callbacks, verbose=verbose, **fit_kwargs
+            # super().search(
+            #     epochs=epochs, callbacks=new_callbacks, verbose=verbose, **fit_kwargs
+            # )
+            self.on_search_begin()
+            while True:
+                trials = self.oracle.create_trials(self.parallelsim)
+                running_trials = []
+                for trial in trials:
+                    if trial.status != trial_lib.TrialStatus.STOPPED:
+                        running_trials.append(trial)
+                if len(running_trials) == 0:
+                    break
+                self.begin_trials(trials)
+                self.run_trials(trials, epochs, **fit_kwargs)
+                self.end_trials(trials)
+
+    def run_trials(self, trials, epochs, **fit_kwargs):
+        estimators = self.trials2estimators(trials, fit_kwargs["x"])
+        ms = self.model_selection
+        est_results = {model.getRunId():{'trialId':trial.trial_id} for trial, model in zip(trials, estimators)}
+
+        for epoch in range(epochs):
+            train_epoch = ms.backend.train_for_one_epoch(estimators, ms.store, ms.feature_cols, ms.label_cols)
+            update_model_results(est_results, train_epoch)
+
+            val_epoch = ms.backend.train_for_one_epoch(estimators, ms.store, ms.feature_cols, ms.label_cols, is_train=False)
+            update_model_results(est_results, val_epoch)
+        
+        for est in estimators:
+            self.oracle.update_trial(
+                est_results[est.getRunId()]['trialId'],
+                est_results[est.getRunId()]['val'+ms.evaluation_metric[-1]]
             )
+            self.search_results[est.getRunId()] = est_results[est.getRunId()]
+
+    def begin_trials(self, trials):
+        for trial in trials:
+            super().on_trial_begin(trial)
+
+    def end_trials(self, trials):
+        for trial in trials:
+            super().on_trial_end(trial)
+
+    
+    def trials2estimators(self, trials, dataset):
+        ests = []
+        for trial in trials:
+            self._prepare_model_IO(trial.hyperparameters, dataset=dataset)
+            model = self.hypermodel.build(trial.hyperparameters)
+            self.adapt(model, dataset)
+            params = {
+                'model': model,
+                'optimizer': model.optimizer, # keras opt not str
+                'loss': self.hypermodel._get_loss(), # not sure
+                'metrics': self.hypermodel._get_metrics(),
+                'bs': self.hypermodel.batch_size
+            }
+            est = self.model_selection._estimator_gen_fn_wrapper(params)
+            ests.append(est)
+        return ests
 
     def space_initialize_test(
             self,
@@ -152,3 +213,40 @@ class SparkTuner(kt.engine.tuner.Tuner):
             self._prepare_model_IO(hp, dataset=dataset)
             self.hypermodel.build(hp)
             self.oracle.update_space(hp)
+
+    @staticmethod
+    def adapt(model, dataset):
+        """Adapt the preprocessing layers in the model."""
+        # Currently, only support using the original dataset to adapt all the
+        # preprocessing layers before the first non-preprocessing layer.
+        # TODO: Use PreprocessingStage for preprocessing layers adapt.
+        # TODO: Use Keras Tuner for preprocessing layers adapt.
+        x = dataset.map(lambda x, y: x)
+
+        def get_output_layers(tensor):
+            output_layers = []
+            tensor = nest.flatten(tensor)[0]
+            for layer in model.layers:
+                if isinstance(layer, tf.keras.layers.InputLayer):
+                    continue
+                input_node = nest.flatten(layer.input)[0]
+                if input_node is tensor:
+                    if isinstance(layer, preprocessing.PreprocessingLayer):
+                        output_layers.append(layer)
+            return output_layers
+
+        dq = collections.deque()
+
+        for index, input_node in enumerate(nest.flatten(model.input)):
+            in_x = x.map(lambda *args: nest.flatten(args)[index])
+            for layer in get_output_layers(input_node):
+                dq.append((layer, in_x))
+
+        while len(dq):
+            layer, in_x = dq.popleft()
+            layer.adapt(in_x)
+            out_x = in_x.map(layer)
+            for next_layer in get_output_layers(layer.output):
+                dq.append((next_layer, out_x))
+
+        return model
