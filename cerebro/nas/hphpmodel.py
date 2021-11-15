@@ -53,7 +53,6 @@ class HyperHyperModel(object):
         self,
         inputs: Union[Input, List[Input]],
         outputs: Union[head_module.Head, node_module.Node, list],
-        overwrite: bool = False,
         seed: Optional[int] = None,
         **kwargs
     ):
@@ -66,7 +65,6 @@ class HyperHyperModel(object):
         # TODO: Support passing a tuner instance.
         # Initialize the hyper_graph.
         self.graph = self._build_graph()
-        self.overwrite = overwrite
         self._heads = [output_node.in_blocks[0] for output_node in self.outputs]
 
     def resource_bind(self,

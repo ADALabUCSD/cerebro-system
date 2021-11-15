@@ -19,6 +19,9 @@ from __future__ import absolute_import
 
 class Backend(object):
     """Interface for remote execution of the distributed training function.
+
+    A custom backend can be used in cases where the training environment running Cerebro is different
+    from the Spark application running the CerebroEstimator.
     """
 
     def _num_workers(self):
@@ -29,18 +32,19 @@ class Backend(object):
         """Initialize workers"""
         raise NotImplementedError()
 
-    def initialize_data_loaders(self, store, schema_fields):
+    def initialize_data_loaders(self, store, dataset_idx, schema_fields):
         """Initialize data loaders"""
         raise NotImplementedError()
 
-    def train_for_one_epoch(self, models, store, feature_col, label_col, is_train=True):
+    def train_for_one_epoch(self, models, store, dataset_idx, feature_col, label_col, is_train=True):
         """
         Takes a set of Keras models and trains for one epoch. If is_train is False, validation is performed
          instead of training.
         :param models:
-        :param store: single store object common for all models or a dictionary of store objects indexed by model id.
-        :param feature_col: single list of feature columns common for all models or a dictionary of feature lists indexed by model id.
-        :param label_col: single list of label columns common for all models or a dictionary of label lists indexed by model id.
+        :param store:
+        :param dataset_idx:
+        :param feature_col:
+        :param label_col:
         :param is_train:
         """
         raise NotImplementedError()
@@ -49,12 +53,15 @@ class Backend(object):
         """Teardown workers"""
         raise NotImplementedError()
 
-    def prepare_data(self, store, dataset, validation, compress_sparse=False, verbose=2):
+    def prepare_data(self, store, dataset, validation, label_columns=['label'], feature_columns=['features'],
+                     compress_sparse=False, verbose=2):
         """
         Prepare data by writing out into persistent storage
         :param store:
         :param dataset:
         :param validation:
+        :param label_columns:
+        :param feature_columns:
         :param compress_sparse:
         :param verbose:
         """

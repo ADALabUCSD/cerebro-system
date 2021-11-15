@@ -24,11 +24,7 @@ import pyspark.sql.functions as f
 from pyspark.ml.linalg import DenseVector, SparseVector, Vector, VectorUDT
 from pyspark.sql.types import ArrayType, BinaryType, BooleanType, FloatType, DoubleType, \
     IntegerType, LongType, NullType, StringType
-try:
-    # Spark 3.0 moved to a pandas submodule
-    from pyspark.sql.pandas.types import from_arrow_type
-except ImportError:
-    from pyspark.sql.types import from_arrow_type
+from pyspark.sql.types import from_arrow_type
 
 from petastorm.unischema import Unischema, UnischemaField, dict_to_spark_row
 from petastorm.codecs import ScalarCodec, NdarrayCodec
@@ -110,7 +106,7 @@ def spark_to_petastorm_type(dtype):
     elif dtype == IntegerType:
         return np.int32
     elif dtype == StringType:
-        return np.string_
+        return np.uint8
     elif dtype == FloatType:
         return np.float32
     elif dtype == BinaryType:
@@ -137,6 +133,50 @@ def petastorm_unischema_codec(shape, type):
         return ScalarCodec(type())
     else:
         return NdarrayCodec()
+
+
+# def check_shape_compatibility(metadata, feature_columns, label_columns,
+#                               input_shapes=None, output_shapes=None):
+#     # Check for model and input type incompatibility. Columns must have the same size
+#     # (total number of elements) of the corresponding inputs.
+#     feature_count = len(feature_columns)
+#     if input_shapes is not None:
+#         if feature_count != len(input_shapes):
+#             raise ValueError('Feature column count {features} must equal '
+#                              'model inputs count {inputs}'
+#                              .format(features=feature_count, inputs=len(input_shapes)))
+#
+#         for idx, col, input_shape in zip(range(feature_count), feature_columns, input_shapes):
+#             col_size = metadata[col]['shape']
+#             if col_size is None:
+#                 # When training directly on Parquet, we do not compute shape metadata
+#                 continue
+#
+#             input_size = abs(np.prod(input_shape))
+#             if col_size != input_size:
+#                 raise ValueError(
+#                     'Feature column \'{col}\' with size {feature} must equal that of the '
+#                     'model input at index {idx} with size {input}'
+#                         .format(col=col, feature=col_size, idx=idx, input=input_size))
+#
+#     if output_shapes is not None:
+#         label_count = len(label_columns)
+#         if label_count != len(output_shapes):
+#             raise ValueError('Label column count {labels} must equal '
+#                              'model outputs count {outputs}'
+#                              .format(labels=label_count, outputs=len(output_shapes)))
+#
+#         for idx, col, output_shape in zip(range(label_count), label_columns, output_shapes):
+#             col_size = metadata[col]['shape']
+#             if col_size is None:
+#                 # When training directly on Parquet, we do not compute shape metadata
+#                 continue
+#
+#             output_size = abs(np.prod(output_shape))
+#             if col_size != output_size:
+#                 raise ValueError('Label column \'{col}\' with size {label} must equal that of the '
+#                                  'model output at index {idx} with size {output}'
+#                                  .format(col=col, label=col_size, idx=idx, output=output_size))
 
 
 def _get_col_info(df):
@@ -336,7 +376,7 @@ def _get_dataset_info(dataset, dataset_id, path):
     return total_rows, total_byte_size
 
 
-def get_simple_meta_from_parquet(store, schema_cols, dataset_idx=None):
+def get_simple_meta_from_parquet(store, schema_cols, sample_weight_col=None, dataset_idx=None):
     train_data_path = store.get_train_data_path(dataset_idx)
     validation_data_path = store.get_val_data_path(dataset_idx)
 
@@ -351,6 +391,9 @@ def get_simple_meta_from_parquet(store, schema_cols, dataset_idx=None):
     if store.exists(validation_data_path):
         val_data = store.get_parquet_dataset(validation_data_path)
         val_rows, _ = _get_dataset_info(val_data, 'validation', validation_data_path)
+
+    if sample_weight_col:
+        schema_cols.append(sample_weight_col)
 
     metadata = {}
     for col in schema_cols:
@@ -397,7 +440,8 @@ def _train_val_split(df, validation):
     return train_df, val_df, validation_ratio
 
 
-def _create_dataset(store, df, validation, compress_sparse,
+def _create_dataset(store, df, feature_columns, label_columns,
+                    validation, sample_weight_col, compress_sparse,
                     num_partitions, num_workers, dataset_idx, parquet_row_group_size_mb, verbose):
     train_data_path = store.get_train_data_path(dataset_idx)
     val_data_path = store.get_val_data_path(dataset_idx)
@@ -408,8 +452,9 @@ def _create_dataset(store, df, validation, compress_sparse,
         print('CEREBRO => Time: {}, Val Data Path: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                                              val_data_path))
 
-    schema_cols = df.columns
-
+    schema_cols = feature_columns + label_columns
+    if sample_weight_col:
+        schema_cols.append(sample_weight_col)
     if isinstance(validation, str):
         schema_cols.append(validation)
     df = df[schema_cols]
@@ -479,7 +524,8 @@ def _create_dataset(store, df, validation, compress_sparse,
                 .mode('overwrite') \
                 .parquet(val_data_path)
 
-    train_rows, val_rows, pq_metadata, avg_row_size = get_simple_meta_from_parquet(store, df.columns, dataset_idx)
+    train_rows, val_rows, pq_metadata, avg_row_size = get_simple_meta_from_parquet(
+        store, label_columns + feature_columns, sample_weight_col, dataset_idx)
 
     if verbose:
         print(
@@ -511,8 +557,8 @@ def check_validation(validation, df=None):
                              .format(type(validation)))
 
 
-def prepare_data(num_workers, store, df,
-                 validation=None, compress_sparse=False,
+def prepare_data(num_workers, store, df, label_columns, feature_columns,
+                 validation=None, sample_weight_col=None, compress_sparse=False,
                  num_partitions=None, parquet_row_group_size_mb=8, dataset_idx=None, verbose=0):
     check_validation(validation, df=df)
     num_partitions = num_partitions or df.rdd.getNumPartitions()
@@ -520,11 +566,26 @@ def prepare_data(num_workers, store, df,
         raise ValueError('num_workers={} and partitions_per_process: {} must both be > 0'
                          .format(num_workers, num_partitions))
 
+    if not label_columns:
+        raise ValueError('Parameter label_columns cannot be None or empty')
+
     if verbose >= 1:
         print('CEREBRO => Time: {}, Num Partitions: {}'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                                                               num_partitions))
 
-    return _create_dataset(store, df, validation, compress_sparse,
+    for col in label_columns:
+        if col not in df.columns:
+            raise ValueError('Label column {} does not exist in the DataFrame'.format(col))
+
+    if feature_columns is None:
+        feature_columns = [col for col in df.columns if col not in set(label_columns)]
+    else:
+        for col in feature_columns:
+            if col not in df.columns:
+                raise ValueError('Feature column {} does not exist in the DataFrame'.format(col))
+
+    return _create_dataset(store, df, feature_columns, label_columns,
+                           validation, sample_weight_col, compress_sparse,
                            num_partitions, num_workers, dataset_idx, parquet_row_group_size_mb, verbose)
 
 

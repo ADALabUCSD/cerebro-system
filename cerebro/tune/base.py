@@ -19,8 +19,9 @@ import tensorflow as tf
 from tensorboard.plugins.hparams import api as hp
 import datetime
 import numpy as np
-from ..commons.util import fix_huggingface_layer_methods_and_add_to_custom_objects
+
 from ..backend import constants
+
 
 class _HP(object):
     def sample_value(self):
@@ -166,7 +167,7 @@ class ModelSelection(object):
 
         self.backend = backend
         self.store = store
-        self.store = store
+        self.remote_store = store.to_remote("logs", None)
         self.validation = validation
         self.estimator_gen_fn = estimator_gen_fn
         self.label_cols = label_columns
@@ -182,7 +183,8 @@ class ModelSelection(object):
         """
         if self.verbose >= 1: print(
             'CEREBRO => Time: {}, Preparing Data'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        _, _, metadata, _ = self.backend.prepare_data(self.store, df, self.validation)
+        _, _, metadata, _ = self.backend.prepare_data(
+            self.store, df, self.validation, label_columns=self.label_cols, feature_columns=self.feature_cols)
 
         if self.verbose >= 1: print(
             'CEREBRO => Time: {}, Initializing Workers'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
@@ -192,22 +194,21 @@ class ModelSelection(object):
         if self.verbose >= 1: print(
             'CEREBRO => Time: {}, Initializing Data Loaders'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        self.backend.initialize_data_loaders(self.store, self.feature_cols + self.label_cols)
+        self.backend.initialize_data_loaders(self.store, None, self.feature_cols + self.label_cols)
 
         try:
             if self.verbose >= 1: print('CEREBRO => Time: {}, Launching Model Selection Workload'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            result = self._fit_on_prepared_data(metadata)
+            result = self._fit_on_prepared_data(None, metadata)
             return result
         finally:
             # teardown the backend workers
             if self.verbose >= 1: print(
                 'CEREBRO => Time: {}, Terminating Workers'.format(
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            if self.backend is not None:
-                self.backend.teardown_workers()
+            self.backend.teardown_workers()
 
-    def fit_on_prepared_data(self):
+    def fit_on_prepared_data(self, dataset_index=None):
         """
          Execute the model selection/AutoML workload on already prepared data.
 
@@ -223,34 +224,53 @@ class ModelSelection(object):
         if self.verbose >= 1: print(
             'CEREBRO => Time: {}, Initializing Data Loaders'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        self.backend.initialize_data_loaders(self.store, self.feature_cols + self.label_cols)
+        self.backend.initialize_data_loaders(self.store, dataset_index, self.feature_cols + self.label_cols)
 
         try:
             if self.verbose >= 1: print('CEREBRO => Time: {}, Launching Model Selection Workload'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            result = self._fit_on_prepared_data(metadata)
+            result = self._fit_on_prepared_data(dataset_index, metadata)
             return result
         finally:
             # teardown the backend workers
             if self.verbose >= 1: print(
                 'CEREBRO => Time: {}, Terminating Workers'.format(
                     datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-            if self.backend is not None:
-                self.backend.teardown_workers()
+            self.backend.teardown_workers()
 
     def _fit_on_prepared_data(self):
         raise NotImplementedError('method not implemented')
 
     def _estimator_gen_fn_wrapper(self, params):
-        return estimator_gen_fn_wrapper(self.estimator_gen_fn, params, self.feature_cols, self.label_cols, self.store, self.verbose)
+        # Disable GPUs when building the model to prevent memory leaks
+        if LooseVersion(tf.__version__) >= LooseVersion('2.0.0'):
+            # See https://github.com/tensorflow/tensorflow/issues/33168
+            os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        else:
+            tf.keras.set_session(tf.Session(config=tf.ConfigProto(device_count={'GPU': 0})))
+
+        est = self.estimator_gen_fn(params)
+        est.setFeatureCols(self.feature_cols)
+        est.setLabelCols(self.label_cols)
+        est.setStore(self.store)
+        est.setVerbose(self.verbose)
+        return est
 
     def _log_epoch_metrics_to_tensorboard(self, estimators, estimator_results):
         # logging to TensorBoard
-        log_epoch_metrics_to_tensorboard(estimators, estimator_results, self.store, self.verbose)
+        with self.remote_store.get_local_logs_dir() as logs_dir:
+            for est in estimators:
+                log_model_epoch_metrics(est.getRunId(), os.path.join(logs_dir, est.getRunId()),
+                                        estimator_results[est.getRunId()],
+                                        est.getEpochs(), self.verbose)
+            self.remote_store.sync(logs_dir)
 
     def _log_hp_to_tensorboard(self, estimators, hparams):
         # logging to TensorBoard
-        log_hp_to_tensorboard(estimators, hparams, self.store, self.verbose)
+        with self.remote_store.get_local_logs_dir() as logs_dir:
+            for i, est in enumerate(estimators):
+                log_model_hps(os.path.join(logs_dir, est.getRunId()), est.getRunId(), hparams[i], self.verbose)
+            self.remote_store.sync(logs_dir)
 
 
 class ModelSelectionResult(object):
@@ -333,7 +353,7 @@ def log_model_hps(logdir, model_id, hparams, verbose=1):
     with tf.summary.create_file_writer(logdir).as_default():
         hp.hparams(hparams, trial_id=model_id)
 
-    if verbose >= 1:
+    if verbose >= 2:
         print(
             ('CEREBRO => Time: {}, Model: {}, ' + ", ".join([k + ": {}" for k in hparams])).format(
                 *([
@@ -350,13 +370,13 @@ def log_model_epoch_metrics(model_id, logdir, metrics, step_number, verbose=1):
     :param logdir:
     :param metrics:
     :param step_number:
-    :param verbose:log_epoch_metrics_to_tensorboard(estimators, estimator_results, store, verbose)
+    :param verbose:
     """
     with tf.summary.create_file_writer(logdir).as_default():
         for key in metrics:
             tf.summary.scalar(key, metrics[key][step_number - 1], step=step_number)
 
-    if verbose >= 1:
+    if verbose >= 2:
         print(
             ('CEREBRO => Time: {}, Model: {}, Epoch: {}, ' + ", ".join([k + ": {}" for k in metrics])).format(
                 *([
@@ -404,66 +424,3 @@ def update_model_results(estimator_results, epoch_results):
                 estimator_results[model_id][k].append(res[k])
             else:
                 estimator_results[model_id][k] = [res[k]]
-
-def log_hp_to_tensorboard(estimators, hparams, store, verbose):
-    """
-    Helper method to log hparams to the TensorBoard
-    :param estimators:
-    :param hparams:
-    :param store: A single store common for all estimators or a dictionary containing stores for each estimator indexed by model id.
-    :param verbose:
-    """
-    for i, est in enumerate(estimators):
-        if type(store) == dict:
-            a_store = store[est.getRunId()]
-        else:
-            a_store = store
-        remote_store = a_store.to_remote(est.getRunId(), None)
-        with remote_store.get_local_output_dir() as logs_dir:
-            log_model_hps(logs_dir, est.getRunId(), hparams[i], verbose)
-        remote_store.sync(logs_dir)
-
-def log_epoch_metrics_to_tensorboard(estimators, estimator_results, store, verbose):
-    """
-    Helper method to log hparams to the TensorBoard
-    :param estimators:
-    :param estimator_results:
-    :param store: A single store common for all estimators or a dictionary containing stores for each estimator indexed by model id.
-    :param verbose:
-    """
-    for est in estimators:
-        if type(store) == dict:
-            a_store = store[est.getRunId()]
-        else:
-            a_store = store
-        remote_store = a_store.to_remote(est.getRunId(), None)
-        with remote_store.get_local_output_dir() as logs_dir:
-            log_model_epoch_metrics(est.getRunId(), logs_dir, estimator_results[est.getRunId()], est.getEpochs(), verbose)
-        remote_store.sync(logs_dir)
-
-
-def estimator_gen_fn_wrapper(estimator_gen_fn, params, feature_cols, label_cols, store, verbose):
-    """
-    Function wrapping a user provided estimator gen function.
-    """
-    # Disable GPUs when building the model to prevent memory leaks
-    if LooseVersion(tf.__version__) >= LooseVersion('2.0.0'):
-        # See https://github.com/tensorflow/tensorflow/issues/33168
-        os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
-    else:
-        tf.keras.set_session(tf.Session(config=tf.ConfigProto(device_count={'GPU': 0})))
-
-    tf.keras.backend.clear_session()
-    est = estimator_gen_fn(params)
-    est.setHyperParams(params)
-    est.setFeatureCols(feature_cols)
-    est.setLabelCols(label_cols)
-    est.setStore(store)
-    est.setVerbose(verbose)
-
-    # Workaround for the issue with huggingface layers needing a python
-    # object as config (not a dict) and explicit definition of get_config method.
-    # We monkey patch the __init__ method get_config methods of such layers.
-    fix_huggingface_layer_methods_and_add_to_custom_objects(est)
-
-    return est

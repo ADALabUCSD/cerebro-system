@@ -89,6 +89,7 @@ class SparkTuner(kt.engine.tuner.Tuner):
             hist = hist + epoch_rel[k]
         return hist
 
+    def search
 
     def search(
             self,

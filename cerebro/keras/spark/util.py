@@ -34,10 +34,11 @@ class TFKerasUtil(object):
 
     @staticmethod
     def fit_sub_epoch_fn():
-        def fn(starting_epoch, model, train_data, callbacks, verbose):
+        def fn(starting_epoch, model, train_data, steps_per_epoch, callbacks, verbose):
             return model.fit(
                 train_data,
                 initial_epoch=starting_epoch,
+                steps_per_epoch=steps_per_epoch,
                 callbacks=callbacks,
                 verbose=verbose,
                 epochs=starting_epoch + 1)
@@ -46,35 +47,39 @@ class TFKerasUtil(object):
 
     @staticmethod
     def eval_sub_epoch_fn():
-        def fn(_, model, val_data, callbacks, verbose):
-            return model.evaluate(val_data, callbacks=callbacks, verbose=verbose)
+        def fn(_, model, val_data, validation_steps, callbacks, verbose):
+            return model.evaluate(val_data, steps=validation_steps, callbacks=callbacks,
+                                  verbose=verbose)
 
         return fn
 
     @staticmethod
-    def make_dataset_fn(feature_columns, label_columns, metadata,
-                        input_shapes, output_shapes, input_names, output_names, batch_size):
+    def make_dataset_fn(feature_columns, label_columns, sample_weight_col, metadata,
+                        input_shapes, output_shapes, output_names, batch_size):
         # Check if any of the columns are only SparseVector
-        has_sparse_col = any(metadata[col]['is_sparse_vector_only'] for col in label_columns + feature_columns)
+        has_sparse_col = any(metadata[col]['is_sparse_vector_only']
+                             for col in label_columns + feature_columns)
 
-        reshape = TFKerasUtil._reshape_fn(feature_columns, label_columns, metadata)
-        prep_data_tf_keras = _prep_data_fn(has_sparse_col, input_names, label_columns, input_shapes, output_shapes, output_names)
+        reshape = TFKerasUtil._reshape_fn(
+            sample_weight_col, feature_columns, label_columns, metadata)
+        prep_data_tf_keras = _prep_data_fn(
+            has_sparse_col, sample_weight_col, feature_columns,
+            label_columns, input_shapes, output_shapes, output_names)
 
-        def fn(reader, transformation_fn):
+        def fn(reader, shuffle_buffer_size, shuffle=False):
             from petastorm.tf_utils import make_petastorm_dataset
-            dataset = make_petastorm_dataset(reader)
+            dataset = make_petastorm_dataset(reader)#.unbatch()
+
+            if shuffle:
+                dataset = dataset.shuffle(shuffle_buffer_size)
 
             # Decompress sparse data if necessary
             if has_sparse_col:
                 dataset = dataset.batch(1).map(reshape, num_parallel_calls=tf.data.experimental.AUTOTUNE)
 
-            if transformation_fn:
-                # user provided custom transformation function
-                dataset = transformation_fn(dataset)
-
-            dataset = dataset.batch(batch_size).map(prep_data_tf_keras, num_parallel_calls=tf.data.experimental.AUTOTUNE)
-
-            return dataset.prefetch(tf.data.experimental.AUTOTUNE)
+            dataset = dataset.batch(batch_size) \
+                .map(prep_data_tf_keras, num_parallel_calls=tf.data.experimental.AUTOTUNE)
+            return dataset
 
         return fn
 
@@ -119,12 +124,15 @@ class TFKerasUtil(object):
         return _serialize_param(*args, **kwargs)
 
     @staticmethod
-    def _reshape_fn(feature_columns, label_columns, metadata):
+    def _reshape_fn(sample_weight_col, feature_columns, label_columns, metadata):
         CUSTOM_SPARSE = constants.CUSTOM_SPARSE
         custom_sparse_to_dense = _custom_sparse_to_dense_fn()
 
         def reshape(row):
             new_row = {}
+            if sample_weight_col:
+                new_row[sample_weight_col] = getattr(row, sample_weight_col)
+
             for col in feature_columns + label_columns:
                 v = getattr(row, col)
                 intermediate_format = metadata[col]['intermediate_format']
@@ -138,27 +146,47 @@ class TFKerasUtil(object):
         return reshape
 
 
-def _prep_data_fn(has_sparse_col, input_names, label_columns,
+def _prep_data_fn(has_sparse_col, sample_weight_col, feature_columns, label_columns,
                   input_shapes, output_shapes, output_names):
+    def _get_from_dict(row, col):
+        return row[col]
 
-    def get_col_from_row_fn(row, col):
-        if type(row) == dict:
-            return row[col]
-        else:
-            return getattr(row, col)
+    def _get_from_named_tuple(row, col):
+        return getattr(row, col)
 
-    num_inputs = len(input_names)
+    if has_sparse_col:
+        get_col_from_row_fn = _get_from_dict
+    else:
+        get_col_from_row_fn = _get_from_named_tuple
+
+    num_inputs = len(feature_columns)
     num_labels = len(label_columns)
 
     def prep(row):
-        return (
-            tuple(
-                tf.reshape(get_col_from_row_fn(row, input_names[i]), input_shapes[i])
-                for i
-                in range(num_inputs)),
-            # No reshaping for the outputs.
-            tuple(get_col_from_row_fn(row, label_columns[j]) for j in range(num_labels))
-        )
+        if sample_weight_col:
+            sample_weight = get_col_from_row_fn(row, sample_weight_col)
+            return (
+                tuple(
+                    tf.reshape(get_col_from_row_fn(row, feature_columns[i]), input_shapes[i])
+                    for i
+                    in range(num_inputs)),
+                tuple(
+                    tf.reshape(get_col_from_row_fn(row, label_columns[j]), output_shapes[j]) for
+                    j
+                    in range(num_labels)),
+                {name: tf.reshape(sample_weight, [-1]) for name in output_names}
+            )
+        else:
+            return (
+                tuple(
+                    tf.reshape(get_col_from_row_fn(row, feature_columns[i]), input_shapes[i])
+                    for i
+                    in range(num_inputs)),
+                tuple(
+                    tf.reshape(get_col_from_row_fn(row, label_columns[j]), output_shapes[j]) for
+                    j
+                    in range(num_labels))
+            )
 
     return prep
 
