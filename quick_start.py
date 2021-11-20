@@ -12,7 +12,6 @@ from cerebro.tune import hp_choice, hp_uniform, hp_quniform, hp_loguniform, hp_q
 
 import tensorflow as tf
 from pyspark.sql import SparkSession
-import numpy as np
 
 
 spark = SparkSession \
@@ -23,11 +22,13 @@ spark = SparkSession \
 ...
 
 backend = SparkBackend(spark_context=spark.sparkContext, num_workers=1)
-store = LocalStore(prefix_path='/Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/test')
+store = LocalStore(prefix_path='/Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/experiments')
 
-df = spark.read.csv("/Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/Iris_clean.csv", header=True)
+
+# Initialize input DataFrames.
+# You can download sample dataset from https://apache.googlesource.com/spark/+/master/data/mllib/sample_libsvm_data.txt
+df = spark.read.format("libsvm").load("/Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/sample_libsvm_data.txt").repartition(8)
 train_df, test_df = df.randomSplit([0.8, 0.2])
-
 
 # Define estimator generating function.
 # Input: Dictionary containing parameter values
@@ -38,6 +39,7 @@ def estimator_gen_fn(params):
     model.add(tf.keras.layers.Dense(100, input_dim=692))
     model.add(tf.keras.layers.Dense(1, input_dim=100))
     model.add(tf.keras.layers.Activation('sigmoid'))
+
     optimizer = tf.keras.optimizers.Adam(lr=params['lr'])
     loss = 'binary_crossentropy'
 
@@ -59,7 +61,7 @@ search_space = {
 # Instantiate TPE (Tree of Parzan Estimators a.k.a., HyperOpt) model selection object.
 model_selection = TPESearch(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,
             num_models=30, num_epochs=10, validation=0.25, evaluation_metric='loss',
-            feature_columns=None, label_columns=['Species'])
+            feature_columns=['features'], label_columns=['label'])
 
 # Perform model selection. Returns best model.
 model = model_selection.fit(train_df)
@@ -79,7 +81,7 @@ all_model_training_history = model.get_all_model_history()
 keras_model = model.keras()
 pred = keras_model.predict([np.ones([1, 692], dtype=np.float32)])
 # Save the keras checkpoint file.
-# keras_model.save(ckpt_path)
+keras_model.save(ckpt_path)
 
 # Convert all the model to Keras.
 all_models_keras = [m.keras() for m in all_models]

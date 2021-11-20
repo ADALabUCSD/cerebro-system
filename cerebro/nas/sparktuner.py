@@ -89,13 +89,12 @@ class SparkTuner(kt.engine.tuner.Tuner):
             hist = hist + epoch_rel[k]
         return hist
 
-    def search
 
     def search(
             self,
             epochs=None,
             callbacks=None,
-            validation_split=0,
+            validation_split=0.2,
             verbose=1,
             **fit_kwargs
         ):

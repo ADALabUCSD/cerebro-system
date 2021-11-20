@@ -110,7 +110,6 @@ class HyperHyperModel(object):
         )
 
     def tuner_bind(self, 
-        # tuner: Union[str, Type[SparkTuner]] = "gridsearch",
         parallelism = None,
         tuner: str = "gridsearch",
         project_name: str = "test",
@@ -129,8 +128,8 @@ class HyperHyperModel(object):
         if parallelism is None:
             parallelism = self.model_selection.backend._num_workers()
         self.tuner = tuner(
-            parallelism = parallelism,
             hypermodel=self.graph,
+            parallelism = parallelism,
             hyperparameters=hyperparameters,
             model_selection=self.model_selection,
             overwrite=overwrite,
@@ -198,7 +197,6 @@ class HyperHyperModel(object):
         batch_size=32,
         epochs=None,
         callbacks=None,
-        validation_data=None,
         verbose=1,
         **kwargs
     ):
@@ -206,38 +204,28 @@ class HyperHyperModel(object):
         """
         Setup cluster before calling the tuner
         """
-        backend = self.model_selection.backend
+        ms = self.model_selection
+        backend = ms.backend
 
-        if self.verbose >= 1: print(
+        if ms.verbose >= 1: print(
             'CEREBRO => Time: {}, Preparing Data'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        _, _, metadata, _ = backend.prepare_data(self.store, df, self.validation)
+        _, _, metadata, _ = backend.prepare_data(ms.store, df, ms.validation, label_columns=ms.label_cols, feature_columns=ms.feature_cols)
 
-        if self.verbose >= 1: print(
+        if ms.verbose >= 1: print(
             'CEREBRO => Time: {}, Initializing Workers'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         # initialize backend and data loaders
         backend.initialize_workers()
 
-        if self.verbose >= 1: print(
+        if ms.verbose >= 1: print(
             'CEREBRO => Time: {}, Initializing Data Loaders'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        backend.initialize_data_loaders(self.store, self.feature_cols + self.label_cols)
+        backend.initialize_data_loaders(ms.store, None, ms.feature_cols + ms.label_cols)
 
-        # Check validation information.
-        if not self.model_selection.validation and not validation_data:
-            raise ValueError(
-                "Either validation_data or a non-zero validation_split "
-                "should be provided."
-            )
-
-        if validation_data:
-            validation_split = 0
-        else:
-            validation_split = self.model_selection.validation
-        x = np.array(df.select([self.tuner.model_section.feature_cols]).collect())
-        y = np.array(df.select([self.tuner.model_section.label_cols]).collect())
+        x = np.array(df.select(ms.feature_cols).collect())
+        y = np.array(df.select(ms.label_cols).collect())
 
         dataset, validation_data = self._convert_to_dataset(
-            x=x, y=y, validation_data=validation_data, batch_size=batch_size
+            x=x, y=y, validation_data=None, batch_size=batch_size
         )
 
         """
@@ -254,18 +242,12 @@ class HyperHyperModel(object):
         self.tuner.hyper_pipeline = None
         self.tuner.hypermodel.hyper_pipeline = None
 
-        # Split the data with validation_split.
-        if validation_data is None and validation_split:
-            dataset, validation_data = data_utils.split_dataset(
-                dataset, validation_split
-            )
-
         self.tuner.search(
             x=dataset,
             epochs=epochs,
             callbacks=callbacks,
             validation_data=validation_data,
-            validation_split=validation_split,
+            validation_split=ms.validation,
             verbose=verbose,
             **kwargs
         )
