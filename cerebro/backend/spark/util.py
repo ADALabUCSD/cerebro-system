@@ -251,7 +251,6 @@ def _get_col_info(df):
                 'Rows of column {col} have varying sizes. This is only allowed if datatype is '
                 'SparseVector or a mix of Sparse and DenseVector.'.format(col=col))
         col_max_sizes[col] = max(sizes)
-
     return all_col_types, col_shapes, col_max_sizes
 
 

@@ -1,6 +1,8 @@
 from os import stat
+from h5py._hl import dataset
 
 import keras_tuner
+from tensorflow._api.v2 import data
 from .base import CerebroOracle
 from ..sparktuner import SparkTuner
 from keras_tuner.engine import trial as trial_lib
@@ -85,6 +87,8 @@ class RandomSearch(SparkTuner):
         callbacks=None, 
         validation_split=0.2, 
         verbose=1,
+        dataset_idx=None,
+        metadata=None,
         **fit_kwargs
     ):
         """
@@ -115,19 +119,19 @@ class RandomSearch(SparkTuner):
             if len(running_trials) == 0:
                 break
             self.begin_trials(trials)
-            self.run_trials(trials, epochs, **fit_kwargs)
+            self.run_trials(trials, epochs, dataset_idx, metadata, **fit_kwargs)
             self.end_trials(trials)
         
-    def run_trials(self, trials, epochs, **fit_kwargs):
+    def run_trials(self, trials, epochs, dataset_idx, metadata, **fit_kwargs):
         estimators = self.trials2estimators(trials, fit_kwargs["x"])
         ms = self.model_selection
         est_results = {model.getRunId():{'trialId':trial.trial_id} for trial, model in zip(trials, estimators)}
 
         for epoch in range(epochs):
-            train_epoch = ms.backend.train_for_one_epoch(estimators, ms.store, ms.feature_cols, ms.label_cols)
+            train_epoch = ms.backend.train_for_one_epoch(estimators, ms.store, dataset_idx, ms.feature_cols, ms.label_cols)
             update_model_results(est_results, train_epoch)
 
-            val_epoch = ms.backend.train_for_one_epoch(estimators, ms.store, ms.feature_cols, ms.label_cols, is_train=False)
+            val_epoch = ms.backend.train_for_one_epoch(estimators, ms.store, dataset_idx, ms.feature_cols, ms.label_cols, is_train=False)
             update_model_results(est_results, val_epoch)
         
         for est in estimators:

@@ -85,12 +85,14 @@ class HyperHyperModel(object):
             loss = params['loss']
             metrics = params['metrics']
             bs = params['batch_size']
+            cuz_obj_dict = params['custom_objects']
             estimator = SparkEstimator(
                 model=model,
                 optimizer=opt,
                 loss=loss,
                 metrics=metrics,
-                batch_size=bs
+                batch_size=bs,
+                custom_objects=cuz_obj_dict
             )
             return estimator
 
@@ -223,7 +225,7 @@ class HyperHyperModel(object):
 
         x = np.array(df.select(ms.feature_cols).collect())
         y = np.array(df.select(ms.label_cols).collect())
-
+        x = [x[:,i,np.newaxis] for i in range(x.shape[1])]
         dataset, validation_data = self._convert_to_dataset(
             x=x, y=y, validation_data=None, batch_size=batch_size
         )
@@ -249,6 +251,8 @@ class HyperHyperModel(object):
             validation_data=validation_data,
             validation_split=ms.validation,
             verbose=verbose,
+            dataset_idx=None,
+            metadata=metadata,
             **kwargs
         )
 
@@ -463,6 +467,7 @@ class HyperHyperModel(object):
         epochs=100,
         **kwargs
     ):
+        x = [x[:,i,np.newaxis] for i in range(x.shape[1])]
         dataset, validation_data = self._convert_to_dataset(
             x=x, y=y, validation_data=None, batch_size=batch_size
         )

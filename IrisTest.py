@@ -52,7 +52,7 @@ am.resource_bind(
 # In[4]:
 
 
-df = spark.read.csv("/Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/Iris_clean.csv", header=True)
+df = spark.read.csv("/Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/Iris_clean.csv", header=True, inferSchema=True)
 
 train_df, test_df = df.randomSplit([0.8, 0.2])
 df.head(10)

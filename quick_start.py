@@ -47,7 +47,7 @@ def estimator_gen_fn(params):
         model=model,
         optimizer=optimizer,
         loss=loss,
-        metrics=['acc'],
+        metrics=['accuracy'],
         batch_size=params['batch_size'])
 
     return estimator

@@ -56,6 +56,7 @@ class SparkTuner(kt.engine.tuner.Tuner):
     """
     def _build_and_fit_model(self, trial, *args, **kwargs):
         dataset = kwargs["x"]
+        hm = self.hypermodel.hypermodel
         self._prepare_model_IO(trial.hyperparameters, dataset=dataset)
         model = self.hypermodel.build(trial.hyperparameters)
         self.adapt(model, dataset)
@@ -64,7 +65,7 @@ class SparkTuner(kt.engine.tuner.Tuner):
             'optimizer': model.optimizer, # keras opt not str
             'loss': self.hypermodel._get_loss(), # not sure
             'metrics': self.hypermodel._get_metrics(),
-            'bs': self.hypermodel.batch_size
+            'batch_size': self.hypermodel.batch_size
         }
         _, history = self.spark_fit(
             params, **kwargs
@@ -96,6 +97,8 @@ class SparkTuner(kt.engine.tuner.Tuner):
             callbacks=None,
             validation_split=0.2,
             verbose=1,
+            dataset_idx=None,
+            metadata=None,
             **fit_kwargs
         ):
             """Search for the best HyperParameters.
@@ -188,12 +191,26 @@ class SparkTuner(kt.engine.tuner.Tuner):
             self._prepare_model_IO(trial.hyperparameters, dataset=dataset)
             model = self.hypermodel.build(trial.hyperparameters)
             self.adapt(model, dataset)
+            hm = self.hypermodel.hypermodel
+            loss_dict = hm._get_loss()
+            metric_dict = hm._get_metrics()
+            loss = []
+            metric = []
+            for lname in loss_dict:
+                loss.append(loss_dict[lname])
+            for mname in metric_dict:
+                metric.append(metric_dict[mname])
+            if len(loss) > 1:
+                raise ValueError("Multiple losses detected")
+            # if len(metric) > 1:
+            #     raise ValueError("Multiple metrics detected")
             params = {
                 'model': model,
                 'optimizer': model.optimizer, # keras opt not str
-                'loss': self.hypermodel._get_loss(), # not sure
-                'metrics': self.hypermodel._get_metrics(),
-                'bs': self.hypermodel.batch_size
+                'loss': loss[0], # not sure
+                'metrics': metric,
+                'batch_size': hm.batch_size,
+                'custom_objects': tf.keras.utils.get_custom_objects()
             }
             est = self.model_selection._estimator_gen_fn_wrapper(params)
             ests.append(est)
