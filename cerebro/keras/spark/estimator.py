@@ -487,7 +487,6 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
                      for i in range(len(feature_cols))])
 
                 preds = [to_numpy(item) for item in preds]
-
                 for label_col, output_col, pred, in zip(label_cols, output_cols, preds):
                     meta = metadata[label_col]
                     col_type = meta['spark_data_type']

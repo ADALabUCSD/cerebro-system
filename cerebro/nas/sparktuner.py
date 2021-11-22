@@ -36,7 +36,6 @@ class SparkTuner(kt.engine.tuner.Tuner):
         self._finished = False
         self.model_selection = model_selection
         self.parallelsim = parallelism
-        self.search_results = {}
         super().__init__(oracle, hypermodel, **kwargs)
 
     def _populate_initial_space(self):
@@ -199,7 +198,7 @@ class SparkTuner(kt.engine.tuner.Tuner):
             for lname in loss_dict:
                 loss.append(loss_dict[lname])
             for mname in metric_dict:
-                metric.append(metric_dict[mname])
+                metric.extend(metric_dict[mname])
             if len(loss) > 1:
                 raise ValueError("Multiple losses detected")
             # if len(metric) > 1:
@@ -267,3 +266,11 @@ class SparkTuner(kt.engine.tuner.Tuner):
                 dq.append((next_layer, out_x))
 
         return model
+
+    @property
+    def objective(self):
+        return self.oracle.objective
+
+    @property
+    def max_trials(self):
+        return self.oracle.max_trials

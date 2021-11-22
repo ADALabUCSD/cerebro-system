@@ -226,6 +226,13 @@ class HyperHyperModel(object):
         x = np.array(df.select(ms.feature_cols).collect())
         y = np.array(df.select(ms.label_cols).collect())
         x = [x[:,i,np.newaxis] for i in range(x.shape[1])]
+        y = np.squeeze(y,1)
+        if len(y.shape) > 2:
+            raise ValueError(
+                "We do not support multiple labels. Expect the target data for {name} to have shape "
+                "(batch_size, num_classes), "
+                "but got {shape}.".format(name=self.name, shape=self.shape)
+            )
         dataset, validation_data = self._convert_to_dataset(
             x=x, y=y, validation_data=None, batch_size=batch_size
         )
@@ -243,8 +250,7 @@ class HyperHyperModel(object):
         # self._build_hyper_pipeline(dataset)
         self.tuner.hyper_pipeline = None
         self.tuner.hypermodel.hyper_pipeline = None
-
-        self.tuner.search(
+        return self.tuner.search(
             x=dataset,
             epochs=epochs,
             callbacks=callbacks,
@@ -355,7 +361,6 @@ class HyperHyperModel(object):
         x = self._adapt(x, self.inputs, batch_size)
         y = self._adapt(y, self._heads, batch_size)
         dataset = tf.data.Dataset.zip((x, y))
-
         # Convert validation data
         if validation_data:
             self._check_data_format(validation_data, validation=True)
@@ -461,13 +466,16 @@ class HyperHyperModel(object):
 
     def test_tuner_space(
         self,
-        x,
-        y,
+        df,
         batch_size=32,
         epochs=100,
         **kwargs
     ):
+        ms = self.model_selection
+        x = np.array(df.select(ms.feature_cols).collect())
+        y = np.array(df.select(ms.label_cols).collect())
         x = [x[:,i,np.newaxis] for i in range(x.shape[1])]
+        y = np.squeeze(y,1)
         dataset, validation_data = self._convert_to_dataset(
             x=x, y=y, validation_data=None, batch_size=batch_size
         )
