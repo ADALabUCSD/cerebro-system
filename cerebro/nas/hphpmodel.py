@@ -184,12 +184,8 @@ class HyperHyperModel(object):
             graph = graph_module.Graph(inputs=self.inputs, outputs=self.outputs)
         # Using input/output API.
         elif all([isinstance(output, head_module.Head) for output in self.outputs]):
-            # Clear session to reset get_uid(). The names of the blocks will
-            # start to count from 1 for new blocks in a new AutoModel afterwards.
-            tf.keras.backend.clear_session()
             graph = self._assemble()
             self.outputs = graph.outputs
-            tf.keras.backend.clear_session()
 
         return graph
 
