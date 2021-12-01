@@ -141,3 +141,4 @@ cython_debug/
 .idea
 *experiments/
 test/*
+**/*.ipynb_checkpoints/

@@ -496,7 +496,7 @@ class HyperHyperModel(object):
 
         if ms.verbose >= 1: print(
             'CEREBRO => Time: {}, Preparing Data'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        _, _, metadata, _ = backend.prepare_data(ms.store, df, ms.validation, label_columns=ms.label_cols, feature_columns=ms.feature_cols)
+        train_rows, val_rows, metadata, avg_row_size = backend.prepare_data(ms.store, df, ms.validation, label_columns=ms.label_cols, feature_columns=ms.feature_cols)
 
         if ms.verbose >= 1: print(
             'CEREBRO => Time: {}, Initializing Workers'.format(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
@@ -507,3 +507,4 @@ class HyperHyperModel(object):
             'CEREBRO => Time: {}, Initializing Data Loaders'.format(
                 datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         backend.initialize_data_loaders(ms.store, None, ms.feature_cols + ms.label_cols)
+        return train_rows, val_rows, metadata, avg_row_size
