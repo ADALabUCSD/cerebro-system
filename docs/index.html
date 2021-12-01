@@ -1,0 +1,147 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Cerebro Documentation &#8212; Cerebro  documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="What is Cerebro?" href="about.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="cerebro-documentation">
+<h1>Cerebro Documentation<a class="headerlink" href="#cerebro-documentation" title="Permalink to this headline">¶</a></h1>
+<p><code class="docutils literal notranslate"><span class="pre">Cerebro</span></code> is a data system for optimized deep learning model selection. It uses a novel parallel execution strategy
+called <strong>Model Hopper Parallelism (MOP)</strong> to execute end-to-end deep learning model selection workloads in a more
+resource-efficient manner.</p>
+<section id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>The best way to install the <code class="docutils literal notranslate"><span class="pre">Cerebro</span></code> is via pip.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip install -U cerebro-dl
+</pre></div>
+</div>
+<p>Alternatively, you can git clone and run the provided Makefile script to install the master branch</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/ADALabUCSD/cerebro-system.git <span class="o">&amp;&amp;</span> <span class="nb">cd</span> cerebro-system <span class="o">&amp;&amp;</span> make
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You MUST be running on <strong>Python &gt;= 3.6</strong> with <strong>Tensorflow &gt;= 2.2</strong> and <strong>Apache Spark &gt;= 2.4</strong></p>
+</div>
+</section>
+<section id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="about.html">What is Cerebro?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="install.html#basic-installation">Basic Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="install.html#spark-cluster-setup">Spark Cluster Setup</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#executing-a-model-selection-workload">Executing a Model Selection Workload</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#visualizing-the-model-selection-process">Visualizing the Model Selection Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#training-on-existing-petastorm-datasets">Training on Existing Petastorm Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="quick_start.html#end-to-end-example">End-to-End Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Cerebro API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="api.html#cerebro-keras">cerebro.keras</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#cerebro-tune">cerebro.tune</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#cerebro-backend">cerebro.backend</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api.html#cerebro-storage">cerebro.storage</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
+</ul>
+</div>
+</section>
+<section id="indices-and-tables">
+<h2>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference internal" href="genindex.html"><span class="std std-ref">Index</span></a></p></li>
+<li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
+<li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
+</ul>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="#">Table of Contents</a></h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="about.html">What is Cerebro?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Cerebro API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="#">Documentation overview</a><ul>
+      <li>Next: <a href="about.html" title="next chapter">What is Cerebro?</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Supun Nakandala, Yuhao Zhang, Arun Kumar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/index.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

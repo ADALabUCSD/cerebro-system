@@ -1,0 +1,144 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Install &#8212; Cerebro  documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Getting Started" href="quick_start.html" />
+    <link rel="prev" title="What is Cerebro?" href="about.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="install">
+<h1>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h1>
+<section id="basic-installation">
+<h2>Basic Installation<a class="headerlink" href="#basic-installation" title="Permalink to this headline">¶</a></h2>
+<p>The best way to install the <code class="docutils literal notranslate"><span class="pre">Cerebro</span></code> is via pip.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">U</span> <span class="n">cerebro</span><span class="o">-</span><span class="n">dl</span>
+</pre></div>
+</div>
+<p>Alternatively, you can git clone and run the provided Makefile script to install the master branch.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">github</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">ADALabUCSD</span><span class="o">/</span><span class="n">cerebro</span><span class="o">-</span><span class="n">system</span><span class="o">.</span><span class="n">git</span> <span class="o">&amp;&amp;</span> <span class="n">cd</span> <span class="n">cerebro</span><span class="o">-</span><span class="n">system</span> <span class="o">&amp;&amp;</span> <span class="n">make</span>
+</pre></div>
+</div>
+<p>You MUST be running on <strong>Python &gt;= 3.6</strong> with <strong>Tensorflow &gt;= 2.2</strong> and <strong>Apache Spark &gt;= 2.4</strong></p>
+</section>
+<section id="spark-cluster-setup">
+<h2>Spark Cluster Setup<a class="headerlink" href="#spark-cluster-setup" title="Permalink to this headline">¶</a></h2>
+<p>As deep learning workloads tend to have very different resource requirements
+from typical data processing workloads, there are certain considerations
+for DL Spark cluster setup.</p>
+<section id="gpu-training">
+<h3>GPU training<a class="headerlink" href="#gpu-training" title="Permalink to this headline">¶</a></h3>
+<p>For GPU training, one approach is to set up a separate GPU Spark cluster
+and configure each executor with <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">of</span> <span class="pre">CPU</span> <span class="pre">cores</span></code> = <code class="docutils literal notranslate"><span class="pre">#</span> <span class="pre">of</span> <span class="pre">GPUs</span></code>. This can
+be accomplished in standalone mode as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ <span class="nb">echo</span> <span class="s2">&quot;export SPARK_WORKER_CORES=&lt;# of GPUs&gt;&quot;</span> &gt;&gt; /path/to/spark/conf/spark-env.sh
+$ /path/to/spark/sbin/start-all.sh
+</pre></div>
+</div>
+<p>This approach turns the <code class="docutils literal notranslate"><span class="pre">spark.task.cpus</span></code> setting to control # of GPUs
+requested per process (defaults to 1).</p>
+<p>The ongoing <a class="reference external" href="https://issues.apache.org/jira/browse/SPARK-24615">SPARK-24615</a> effort aims to
+introduce GPU-aware resource scheduling in future versions of Spark.</p>
+</section>
+<section id="cpu-training">
+<h3>CPU training<a class="headerlink" href="#cpu-training" title="Permalink to this headline">¶</a></h3>
+<p>For CPU training, one approach is to specify the <code class="docutils literal notranslate"><span class="pre">spark.task.cpus</span></code> setting
+during the training session creation:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">conf</span> <span class="o">=</span> <span class="n">SparkConf</span><span class="p">()</span><span class="o">.</span><span class="n">setAppName</span><span class="p">(</span><span class="s1">&#39;training&#39;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">setMaster</span><span class="p">(</span><span class="s1">&#39;spark://training-cluster:7077&#39;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="s1">&#39;spark.task.cpus&#39;</span><span class="p">,</span> <span class="s1">&#39;16&#39;</span><span class="p">)</span>
+<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span><span class="o">.</span><span class="n">builder</span><span class="o">.</span><span class="n">config</span><span class="p">(</span><span class="n">conf</span><span class="o">=</span><span class="n">conf</span><span class="p">)</span><span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>This approach allows you to reuse the same Spark cluster for data preparation
+and training.</p>
+</section>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">What is Cerebro?</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-installation">Basic Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#spark-cluster-setup">Spark Cluster Setup</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="quick_start.html">Getting Started</a></li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Cerebro API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="about.html" title="previous chapter">What is Cerebro?</a></li>
+      <li>Next: <a href="quick_start.html" title="next chapter">Getting Started</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Supun Nakandala, Yuhao Zhang, Arun Kumar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/install.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

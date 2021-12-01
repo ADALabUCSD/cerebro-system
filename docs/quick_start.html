@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Getting Started &#8212; Cerebro  documentation</title>
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Cerebro API" href="api.html" />
+    <link rel="prev" title="Install" href="install.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="getting-started">
+<h1>Getting Started<a class="headerlink" href="#getting-started" title="Permalink to this headline">¶</a></h1>
+<section id="executing-a-model-selection-workload">
+<h2>Executing a Model Selection Workload<a class="headerlink" href="#executing-a-model-selection-workload" title="Permalink to this headline">¶</a></h2>
+<p>Cerebro allows you to perform model selection of your deep neural network directly on an existing Spark DataFrame,
+leveraging Spark’s ability to scale across multiple workers:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">cerebro.backend</span> <span class="kn">import</span> <span class="n">SparkBackend</span>
+<span class="kn">from</span> <span class="nn">cerebro.keras</span> <span class="kn">import</span> <span class="n">SparkEstimator</span>
+
+<span class="c1"># datas storage for intermediate data and model artifacts.</span>
+<span class="kn">from</span> <span class="nn">cerebro.storage</span> <span class="kn">import</span> <span class="n">LocalStore</span><span class="p">,</span> <span class="n">HDFSStore</span>
+
+<span class="c1"># Model selection/AutoML methods.</span>
+<span class="kn">from</span> <span class="nn">cerebro.tune</span> <span class="kn">import</span> <span class="n">GridSearch</span><span class="p">,</span> <span class="n">RandomSearch</span><span class="p">,</span> <span class="n">TPESearch</span>
+
+<span class="c1"># Utility functions for specifying the search space.</span>
+<span class="kn">from</span> <span class="nn">cerebro.tune</span> <span class="kn">import</span> <span class="n">hp_choice</span><span class="p">,</span> <span class="n">hp_uniform</span><span class="p">,</span> <span class="n">hp_quniform</span><span class="p">,</span> <span class="n">hp_loguniform</span><span class="p">,</span> <span class="n">hp_qloguniform</span>
+
+<span class="kn">import</span> <span class="nn">tensorflow</span> <span class="k">as</span> <span class="nn">tf</span>
+<span class="kn">from</span> <span class="nn">pyspark.sql</span> <span class="kn">import</span> <span class="n">SparkSession</span>
+
+
+<span class="n">spark</span> <span class="o">=</span> <span class="n">SparkSession</span> \
+    <span class="o">.</span><span class="n">builder</span> \
+    <span class="o">.</span><span class="n">appName</span><span class="p">(</span><span class="s2">&quot;Cerebro Example&quot;</span><span class="p">)</span> \
+    <span class="o">.</span><span class="n">getOrCreate</span><span class="p">()</span>
+
+<span class="o">...</span>
+
+<span class="n">backend</span> <span class="o">=</span> <span class="n">SparkBackend</span><span class="p">(</span><span class="n">spark_context</span><span class="o">=</span><span class="n">spark</span><span class="o">.</span><span class="n">sparkContext</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">store</span> <span class="o">=</span> <span class="n">LocalStore</span><span class="p">(</span><span class="n">prefix_path</span><span class="o">=</span><span class="s1">&#39;/user/username/experiments&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># Initialize input DataFrames.</span>
+<span class="c1"># You can download sample dataset from https://apache.googlesource.com/spark/+/master/data/mllib/sample_libsvm_data.txt</span>
+<span class="n">df</span> <span class="o">=</span> <span class="n">spark</span><span class="o">.</span><span class="n">read</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s2">&quot;libsvm&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;sample_libsvm_data.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">repartition</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">train_df</span><span class="p">,</span> <span class="n">test_df</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">randomSplit</span><span class="p">([</span><span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">])</span>
+
+<span class="c1"># Define estimator generating function.</span>
+<span class="c1"># Input: Dictionary containing parameter values</span>
+<span class="c1"># Output: SparkEstimator</span>
+<span class="k">def</span> <span class="nf">estimator_gen_fn</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Sequential</span><span class="p">()</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">input_dim</span><span class="o">=</span><span class="mi">692</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">input_dim</span><span class="o">=</span><span class="mi">100</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s1">&#39;sigmoid&#39;</span><span class="p">))</span>
+
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">lr</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;lr&#39;</span><span class="p">])</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="s1">&#39;binary_crossentropy&#39;</span>
+
+    <span class="n">estimator</span> <span class="o">=</span> <span class="n">SparkEstimator</span><span class="p">(</span>
+        <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
+        <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+        <span class="n">loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span>
+        <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;acc&#39;</span><span class="p">],</span>
+        <span class="n">batch_size</span><span class="o">=</span><span class="n">params</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="n">estimator</span>
+
+<span class="c1"># Define dictionary containing the parameter search space.</span>
+<span class="n">search_space</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">hp_choice</span><span class="p">([</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.001</span><span class="p">,</span> <span class="mf">0.0001</span><span class="p">]),</span>
+    <span class="s1">&#39;batch_size&#39;</span><span class="p">:</span> <span class="n">hp_quniform</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="c1"># Instantiate TPE (Tree of Parzan Estimators a.k.a., HyperOpt) model selection object.</span>
+<span class="n">model_selection</span> <span class="o">=</span> <span class="n">TPESearch</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">estimator_gen_fn</span><span class="o">=</span><span class="n">estimator_gen_fn</span><span class="p">,</span> <span class="n">search_space</span><span class="o">=</span><span class="n">search_space</span><span class="p">,</span>
+            <span class="n">num_models</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validation</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">evaluation_metric</span><span class="o">=</span><span class="s1">&#39;loss&#39;</span><span class="p">,</span>
+            <span class="n">feature_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">],</span> <span class="n">label_columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">])</span>
+
+<span class="c1"># Perform model selection. Returns best model.</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">model_selection</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">train_df</span><span class="p">)</span>
+
+<span class="c1"># Inspect best model training history.</span>
+<span class="n">model_history</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_history</span><span class="p">()</span>
+
+<span class="c1"># Perform inference using the best model and Spark DataFrame.</span>
+<span class="n">output_df</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">set_output_columns</span><span class="p">([</span><span class="s1">&#39;label_predicted&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">test_df</span><span class="p">)</span>
+<span class="n">output_df</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="s1">&#39;label_predicted&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+<span class="c1"># Access all models.</span>
+<span class="n">all_models</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_all_models</span><span class="p">()</span>
+<span class="n">all_model_training_history</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_all_model_history</span><span class="p">()</span>
+
+<span class="c1"># Convert the best model to Keras and perform inference using numpy data.</span>
+<span class="n">keras_model</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">keras</span><span class="p">()</span>
+<span class="n">pred</span> <span class="o">=</span> <span class="n">keras_model</span><span class="o">.</span><span class="n">predict</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">692</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)])</span>
+<span class="c1"># Save the keras checkpoint file.</span>
+<span class="n">keras_model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">ckpt_path</span><span class="p">)</span>
+
+<span class="c1"># Convert all the model to Keras.</span>
+<span class="n">all_models_keras</span> <span class="o">=</span> <span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">keras</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">all_models</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Cerebro hides the complexity of gluing Spark DataFrames to a deep learning training script, reading data into a
+format interpretable by the training framework, and distributing the model selection using model hopper parallelism.
+The user only needs to provide a Keras model generating function, define a search space, and pick an AutoML method.</p>
+<p>After model selection completes, Cerebro returns a model output which contains the best model. This model can be used
+like any Spark ML transformer to make predictions on an input DataFrame, writing them as new columns in the
+output DataFrame. It also contain all the other models and their training metrics history. All models can also be
+converted to Keras format and used in other ways.</p>
+<p>The user provided Store object is used to store all model checkpoints, all intermediate representations of the training
+data, and training metrics (for Tensorboard). Cerebro currently supports stores for HDFS and local filesystems.</p>
+</section>
+<section id="visualizing-the-model-selection-process">
+<h2>Visualizing the Model Selection Process<a class="headerlink" href="#visualizing-the-model-selection-process" title="Permalink to this headline">¶</a></h2>
+<p>Cerebro logs model training metrics into the <code class="docutils literal notranslate"><span class="pre">&lt;prefix_path&gt;/runs/logs</span></code> directory of your Storage object.
+To visualize the model selection process, launch a Tensorboard instance as follows:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>tensorboard --logdir &lt;prefix_path&gt;/runs/logs
+</pre></div>
+</div>
+<p><img alt="tensorboard" src="_images/tensorboard.png" /></p>
+</section>
+<section id="training-on-existing-petastorm-datasets">
+<h2>Training on Existing Petastorm Datasets<a class="headerlink" href="#training-on-existing-petastorm-datasets" title="Permalink to this headline">¶</a></h2>
+<p>Cerebro uses <a class="reference external" href="https://github.com/uber/petastorm">Petastorm</a> as the data format for storing intermediate data.
+So if your data is already in petastorm format you can create the store object to point to the location of the data
+and call <code class="docutils literal notranslate"><span class="pre">.fit_on_prepared_data()</span></code> method to directly train on that data.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">backend</span> <span class="o">=</span> <span class="n">SparkBackend</span><span class="p">(</span><span class="n">spark_context</span><span class="o">=</span><span class="n">spark</span><span class="o">.</span><span class="n">sparkContext</span><span class="p">,</span> <span class="n">num_workers</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="n">store</span> <span class="o">=</span> <span class="n">LocalStore</span><span class="p">(</span><span class="n">prefix_path</span><span class="o">=</span><span class="s1">&#39;/user/username/experiments&#39;</span><span class="p">,</span> <span class="n">train_path</span><span class="o">=</span><span class="s1">&#39;/user/username/training_dataset&#39;</span><span class="p">,</span> <span class="n">val_path</span><span class="o">=</span><span class="s1">&#39;/user/username/val_dataset&#39;</span><span class="p">)</span>
+<span class="o">...</span>
+
+<span class="c1"># Instantiate model selection object</span>
+<span class="n">model_selection</span> <span class="o">=</span> <span class="n">TPESearch</span><span class="p">(</span><span class="n">backend</span><span class="o">=</span><span class="n">backend</span><span class="p">,</span> <span class="n">store</span><span class="o">=</span><span class="n">store</span><span class="p">,</span> <span class="n">estimator_gen_fn</span><span class="o">=</span><span class="n">estimator_gen_fn</span><span class="p">,</span> <span class="n">search_space</span><span class="o">=</span><span class="n">search_space</span><span class="p">,</span>
+            <span class="n">num_models</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">num_epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">evaluation_metric</span><span class="o">=</span><span class="s1">&#39;loss&#39;</span><span class="p">)</span>
+
+<span class="c1"># Perform model selection</span>
+<span class="n">model_selection_output</span> <span class="o">=</span> <span class="n">model_selection</span><span class="o">.</span><span class="n">fit_on_prepared_data</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>Furthermore, you can use the <code class="docutils literal notranslate"><span class="pre">backend.prepare_data</span></code> method to materialize a Spark DataFrame object in petastorm format
+as shown below.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">backend</span> <span class="o">=</span> <span class="n">SparkBackend</span><span class="p">(</span><span class="n">spark_context</span><span class="o">=</span><span class="n">spark</span><span class="o">.</span><span class="n">sparkContext</span><span class="p">)</span>
+<span class="n">store</span> <span class="o">=</span>  <span class="n">LocalStore</span><span class="p">(</span><span class="n">prefix_path</span><span class="o">=</span><span class="s1">&#39;/user/username/experiments&#39;</span><span class="p">,</span> <span class="n">train_path</span><span class="o">=</span><span class="s1">&#39;/user/username/training_dataset&#39;</span><span class="p">,</span> <span class="n">val_path</span><span class="o">=</span><span class="s1">&#39;/user/username/val_dataset&#39;</span><span class="p">)</span>
+<span class="n">backend</span><span class="o">.</span><span class="n">prepare_data</span><span class="p">(</span><span class="n">store</span><span class="p">,</span> <span class="n">train_df</span><span class="p">,</span> <span class="n">validation</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Once the data has been materialized, you can reuse it in future Cerebro applications without needing to call
+<code class="docutils literal notranslate"><span class="pre">backend.prepare_data</span></code> again.</p>
+</section>
+<section id="end-to-end-example">
+<h2>End-to-End Example<a class="headerlink" href="#end-to-end-example" title="Permalink to this headline">¶</a></h2>
+<p>We explain how a deep learning model training workload on Spark using <a class="reference external" href="https://github.com/horovod/horovod/blob/master/examples/keras_spark_rossmann_estimator.py">Horovod</a> can be extended to perform model selection using Cerebro.</p>
+<p><a class="reference external" href="https://raw.githubusercontent.com/ADALabUCSD/cerebro-system/master/examples/rossmann_model_selection.py">rossmann_model_selection.py</a>
+script provides an example of end-to-end data preparation and model selection of a model for the
+<a class="reference external" href="https://www.kaggle.com/c/rossmann-store-sales">Rossmann Store Sales</a> Kaggle competition.
+It is inspired by an article <a class="reference external" href="https://www.fast.ai/2018/04/29/categorical-embeddings/">An Introduction to Deep Learning for Tabular Data</a>
+and leverages the code of the notebook referenced in the article. The example is split into three parts:</p>
+<ol class="simple">
+<li><p>The first part performs complicated data preprocessing over an initial set of CSV files provided by the competition and gathered by the community.</p></li>
+<li><p>The second part defines a Keras model and performs model selection using Cerebro on Spark.</p></li>
+<li><p>The third part performs prediction using the best model and creates a submission file.</p></li>
+</ol>
+<p>To run the example:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>$ wget https://raw.githubusercontent.com/ADALabUCSD/cerebro-system/master/examples/rossmann_model_selection.py
+$ wget http://files.fast.ai/part2/lesson14/rossmann.tgz
+$ tar zxvf rossmann.tgz
+$ python3 rossmann_model_selection.py
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h3><a href="index.html">Table of Contents</a></h3>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="about.html">What is Cerebro?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Getting Started</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#executing-a-model-selection-workload">Executing a Model Selection Workload</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#visualizing-the-model-selection-process">Visualizing the Model Selection Process</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#training-on-existing-petastorm-datasets">Training on Existing Petastorm Datasets</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#end-to-end-example">End-to-End Example</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api.html">Cerebro API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="acknowledgement.html">Acknowledgement</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="install.html" title="previous chapter">Install</a></li>
+      <li>Next: <a href="api.html" title="next chapter">Cerebro API</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2020, Supun Nakandala, Yuhao Zhang, Arun Kumar.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 3.5.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/quick_start.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

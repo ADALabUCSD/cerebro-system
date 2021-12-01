@@ -1,0 +1,95 @@
+21/11/19 13:43:35 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Using Spark's default log4j profile: org/apache/spark/log4j-defaults.properties
+Setting default log level to "WARN".
+To adjust logging level use sc.setLogLevel(newLevel). For SparkR, use setLogLevel(newLevel).
+CEREBRO => Time: 2021-11-19 13:43:36, Running 1 Workers
+21/11/19 13:43:37 WARN LibSVMFileFormat: 'numFeatures' option not specified, determining the number of features by going though the input. If you know the number in advance, please specify it via 'numFeatures' option to avoid the extra scan.
+CEREBRO => Time: 2021-11-19 13:43:39, Preparing Data
+CEREBRO => Time: 2021-11-19 13:43:39, Num Partitions: 8
+CEREBRO => Time: 2021-11-19 13:43:39, Writing DataFrames
+CEREBRO => Time: 2021-11-19 13:43:39, Train Data Path: file:///Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/experiments/intermediate_train_data
+CEREBRO => Time: 2021-11-19 13:43:39, Val Data Path: file:///Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/experiments/intermediate_val_data
+CEREBRO => Time: 2021-11-19 13:43:41, Train Partitions: 6
+CEREBRO => Time: 2021-11-19 13:43:47, Val Partitions: 2
+CEREBRO => Time: 2021-11-19 13:43:54, Train Rows: 64
+CEREBRO => Time: 2021-11-19 13:43:54, Val Rows: 23
+CEREBRO => Time: 2021-11-19 13:43:54, Initializing Workers
+CEREBRO => Time: 2021-11-19 13:43:54, Initializing Data Loaders
+CEREBRO => Time: 2021-11-19 13:43:54, Launching Model Selection Workload
+2021-11-19 13:43:54.964727: I tensorflow/compiler/jit/xla_cpu_device.cc:41] Not creating XLA devices, tf_xla_enable_xla_devices not set
+2021-11-19 13:43:54.964927: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2021-11-19 13:43:55.036198: I tensorflow/compiler/jit/xla_cpu_device.cc:41] Not creating XLA devices, tf_xla_enable_xla_devices not set
+2021-11-19 13:43:55.091298: I tensorflow/core/platform/cpu_feature_guard.cc:142] This TensorFlow binary is optimized with oneAPI Deep Neural Network Library (oneDNN) to use the following CPU instructions in performance-critical operations:  AVX2 FMA
+To enable them in other operations, rebuild TensorFlow with the appropriate compiler flags.
+2021-11-19 13:43:55.094442: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:196] None of the MLIR optimization passes are enabled (registered 0 passes)
+WARNING:tensorflow:From /Users/zijian/.pyenv/versions/nocerebro/lib/python3.7/site-packages/tensorflow/python/data/ops/dataset_ops.py:2561: calling DatasetV2.from_generator (from tensorflow.python.data.ops.dataset_ops) with output_types is deprecated and will be removed in a future version.
+Instructions for updating:
+Use output_signature instead
+WARNING:tensorflow:From /Users/zijian/.pyenv/versions/nocerebro/lib/python3.7/site-packages/tensorflow/python/data/ops/dataset_ops.py:2561: calling DatasetV2.from_generator (from tensorflow.python.data.ops.dataset_ops) with output_shapes is deprecated and will be removed in a future version.
+Instructions for updating:
+Use output_signature instead
+[Stage 12:>                                                         (0 + 1) / 1]WARNING:tensorflow:Expected a shuffled dataset but input dataset `x` is not shuffled. Please invoke `shuffle()` on input dataset.
+2021-11-19 13:43:55.757996: I tensorflow/compiler/mlir/mlir_graph_optimization_pass.cc:116] None of the MLIR optimization passes are enabled (registered 2)
+Train on 1 steps
+1/1 [==============================] - 0s 95ms/step - batch: 0.0000e+00 - size: 1.0000 - loss: 49.4486 - acc: 0.3906
+CEREBRO => Time: 2021-11-19 13:43:56, Model: model_0_1637358234, Mode: TRAIN, Initialization Time: 0.6664178371429443, Training Time: 0.32642507553100586, Finalization Time: 0.096282958984375
+/Users/zijian/.pyenv/versions/nocerebro/lib/python3.7/site-packages/tensorflow/python/keras/engine/training.py:2325: UserWarning: `Model.state_updates` will be removed in a future version. This property should not be used in TensorFlow 2.0, as `updates` are applied automatically.
+  warnings.warn('`Model.state_updates` will be removed in a future version. '
+2021-11-19 13:43:59.620098: W tensorflow/core/framework/op_kernel.cc:1751] Invalid argument: ValueError: callback pyfunc_2 is not found
+Traceback (most recent call last):
+
+  File "/Users/zijian/.pyenv/versions/nocerebro/lib/python3.7/site-packages/tensorflow/python/ops/script_ops.py", line 238, in __call__
+    raise ValueError("callback %s is not found" % token)
+
+ValueError: callback pyfunc_2 is not found
+
+
+2021-11-19 13:43:59.620459: W tensorflow/core/kernels/data/generator_dataset_op.cc:107] Error occurred when finalizing GeneratorDataset iterator: Invalid argument: ValueError: callback pyfunc_2 is not found
+Traceback (most recent call last):
+
+  File "/Users/zijian/.pyenv/versions/nocerebro/lib/python3.7/site-packages/tensorflow/python/ops/script_ops.py", line 238, in __call__
+    raise ValueError("callback %s is not found" % token)
+
+ValueError: callback pyfunc_2 is not found
+
+
+	 [[{{node PyFunc}}]]
+CEREBRO => Time: 2021-11-19 13:43:59, Model: model_0_1637358234, Mode: VALID, Initialization Time: 0.3816988468170166, Training Time: 0.10549116134643555, Finalization Time: 0.07088398933410645
+WARNING:tensorflow:Expected a shuffled dataset but input dataset `x` is not shuffled. Please invoke `shuffle()` on input dataset.
+Train on 1 steps
+Epoch 2/2
+1/1 [==============================] - 0s 89ms/step - batch: 0.0000e+00 - size: 1.0000 - loss: 6.5719 - acc: 0.8594
+2021-11-19 13:44:03.808494: W tensorflow/core/framework/op_kernel.cc:1751] Invalid argument: ValueError: callback pyfunc_5 is not found
+Traceback (most recent call last):
+
+  File "/Users/zijian/.pyenv/versions/nocerebro/lib/python3.7/site-packages/tensorflow/python/ops/script_ops.py", line 238, in __call__
+    raise ValueError("callback %s is not found" % token)
+
+ValueError: callback pyfunc_5 is not found
+
+
+2021-11-19 13:44:03.808906: W tensorflow/core/kernels/data/generator_dataset_op.cc:107] Error occurred when finalizing GeneratorDataset iterator: Invalid argument: ValueError: callback pyfunc_5 is not found
+Traceback (most recent call last):
+
+  File "/Users/zijian/.pyenv/versions/nocerebro/lib/python3.7/site-packages/tensorflow/python/ops/script_ops.py", line 238, in __call__
+    raise ValueError("callback %s is not found" % token)
+
+ValueError: callback pyfunc_5 is not found
+
+
+	 [[{{node PyFunc}}]]
+CEREBRO => Time: 2021-11-19 13:44:03, Model: model_0_1637358234, Mode: TRAIN, Initialization Time: 0.37346887588500977, Training Time: 0.22748899459838867, Finalization Time: 0.10210824012756348
+^CCEREBRO => Time: 2021-11-19 13:44:04, Terminating Workers
+Traceback (most recent call last):
+  File "quick_start.py", line 67, in <module>
+    model = model_selection.fit(train_df)
+  File "/Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/cerebro/tune/base.py", line 202, in fit
+    result = self._fit_on_prepared_data(None, metadata)
+  File "/Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/cerebro/tune/tpe.py", line 135, in _fit_on_prepared_data
+    self.label_cols)
+  File "/Users/zijian/Desktop/ucsd/cse234/project/cerebro-system/cerebro/backend/spark/backend.py", line 234, in train_for_one_epoch
+    time.sleep(self.settings.polling_period)
+  File "/Users/zijian/.pyenv/versions/nocerebro/lib/python3.7/site-packages/pyspark/context.py", line 270, in signal_handler
+    raise KeyboardInterrupt()
+KeyboardInterrupt
