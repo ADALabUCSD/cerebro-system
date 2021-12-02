@@ -1,5 +1,6 @@
 
 from .tuners.randsearch import RandomSearch
+from .tuners.greedy import GreedySearch
 from .tuners.gridsearch import GridSearch
 # from .tuners.hyperband import Hyperband
 from .sparktuner import SparkTuner
@@ -35,6 +36,7 @@ NAS_TUNERS = {
     # "hyperband": Hyperband,
     "gridsearch": GridSearch,
     "randomsearch": RandomSearch,
+    "greedy": GreedySearch,
 }
 
 def get_tuner_class(tuner):
@@ -129,20 +131,39 @@ class HyperHyperModel(object):
             pass
         if parallelism is None:
             parallelism = self.model_selection.backend._num_workers()
-        self.tuner = tuner(
-            hypermodel=self.graph,
-            parallelism = parallelism,
-            hyperparameters=hyperparameters,
-            model_selection=self.model_selection,
-            overwrite=overwrite,
-            objective=objective,
-            max_trials=max_trials,
-            directory=directory,
-            seed=self.seed,
-            project_name=project_name,
-            max_model_size=max_model_size,
-            **kwargs
-        )
+        
+        if type(tuner) is GreedySearch and kwargs['exploration']:
+            exp = kwargs['exploration']
+            self.tuner = tuner(
+                hypermodel=self.graph,
+                parallelism = parallelism,
+                hyperparameters=hyperparameters,
+                model_selection=self.model_selection,
+                overwrite=overwrite,
+                objective=objective,
+                max_trials=max_trials,
+                directory=directory,
+                seed=self.seed,
+                project_name=project_name,
+                max_model_size=max_model_size,
+                exploration=exp,
+                **kwargs
+            )
+        else:
+            self.tuner = tuner(
+                hypermodel=self.graph,
+                parallelism = parallelism,
+                hyperparameters=hyperparameters,
+                model_selection=self.model_selection,
+                overwrite=overwrite,
+                objective=objective,
+                max_trials=max_trials,
+                directory=directory,
+                seed=self.seed,
+                project_name=project_name,
+                max_model_size=max_model_size,
+                **kwargs
+            )
 
     @property
     def objective(self):
@@ -472,13 +493,27 @@ class HyperHyperModel(object):
         df,
         batch_size=32,
         epochs=100,
+        input_shape = None,
         **kwargs
     ):
         ms = self.model_selection
-        x = np.array(df.select(ms.feature_cols).head(100))
-        y = np.array(df.select(ms.label_cols).head(100))
-        x = [x[:,i,...,np.newaxis] for i in range(x.shape[1])]
-        y = np.squeeze(y,1)
+        if input_shape and type(input_shape) is int or type(input_shape) is tuple:
+            x = np.array(df.select(ms.feature_cols).head(100))
+            y = np.array(df.select(ms.label_cols).head(100))
+            x = [x[:,i] for i in range(x.shape[1])]
+            x = [r.reshape((-1, *input_shape)) for r in x]
+            y = np.squeeze(y,1)
+        else:
+            x = np.array(df.select(ms.feature_cols).head(100))
+            y = np.array(df.select(ms.label_cols).head(100))
+            x = [x[:,i,...,np.newaxis] for i in range(x.shape[1])]
+            y = np.squeeze(y,1)
+        if len(y.shape) > 2:
+            raise ValueError(
+                "We do not support multiple labels. Expect the target data for {name} to have shape "
+                "(batch_size, num_classes), "
+                "but got {shape}.".format(name=self.name, shape=self.shape)
+            )
         dataset, validation_data = self._convert_to_dataset(
             x=x, y=y, validation_data=None, batch_size=batch_size
         )
