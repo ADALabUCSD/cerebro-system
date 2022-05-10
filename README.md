@@ -10,15 +10,31 @@ resource-efficient manner. Detailed technical information about ``Cerebro`` can 
 Install
 -------
 
-The best way to install the ``Cerebro`` is via pip.
+**Prerequisites:** You MUST be running on **Python >= 3.6** with **Tensorflow >= 2.3** and **Apache Spark >= 2.4**. You will need to install these separately, and you will also need to install pyspark with a matching version of your Spark. For most users, these (except for Spark, which you will need to follow their instructions) can be installed by
 
+```bash
+pip install tensorflow==2.3
+```
+and
+
+```bash
+pip install pyspark==<your spark version>
+```
+
+It's worth mentioning pyspark itself can be run in local/single-node mode without Spark installed. If you are just checking out/not using a cluster, then you can run `pip install pyspark` without the version number. This alone should be sufficient for running the examples, but remember, to utilize a cluster with multiple machines, you will need Spark eventually. 
+
+**Cerebro:** The best way to install the ``Cerebro`` is via pip (may not contain the latest changes). **WARNING: if you are using Spark/PySpark 3.x, then you must use the alternative method for installation** 
+
+```bash
     pip install -U cerebro-dl
+```
 
 Alternatively, you can git clone and run the provided Makefile script
 
+```bash
     git clone https://github.com/ADALabUCSD/cerebro-system.git && cd cerebro-system && make
+```
 
-You MUST be running on **Python >= 3.6** with **Tensorflow >= 2.3** and **Apache Spark >= 2.4**
 
 
 Documentation
