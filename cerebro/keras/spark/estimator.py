@@ -216,6 +216,10 @@ class SparkEstimator(PySparkEstimator, SparkEstimatorParams, SparkEstimatorParam
         kwargs = self._input_kwargs
         self.setParams(**kwargs)
 
+
+    def _fit(self):
+        raise NotImplementedError
+
     def _get_keras_utils(self):
         # This function determines the keras package type of the Estimator based on the passed
         # optimizer and model and updates _keras_pkg_type parameter.
@@ -419,6 +423,12 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
     def _get_floatx(self):
         return self.getOrDefault(self._floatx)
 
+
+    def _transform(self):
+        """ Only required by PySparkModel, not used at all
+        """
+        raise NotImplementedError
+
     def transform(self, df):
         """ Transforms the given DataFrame using the trained ML model
 
@@ -438,13 +448,14 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
         pin_cpu = spark.backend._pin_cpu_fn()
 
         def predict(rows):
+            import tensorflow as tf
             from pyspark import Row
             from pyspark.ml.linalg import DenseVector, SparseVector
 
             k = keras_utils.keras()
             k.backend.set_floatx(floatx)
             # Do not use GPUs for prediction, use single CPU core per task.
-            pin_cpu()
+            pin_cpu(tf, k)
 
             def load_model_fn(x):
                 with k.utils.custom_object_scope(custom_objects):
@@ -514,3 +525,15 @@ class SparkModel(PySparkModel, SparkModelParams, SparkEstimatorParamsReadable, S
             return self.getModel()
         else:
             raise Exception('Keras model is not set!')
+
+    # copied from https://github.com/apache/spark/tree/master/python/pyspark/ml/param/shared.py
+    # has been removed from pyspark.ml.param.HasOutputCol in pyspark 3.0.0
+    # added here to keep ModelParams API consistent between pyspark 2 and 3
+    # https://github.com/apache/spark/commit/b19fd487dfe307542d65391fd7b8410fa4992698#diff-3d1fb305acc7bab18e5d91f2b69018c7
+    # https://github.com/apache/spark/pull/26232
+    # https://issues.apache.org/jira/browse/SPARK-29093
+    def setOutputCols(self, value):
+        """
+        Sets the value of :py:attr:`outputCols`.
+        """
+        return self._set(outputCols=value)

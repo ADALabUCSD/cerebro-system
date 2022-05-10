@@ -26,7 +26,7 @@ packages = find_packages()
 assert packages
 
 # read version from the package file.
-version_str = '1.0.0'
+version_str = '1.1.0'
 with (open(os.path.join(this, 'cerebro/__init__.py'), "r")) as f:
     line = [_ for _ in [_.strip("\r\n ")
                                 for _ in f.readlines()] if _.startswith("__version__")]
@@ -46,8 +46,8 @@ setup(
     include_package_data=True,
     install_requires=requirements,
     extras_require={
-        'cpu': ['tensorflow>=2.2'],
-        'gpu': ['tensorflow-gpu>=2.2'],
+        'cpu': ['tensorflow>=2.3'],
+        'gpu': ['tensorflow-gpu>=2.3'],
     },
     entry_points={
         'console_scripts': [

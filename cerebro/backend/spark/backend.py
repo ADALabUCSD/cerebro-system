@@ -583,8 +583,15 @@ def _pin_gpu_fn():
 
 
 def _pin_cpu_fn():
-    def fn():
+    # def fn():
+    #     os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+    #     tf.config.threading.set_inter_op_parallelism_threads(1)
+    #     tf.config.threading.set_intra_op_parallelism_threads(1)
+    def fn(tf, keras):
         os.environ['CUDA_VISIBLE_DEVICES'] = '-1'
+        from tensorflow.python.eager import context
+        context._context = None
+        context._create_context()
         tf.config.threading.set_inter_op_parallelism_threads(1)
         tf.config.threading.set_intra_op_parallelism_threads(1)
 

@@ -17,13 +17,13 @@
 all: install
 
 build: clean
-	python3 setup.py sdist bdist_wheel
+	python setup.py sdist bdist_wheel
 
 install: clean
-	python3 setup.py install
+	python -m pip install .
 
 publish: clean build
-	python3 -m pip install --user --upgrade twine
+	python -m pip install --user --upgrade twine
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
 	#twine upload dist/*
 
@@ -31,4 +31,4 @@ gen-docs:
 	cd docs-src && rm -rf build/* && make html && cp -r build/html/* ../docs && cd ..
 
 clean:
-	rm -rf build dist cerebro.egg-info .cache .pytest_cache
+	rm -rf build dist cerebro-dl.egg-info .cache .pytest_cache
