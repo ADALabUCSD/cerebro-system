@@ -479,7 +479,7 @@ def _create_dataset(store, df, validation, compress_sparse,
                 .mode('overwrite') \
                 .parquet(val_data_path)
 
-    train_rows, val_rows, pq_metadata, avg_row_size = get_simple_meta_from_parquet(store, df.columns, dataset_idx)
+    train_rows, val_rows, pq_metadata, avg_row_size = get_simple_meta_from_parquet(store, train_df.columns, dataset_idx)
 
     if verbose:
         print(

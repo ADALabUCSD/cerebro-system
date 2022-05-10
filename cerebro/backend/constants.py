@@ -30,4 +30,5 @@ DENSE_VECTOR = 'dense_vector'
 TOTAL_BUFFER_MEMORY_CAP_GIB = 4
 BYTES_PER_GIB = 1073741824
 
-RANDOM_SEED = int(os.environ['CEREBRO_RANDOM_SEED']) if 'CEREBRO_RANDOM_SEED' is os.environ else 2020
+RANDOM_SEED = int(os.environ['CEREBRO_RANDOM_SEED']
+                  ) if 'CEREBRO_RANDOM_SEED' in os.environ else 2020

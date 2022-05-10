@@ -157,8 +157,8 @@ def prepare_df(df):
     df = df.join(google_trend_all, ['State', 'Year', 'Week']).select(df['*'], google_trend_all.trend)
 
     # Merge in Google Trend for whole Germany.
-    google_trend_de = google_trend_all[google_trend_all.file == 'Rossmann_DE']
-    df = df.join(google_trend_de, ['Year', 'Week']).select(df['*'], google_trend_all.trend.alias('trend_de'))
+    google_trend_de = google_trend_all[google_trend_all.file == 'Rossmann_DE'].withColumnRenamed('trend', 'trend_de')
+    df = df.join(google_trend_de, ['Year', 'Week']).select(df['*'], google_trend_de.trend_de)
 
     # Merge in weather.
     weather = weather_csv.join(state_names_csv, weather_csv.file == state_names_csv.StateName)
@@ -183,7 +183,7 @@ def prepare_df(df):
 
     # Days & weeks of promotion, cap to 25 weeks.
     df = df.withColumn('Promo2Since',
-                       F.expr('date_add(format_string("%s-01-01", Promo2SinceYear), (Promo2SinceWeek - 1) * 7)'))
+                       F.expr('date_add(format_string("%s-01-01", Promo2SinceYear), (cast(Promo2SinceWeek as int) - 1) * 7)'))
     df = df.withColumn('Promo2Days',
                        F.when(df.Promo2SinceYear > 1900,
                               F.greatest(F.lit(0), F.least(F.lit(25 * 7), F.datediff(df.Date, df.Promo2Since))))
@@ -260,7 +260,7 @@ categorical_cols = [
 
 continuous_cols = [
     'CompetitionDistance', 'Max_TemperatureC', 'Mean_TemperatureC', 'Min_TemperatureC', 'Max_Humidity',
-    'Mean_Humidity', 'Min_Humidity', 'Max_Wind_SpeedKm_h', 'Mean_Wind_SpeedKm_h', 'CloudCover', 'trend', 'trend_DE',
+    'Mean_Humidity', 'Min_Humidity', 'Max_Wind_SpeedKm_h', 'Mean_Wind_SpeedKm_h', 'CloudCover', 'trend', 'trend_de',
     'BeforePromo', 'AfterPromo', 'AfterStateHoliday', 'BeforeStateHoliday', 'BeforeSchoolHoliday', 'AfterSchoolHoliday'
 ]
 
@@ -369,7 +369,7 @@ def estimator_gen_fn(params):
         optimizer=optimizer,
         loss='mae',
         metrics=[exp_rmspe],
-        custom_objects = CUSTOM_OBJECTS,
+        custom_objects=CUSTOM_OBJECTS,
         batch_size=params['batch_size'])
 
     return estimator
@@ -381,6 +381,10 @@ search_space = {
     'num_layers': hp_choice([3, 4, 5, 6]),
     'batch_size': hp_quniform(16, 128, 16)
 }
+
+# Drop the Date cols
+train_df = train_df.drop('Date')
+test_df = test_df.drop('Date')
 
 # Instantiate model selection object
 model_selection = TPESearch(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,

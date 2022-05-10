@@ -500,9 +500,11 @@ def sub_epoch_trainer(estimator, metadata, keras_utils, run_id, dataset_idx, tra
         # Workaround for the issue with huggingface layers needing a python
         # object as config (not a dict) and explicit definition of get_config method.
         # We monkey patch the __init__ method get_config methods of such layers.
-        for k in custom_objects:
-            if issubclass(custom_objects[k], tf.keras.layers.Layer) and inspect.getmodule(custom_objects[k]).__name__.startswith('transformers.'):
-                patch_hugginface_layer_methods(custom_objects[k])
+
+        # WARNING: checked out temporarily
+        # for k in custom_objects:
+        #     if issubclass(custom_objects[k], tf.keras.layers.Layer) and inspect.getmodule(custom_objects[k]).__name__.startswith('transformers.'):
+        #         patch_hugginface_layer_methods(custom_objects[k])
 
         tf.keras.backend.set_floatx(floatx)
         pin_gpu(local_task_index)
