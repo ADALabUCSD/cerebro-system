@@ -21,18 +21,24 @@ and
 pip install pyspark==<your spark version>
 ```
 
-It's worth mentioning pyspark itself can be run in local/single-node mode without Spark installed. If you are just checking out/not using a cluster, then you can run `pip install pyspark` without the version number. This alone should be sufficient for running the examples, but remember, to utilize a cluster with multiple machines, you will need Spark eventually. 
+It's worth mentioning pyspark itself can be run in local/single-node mode without Spark installed. If you are just checking out/not using a cluster, then you can run 
+```bash
+sudo apt-get update
+sudo apt-get install -y openjdk-8-jdk
+pip install pyspark==3.2.0
+```
+This alone should be sufficient for running the examples, but remember, to utilize a cluster with multiple machines, you will need Spark eventually. 
 
 **Cerebro:** The best way to install the ``Cerebro`` is via pip (may not contain the latest changes). **WARNING: if you are using Spark/PySpark 3.x, then you must use the alternative method for installation** 
 
 ```bash
-    pip install -U cerebro-dl
+pip install -U cerebro-dl
 ```
 
 Alternatively, you can git clone and run the provided Makefile script
 
 ```bash
-    git clone https://github.com/ADALabUCSD/cerebro-system.git && cd cerebro-system && make
+git clone https://github.com/ADALabUCSD/cerebro-system.git && cd cerebro-system && make
 ```
 
 
