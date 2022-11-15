@@ -36,34 +36,29 @@ class TestTPE(unittest.TestCase):
         # Load training data
         df = spark.read.format("libsvm").load("./tests/sample_libsvm_data.txt").repartition(8)
         df.printSchema()
-
         backend = SparkBackend(spark_context=spark.sparkContext, num_workers=3)
         store = LocalStore('/tmp')
-
         def estimator_gen_fn(params):
             model = tf.keras.models.Sequential()
             model.add(tf.keras.layers.Input(shape=692, name='features'))
             model.add(tf.keras.layers.Dense(100, input_dim=692))
             model.add(tf.keras.layers.Dense(1, input_dim=100))
             model.add(tf.keras.layers.Activation('sigmoid'))
-
             optimizer = tf.keras.optimizers.Adam(lr=params['lr'])
             loss = 'binary_crossentropy'
-
             keras_estimator = SparkEstimator(
                 model=model,
                 optimizer=optimizer,
                 loss=loss,
                 metrics=['acc'],
                 batch_size=10)
-
             return keras_estimator
 
         search_space = {
             'lr': hp_choice([0.01, 0.001, 0.0001]),
             'dummy1': hp_uniform(0, 100),
             'dummy2': hp_quniform(0, 100, 1),
-            'dummy3': hp_qloguniform(0, 100, 1),
+            'dummy3': hp_quniform(0, 100, 1),
         }
 
         hyperopt = TPESearch(backend=backend, store=store, estimator_gen_fn=estimator_gen_fn, search_space=search_space,

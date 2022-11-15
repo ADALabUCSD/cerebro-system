@@ -10,7 +10,7 @@ resource-efficient manner. Detailed technical information about ``Cerebro`` can 
 Install
 -------
 
-**Prerequisites:** You MUST be running on **Python >= 3.6** with **Tensorflow >= 2.3** and **Apache Spark >= 2.4**. You will need to install these separately, and you will also need to install pyspark with a matching version of your Spark. For most users, these (except for Spark, which you will need to follow their instructions) can be installed by
+**Prerequisites:** You MUST be running on **Python >= 3.6** with **Tensorflow >= 2.3** (note version 2.3 and >=2.9.1 are both known to work, but version 2.4 - 2.5 are not working) and **Apache Spark >= 2.4**. You will need to install these separately, and you will also need to install pyspark with a matching version of your Spark. For most users, these (except for Spark, which you will need to follow their instructions) can be installed by
 
 ```bash
 pip install tensorflow==2.3
@@ -29,7 +29,7 @@ pip install pyspark==3.2.0
 ```
 This alone should be sufficient for running the examples, but remember, to utilize a cluster with multiple machines, you will need Spark eventually. 
 
-**Cerebro:** The best way to install the ``Cerebro`` is via pip (may not contain the latest changes). **WARNING: if you are using Spark/PySpark 3.x, then you must use the alternative method for installation** 
+**Cerebro:** The best way to install the ``Cerebro`` is via pip (may not contain the latest changes).
 
 ```bash
 pip install -U cerebro-dl
@@ -41,7 +41,28 @@ Alternatively, you can git clone and run the provided Makefile script
 git clone https://github.com/ADALabUCSD/cerebro-system.git && cd cerebro-system && make
 ```
 
+Quick Start
+-------------
+There are three examples in increasing complexity.
 
+1. Run the unit tests:
+```bash
+python -m pytest
+```
+
+2. Run a bare minimum model selection example:
+```bash
+cd examples
+python dummy_model_selection.py
+```
+
+3. Run an end-to-end example:
+```bash
+cd examples
+wget http://files.fast.ai/part2/lesson14/rossmann.tgz
+tar zxvf rossmann.tgz
+python rossmann_model_selection.py
+```
 
 Documentation
 -------------

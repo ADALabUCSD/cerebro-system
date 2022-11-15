@@ -24,8 +24,11 @@ import shutil
 import tempfile
 
 import pyarrow as pa
+from pyarrow import fs
 
 from .base import FilesystemStore
+from .base import filter_dict
+
 
 
 class HDFSStore(FilesystemStore):
@@ -61,7 +64,8 @@ class HDFSStore(FilesystemStore):
                  driver='libhdfs', extra_conf=None):
         self._temp_dir = temp_dir
 
-        prefix, url_host, url_port, path, path_offset = self.parse_url(prefix_path)
+        prefix, url_host, url_port, path, path_offset = self.parse_url(
+            prefix_path)
         self._check_url(prefix_path, prefix, path)
         self._url_prefix = prefix_path[:path_offset] if prefix else self.FS_PREFIX
 
@@ -75,7 +79,8 @@ class HDFSStore(FilesystemStore):
                                  extra_conf=extra_conf)
         self._hdfs = self._get_filesystem_fn()()
 
-        super(HDFSStore, self).__init__(prefix_path, train_path=train_path, val_path=val_path, runs_path=runs_path)
+        super(HDFSStore, self).__init__(prefix_path,
+                                        train_path=train_path, val_path=val_path, runs_path=runs_path)
 
     def parse_url(self, url):
         match = re.search(self.URL_PATTERN, url)
@@ -150,6 +155,8 @@ class HDFSStore(FilesystemStore):
 
     def _get_filesystem_fn(self):
         hdfs_kwargs = self._hdfs_kwargs
+
+        hdfs_kwargs = filter_dict(hdfs_kwargs, pa.hdfs.connect)
 
         def fn():
             return pa.hdfs.connect(**hdfs_kwargs)

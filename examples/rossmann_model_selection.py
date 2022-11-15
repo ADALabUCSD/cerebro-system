@@ -18,6 +18,7 @@
 import argparse
 import datetime
 import os
+import sys
 
 import pyspark.sql.functions as F
 import pyspark.sql.types as T
@@ -39,7 +40,7 @@ parser.add_argument('--master',
                          'should be set up to provide a Spark task per multiple CPU cores, or per GPU, e.g. by'
                          'supplying `-c <NUM_GPUS>` in Spark Standalone mode')
 parser.add_argument('--num-workers', type=int,
-                    help='number of workers for training, default: `spark.default.parallelism`', default=1)
+                    help='number of workers for training, default: 4', default=4)
 parser.add_argument('--learning_rate', type=float, default=0.0001,
                     help='initial learning rate')
 parser.add_argument('--batch-size', type=int, default=32,
@@ -73,7 +74,11 @@ print('================')
 # Create Spark session for data preparation.
 conf = SparkConf().setAppName('Rossmann Model Selection').set('spark.sql.shuffle.partitions', '16')
 if args.master:
+    os.environ['PYSPARK_PYTHON'] = sys.executable
+    os.environ['PYSPARK_DRIVER_PYTHON'] = sys.executable
     conf.setMaster(args.master)
+    conf.set("spark.executor.memory", "10G")
+    conf.set("spark.driver.memory", "10G")
 elif args.num_workers:
     conf.setMaster('local[{}]'.format(args.num_workers))
 spark = SparkSession.builder.config(conf=conf).getOrCreate()
@@ -293,7 +298,7 @@ train_df = train_df.withColumn('Validation',
 max_sales = train_df.agg(F.max(train_df.Sales)).collect()[0][0]
 
 # Convert Sales to log domain
-train_df = train_df.withColumn('Sales', F.log(train_df.Sales))
+train_df = train_df.withColumn('Sales', F.log(train_df.Sales)).repartition(args.num_workers)
 
 print('===================================')
 print('Data frame with transformed columns')
@@ -345,7 +350,7 @@ def estimator_gen_fn(params):
 
 
     CUSTOM_OBJECTS = {'exp_rmspe': exp_rmspe, 'act_sigmoid_scaled': act_sigmoid_scaled}
-    
+
     inputs = {col: Input(shape=(1,), name=col) for col in all_cols}
     embeddings = [Embedding(len(vocab[col]), 10, input_length=1, name='emb_' + col)(inputs[col])
                   for col in categorical_cols]

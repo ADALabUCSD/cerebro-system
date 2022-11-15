@@ -104,6 +104,7 @@ class TPESearch(ModelSelection):
             # Using HyperOpt TPE to generate parameters
             hyperopt_params = []
             for j in range(i, i + n):
+                # print("HERE", j, domain, trials)
                 new_param = tpe.suggest([j], domain, trials, rand.randint(0, 2 ** 31 - 1))
                 new_param[0]['status'] = STATUS_RUNNING
 
