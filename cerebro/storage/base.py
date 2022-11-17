@@ -23,6 +23,9 @@ import pyarrow.parquet as pq
 
 import inspect
 
+import shutil
+import tempfile
+import contextlib
 
 def filter_dict(dict_to_filter, thing_with_kwargs):
     sig = inspect.signature(thing_with_kwargs)
@@ -148,8 +151,6 @@ class FilesystemStore(Store):
         self._runs_path = self._get_full_path_or_default(runs_path, 'runs')
         super(FilesystemStore, self).__init__()
 
-    def exists(self, path):
-        return self.get_filesystem().exists(self.get_localized_path(path))
 
     def read(self, path):
         with self.get_filesystem().open(self.get_localized_path(path), 'rb') as f:
@@ -224,3 +225,54 @@ class FilesystemStore(Store):
     @classmethod
     def filesystem_prefix(cls):
         raise NotImplementedError()
+    
+    def get_local_output_dir_fn(self, run_id):
+        temp_dir = self._temp_dir
+
+        @contextlib.contextmanager
+        def local_run_path():
+            dirpath = tempfile.mkdtemp(dir=temp_dir)
+            try:
+                yield dirpath
+            finally:
+                shutil.rmtree(dirpath)
+
+        return local_run_path
+
+    def sync_fn(self, run_id):
+        class SyncState(object):
+            def __init__(self):
+                self.fs = None
+                self.uploaded = {}
+
+        state = SyncState()
+        get_filesystem = self._get_filesystem_fn()
+        hdfs_root_path = self.get_run_path(run_id)
+
+        def fn(local_run_path):
+            if state.fs is None:
+                state.fs = get_filesystem()
+
+            hdfs = state.fs
+            uploaded = state.uploaded
+
+            # We need to swap this prefix from the local path with the absolute path, +1 due to
+            # including the trailing slash
+            prefix = len(local_run_path) + 1
+
+            for local_dir, dirs, files in os.walk(local_run_path):
+                hdfs_dir = os.path.join(hdfs_root_path, local_dir[prefix:])
+                for file in files:
+                    local_path = os.path.join(local_dir, file)
+                    modified_ts = int(os.path.getmtime(local_path))
+
+                    if local_path in uploaded:
+                        last_modified_ts = uploaded.get(local_path)
+                        if modified_ts <= last_modified_ts:
+                            continue
+
+                    hdfs_path = os.path.join(hdfs_dir, file)
+                    self.move(hdfs, local_path, hdfs_path)
+                    uploaded[local_path] = modified_ts
+
+        return fn
