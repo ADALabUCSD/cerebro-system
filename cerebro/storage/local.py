@@ -58,31 +58,6 @@ class LocalStore(FilesystemStore):
     def _get_filesystem_fn(self):
         return self.get_filesystem
 
-    # def get_local_output_dir_fn(self, run_id):
-    #     run_path = self.get_localized_path(self.get_run_path(run_id))
-
-    #     @contextlib.contextmanager
-    #     def local_run_path():
-    #         if not os.path.exists(run_path):
-    #             try:
-    #                 os.makedirs(run_path, mode=0o755)
-    #             except OSError as e:
-    #                 # Race condition from workers on the same host: ignore
-    #                 if e.errno != errno.EEXIST:
-    #                     raise
-    #         yield run_path
-
-    #     return local_run_path
-
-    # def sync_fn(self, run_id):
-    #     run_path = self.get_localized_path(self.get_run_path(run_id))
-
-    #     def fn(local_run_path):
-    #         # No-op for LocalStore since the `local_run_path` will be the same as the run path
-    #         assert run_path == local_run_path
-
-    #     return fn
-
     @classmethod
     def filesystem_prefix(cls):
         return cls.FS_PREFIX

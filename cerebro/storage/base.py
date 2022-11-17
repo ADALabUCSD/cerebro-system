@@ -247,13 +247,13 @@ class FilesystemStore(Store):
 
         state = SyncState()
         get_filesystem = self._get_filesystem_fn()
-        hdfs_root_path = self.get_run_path(run_id)
+        fs_root_path = self.get_run_path(run_id)
 
         def fn(local_run_path):
             if state.fs is None:
                 state.fs = get_filesystem()
 
-            hdfs = state.fs
+            fs = state.fs
             uploaded = state.uploaded
 
             # We need to swap this prefix from the local path with the absolute path, +1 due to
@@ -261,7 +261,7 @@ class FilesystemStore(Store):
             prefix = len(local_run_path) + 1
 
             for local_dir, dirs, files in os.walk(local_run_path):
-                hdfs_dir = os.path.join(hdfs_root_path, local_dir[prefix:])
+                fs_dir = os.path.join(fs_root_path, local_dir[prefix:])
                 for file in files:
                     local_path = os.path.join(local_dir, file)
                     modified_ts = int(os.path.getmtime(local_path))
@@ -271,8 +271,8 @@ class FilesystemStore(Store):
                         if modified_ts <= last_modified_ts:
                             continue
 
-                    hdfs_path = os.path.join(hdfs_dir, file)
-                    self.move(hdfs, local_path, hdfs_path)
+                    fs_path = os.path.join(fs_dir, file)
+                    self.move(fs, local_path, fs_path)
                     uploaded[local_path] = modified_ts
 
         return fn
