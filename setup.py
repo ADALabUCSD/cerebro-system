@@ -26,7 +26,7 @@ packages = find_packages()
 assert packages
 
 # read version from the package file.
-version_str = '1.1.0'
+version_str = '1.1.1'
 with (open(os.path.join(this, 'cerebro/__init__.py'), "r")) as f:
     line = [_ for _ in [_.strip("\r\n ")
                                 for _ in f.readlines()] if _.startswith("__version__")]
