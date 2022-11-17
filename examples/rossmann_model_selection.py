@@ -30,6 +30,7 @@ from tensorflow.keras.layers import Input, Embedding, Concatenate, Dense, Flatte
 from cerebro.backend import SparkBackend
 from cerebro.keras import SparkEstimator
 from cerebro.storage import LocalStore
+from cerebro.storage import HDFSStore
 from cerebro.tune import TPESearch
 from cerebro.tune import hp_choice, hp_quniform, hp_loguniform
 
@@ -327,7 +328,10 @@ print('==============')
 
 
 backend = SparkBackend(spark_context=spark.sparkContext, num_workers=args.num_workers)
-store = LocalStore(args.work_dir)
+if 'hdfs' in args.work_dir:
+    store = HDFSStore(prefix_path=args.work_dir)
+else:
+    store = LocalStore(args.work_dir)
 
 
 # Define estimator generating function.
